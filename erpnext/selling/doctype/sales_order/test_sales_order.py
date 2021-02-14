@@ -325,6 +325,9 @@ class TestSalesOrder(unittest.TestCase):
 		create_dn_against_so(so.name, 4)
 		make_sales_invoice(so.name)
 
+		prev_total = so.get("base_total")
+		prev_total_in_words = so.get("base_in_words")
+
 		first_item_of_so = so.get("items")[0]
 		trans_item = json.dumps([
 			{'item_code' : first_item_of_so.item_code, 'rate' : first_item_of_so.rate, \
@@ -339,6 +342,12 @@ class TestSalesOrder(unittest.TestCase):
 		self.assertEqual(so.get("items")[-1].qty, 7)
 		self.assertEqual(so.get("items")[-1].amount, 1400)
 		self.assertEqual(so.status, 'To Deliver and Bill')
+
+		updated_total = so.get("base_total")
+		updated_total_in_words = so.get("base_in_words")
+
+		self.assertEqual(updated_total, prev_total+1400)
+		self.assertNotEqual(updated_total_in_words, prev_total_in_words)
 
 	def test_update_child_removing_item(self):
 		so = make_sales_order(**{
@@ -769,6 +778,59 @@ class TestSalesOrder(unittest.TestCase):
 		dn.load_from_db()
 		dn.cancel()
 		po.cancel()
+		so.load_from_db()
+		so.cancel()
+
+	def test_drop_shipping_partial_order(self):
+		from erpnext.selling.doctype.sales_order.sales_order import make_purchase_order_for_default_supplier, \
+			update_status as so_update_status
+
+		# make items
+		po_item1 = make_item("_Test Item for Drop Shipping 1", {"is_stock_item": 1, "delivered_by_supplier": 1})
+		po_item2 = make_item("_Test Item for Drop Shipping 2", {"is_stock_item": 1, "delivered_by_supplier": 1})
+
+		so_items = [
+			{
+				"item_code": po_item1.item_code,
+				"warehouse": "",
+				"qty": 2,
+				"rate": 400,
+				"delivered_by_supplier": 1,
+				"supplier": '_Test Supplier'
+			},
+			{
+				"item_code": po_item2.item_code,
+				"warehouse": "",
+				"qty": 2,
+				"rate": 400,
+				"delivered_by_supplier": 1,
+				"supplier": '_Test Supplier'
+			}
+		]
+
+		# create so and po
+		so = make_sales_order(item_list=so_items, do_not_submit=True)
+		so.submit()
+
+		# create po for only one item
+		po1 = make_purchase_order_for_default_supplier(so.name, selected_items=[so_items[0]])
+		po1.submit()
+
+		self.assertEqual(so.customer, po1.customer)
+		self.assertEqual(po1.items[0].sales_order, so.name)
+		self.assertEqual(po1.items[0].item_code, po_item1.item_code)
+		#test po item length
+		self.assertEqual(len(po1.items), 1)
+
+		# create po for remaining item
+		po2 = make_purchase_order_for_default_supplier(so.name, selected_items=[so_items[1]])
+		po2.submit()
+
+		# teardown
+		so_update_status("Draft", so.name)
+
+		po1.cancel()
+		po2.cancel()
 		so.load_from_db()
 		so.cancel()
 
