@@ -76,7 +76,7 @@ class SalesInvoice(SellingController):
 
 		if not self.is_pos:
 			self.so_dn_required()
-		
+
 		self.set_tax_withholding()
 
 		self.validate_proj_cust()
@@ -1059,7 +1059,8 @@ class SalesInvoice(SellingController):
 			)
 
 	def make_gle_for_rounding_adjustment(self, gl_entries):
-		if flt(self.rounding_adjustment, self.precision("rounding_adjustment")) and self.base_rounding_adjustment:
+		if flt(self.rounding_adjustment, self.precision("rounding_adjustment")) and self.base_rounding_adjustment \
+			and not self.is_internal_transfer():
 			round_off_account, round_off_cost_center = \
 				get_round_off_account_and_cost_center(self.company)
 
