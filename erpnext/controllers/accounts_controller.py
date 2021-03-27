@@ -25,7 +25,8 @@ from erpnext.stock.doctype.packed_item.packed_item import make_packing_list
 
 class AccountMissingError(frappe.ValidationError): pass
 
-force_item_fields = ("item_group", "brand", "stock_uom", "is_fixed_asset", "item_tax_rate", "pricing_rules")
+force_item_fields = ("item_group", "brand", "stock_uom", "is_fixed_asset", "item_tax_rate",
+	"pricing_rules", "weight_per_unit", "weight_uom", "total_weight")
 
 class AccountsController(TransactionBase):
 	def __init__(self, *args, **kwargs):
@@ -75,6 +76,9 @@ class AccountsController(TransactionBase):
 		self.ensure_supplier_is_not_blocked()
 
 		self.validate_date_with_fiscal_year()
+		self.validate_inter_company_reference()
+
+		self.set_incoming_rate()
 
 		if self.meta.get_field("currency"):
 			self.calculate_taxes_and_totals()
@@ -110,14 +114,20 @@ class AccountsController(TransactionBase):
 			self.set_inter_company_account()
 
 		validate_regional(self)
-		
+
 		validate_einvoice_fields(self)
 
 		if self.doctype != 'Material Request':
 			apply_pricing_rule_on_transaction(self)
-	
+
 	def before_cancel(self):
 		validate_einvoice_fields(self)
+
+	def on_trash(self):
+		# delete sl and gl entries on deletion of transaction
+		if frappe.db.get_single_value('Accounts Settings', 'delete_linked_ledger_entries'):
+			frappe.db.sql("delete from `tabGL Entry` where voucher_type=%s and voucher_no=%s", (self.doctype, self.name))
+			frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_type=%s and voucher_no=%s", (self.doctype, self.name))
 
 	def validate_deferred_start_and_end_date(self):
 		for d in self.items:
@@ -206,6 +216,17 @@ class AccountsController(TransactionBase):
 				validate_fiscal_year(self.get(date_field), self.fiscal_year, self.company,
 									 self.meta.get_label(date_field), self)
 
+	def validate_inter_company_reference(self):
+		if self.doctype not in ('Purchase Invoice', 'Purchase Receipt', 'Purchase Order'):
+			return
+
+		if self.is_internal_transfer():
+			if not (self.get('inter_company_reference') or self.get('inter_company_invoice_reference')
+				or self.get('inter_company_order_reference')):
+				msg = _("Internal Sale or Delivery Reference missing. ")
+				msg += _("Please create purchase from internal sale or delivery document itself")
+				frappe.throw(msg, title=_("Internal Sales Reference Missing"))
+
 	def validate_due_date(self):
 		if self.get('is_pos'): return
 
@@ -282,6 +303,7 @@ class AccountsController(TransactionBase):
 					args["doctype"] = self.doctype
 					args["name"] = self.name
 					args["child_docname"] = item.name
+					args["ignore_pricing_rule"] = self.ignore_pricing_rule if hasattr(self, 'ignore_pricing_rule') else 0
 
 					if not args.get("transaction_date"):
 						args["transaction_date"] = args.get("posting_date")
@@ -448,8 +470,10 @@ class AccountsController(TransactionBase):
 			account_currency = get_account_currency(gl_dict.account)
 
 		if gl_dict.account and self.doctype not in ["Journal Entry",
-													"Period Closing Voucher", "Payment Entry"]:
+			"Period Closing Voucher", "Payment Entry", "Purchase Receipt", "Purchase Invoice", "Stock Entry"]:
 			self.validate_account_currency(gl_dict.account, account_currency)
+
+		if gl_dict.account and self.doctype not in ["Journal Entry", "Period Closing Voucher", "Payment Entry"]:
 			set_balance_in_account_currency(gl_dict, account_currency, self.get("conversion_rate"),
 											self.company_currency)
 
@@ -962,9 +986,9 @@ class AccountsController(TransactionBase):
 			It will an internal transfer if its an internal customer and representation
 			company is same as billing company
 		"""
-		if self.doctype == 'Sales Invoice':
+		if self.doctype in ('Sales Invoice', 'Delivery Note', 'Sales Order'):
 			internal_party_field = 'is_internal_customer'
-		else:
+		elif self.doctype in ('Purchase Invoice', 'Purchase Receipt', 'Purchase Order'):
 			internal_party_field = 'is_internal_supplier'
 
 		if self.get(internal_party_field) and (self.represents_company == self.company):
@@ -1481,6 +1505,7 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 	parent.flags.ignore_validate_update_after_submit = True
 	parent.set_qty_as_per_stock_uom()
 	parent.calculate_taxes_and_totals()
+	parent.set_total_in_words()
 	if parent_doctype == "Sales Order":
 		make_packing_list(parent)
 		parent.set_gross_profit()
