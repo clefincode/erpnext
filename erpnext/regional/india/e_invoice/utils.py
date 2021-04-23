@@ -109,13 +109,15 @@ def get_doc_details(invoice):
 		invoice_date=invoice_date
 	))
 
-def validate_address_fields(address, is_shipping_address):
-	if ((not address.gstin and not is_shipping_address)
-		or not address.city
-		or not address.pincode
-		or not address.address_title
-		or not address.address_line1
-		or not address.gst_state_number):
+def get_party_details(address_name, company_address=None, billing_address=None, shipping_address=None):
+	d = frappe.get_all('Address', filters={'name': address_name}, fields=['*'])[0]
+
+	if ((not d.gstin and not shipping_address)
+		or not d.city
+		or not d.pincode
+		or not d.address_title
+		or not d.address_line1
+		or not d.gst_state_number):
 
 		frappe.throw(
 			msg=_('Address Lines, City, Pincode, GSTIN are mandatory for address {}. Please set them and try again.').format(address.name),
@@ -132,17 +134,14 @@ def get_party_details(address_name, is_shipping_address=False):
 		addr.pincode = 999999
 
 	party_address_details = frappe._dict(dict(
-		legal_name=sanitize_for_json(addr.address_title),
-		location=sanitize_for_json(addr.city),
-		pincode=addr.pincode, gstin=addr.gstin,
-		state_code=addr.gst_state_number,
-		address_line1=sanitize_for_json(addr.address_line1),
-		address_line2=sanitize_for_json(addr.address_line2)
+		legal_name=d.address_title,
+		location=d.city, pincode=d.pincode,
+		state_code=d.gst_state_number,
+		address_line1=d.address_line1,
+		address_line2=d.address_line2
 	))
 	if d.gstin:
 		party_address_details.gstin = d.gstin
-
-	return party_address_details
 
 	return party_address_details
 
@@ -432,7 +431,7 @@ def make_einvoice(invoice):
 	if invoice.gst_category == 'Overseas':
 		buyer_details = get_overseas_address_details(invoice.customer_address)
 	else:
-		buyer_details = get_party_details(invoice.customer_address)
+		buyer_details = get_party_details(invoice.customer_address, billing_address=1)
 		place_of_supply = get_place_of_supply(invoice, invoice.doctype)
 		if place_of_supply:
 			place_of_supply = place_of_supply.split('-')[0]
@@ -448,15 +447,11 @@ def make_einvoice(invoice):
 		if invoice.gst_category == 'Overseas':
 			shipping_details = get_overseas_address_details(invoice.shipping_address_name)
 		else:
-			shipping_details = get_party_details(invoice.shipping_address_name, shipping_address=True)
-	
-	if invoice.is_pos and invoice.base_paid_amount:
-		payment_details = get_payment_details(invoice)
-	
+			shipping_details = get_party_details(invoice.shipping_address_name, shipping_address=1)
+
 	if invoice.is_return and invoice.return_against:
 		prev_doc_details = get_return_doc_reference(invoice)
-
-	if invoice.transporter and flt(invoice.distance) and not invoice.is_return:
+	if invoice.transporter and cint(invoice.distance):
 		eway_bill_details = get_eway_bill_details(invoice)
 
 	# not yet implemented
@@ -480,75 +475,66 @@ def make_einvoice(invoice):
 
 	return einvoice
 
-def show_link_to_error_log(invoice, einvoice):
-	err_log = log_error(einvoice)
-	link_to_error_log = get_link_to_form('Error Log', err_log.name, 'Error Log')
-	frappe.throw(
-		_('An error occurred while creating e-invoice for {}. Please check {} for more information.').format(
-			invoice.name, link_to_error_log),
-		title=_('E Invoice Creation Failed')
-	)
+def throw_error_list(errors, title):
+	if len(errors) > 1:
+		li = ['<li>'+ d +'</li>' for d in errors]
+		frappe.throw("<ul style='padding-left: 20px'>{}</ul>".format(''.join(li)), title=title)
+	else:
+		frappe.throw(errors[0], title=title)
 
-def log_error(data=None):
-	if isinstance(data, six.string_types):
-		data = json.loads(data)
+def validate_einvoice(validations, einvoice, errors=None):
+	if errors is None:
+		errors = []
 
-	seperator = "--" * 50
-	err_tb = traceback.format_exc()
-	err_msg = str(sys.exc_info()[1])
-	data = json.dumps(data, indent=4)
+	for fieldname, field_validation in validations.items():
+		value = einvoice.get(fieldname, None)
+		if not value or value == "None":
+			# remove keys with empty values
+			einvoice.pop(fieldname, None)
+			continue
 
-	message = "\n".join([
-		"Error", err_msg, seperator,
-		"Data:", data, seperator,
-		"Exception:", err_tb
-	])
-	frappe.log_error(title=_('E Invoice Request Failed'), message=message)
+		value_type = field_validation.get("type").lower()
+		if value_type in ['object', 'array']:
+			child_validations = field_validation.get('properties')
 
-def santize_einvoice_fields(einvoice):
-	int_fields = ["Pin","Distance","CrDay"]
-	float_fields = ["Qty","FreeQty","UnitPrice","TotAmt","Discount","PreTaxVal","AssAmt","GstRt","IgstAmt","CgstAmt","SgstAmt","CesRt","CesAmt","CesNonAdvlAmt","StateCesRt","StateCesAmt","StateCesNonAdvlAmt","OthChrg","TotItemVal","AssVal","CgstVal","SgstVal","IgstVal","CesVal","StCesVal","Discount","OthChrg","RndOffAmt","TotInvVal","TotInvValFc","PaidAmt","PaymtDue","ExpDuty",]
-	copy = einvoice.copy()
-	for key, value in copy.items():
-		if isinstance(value, list):
-			for idx, d in enumerate(value):
-				santized_dict = santize_einvoice_fields(d)
-				if santized_dict:
-					einvoice[key][idx] = santized_dict
-				else:
-					einvoice[key].pop(idx)
-
-			if not einvoice[key]:
-				einvoice.pop(key, None)
-
-		elif isinstance(value, dict):
-			santized_dict = santize_einvoice_fields(value)
-			if santized_dict:
-				einvoice[key] = santized_dict
+			if isinstance(value, list):
+				for d in value:
+					validate_einvoice(child_validations, d, errors)
+					if not d:
+						# remove empty dicts
+						einvoice.pop(fieldname, None)
 			else:
-				einvoice.pop(key, None)
+				validate_einvoice(child_validations, value, errors)
+				if not value:
+					# remove empty dicts
+					einvoice.pop(fieldname, None)
+			continue
 
-		elif not value or value == "None":
-			einvoice.pop(key, None)
+		# convert to int or str
+		if value_type == 'string':
+			einvoice[fieldname] = str(value)
+		elif value_type == 'number':
+			is_integer = '.' not in str(field_validation.get('maximum'))
+			precision = 3 if '.999' in str(field_validation.get('maximum')) else 2
+			einvoice[fieldname] = flt(value, precision) if not is_integer else cint(value)
+			value = einvoice[fieldname]
 
-		elif key in float_fields:
-			einvoice[key] = flt(value, 2)
+		max_length = field_validation.get('maxLength')
+		minimum = flt(field_validation.get('minimum'))
+		maximum = flt(field_validation.get('maximum'))
+		pattern_str = field_validation.get('pattern')
+		pattern = re.compile(pattern_str or '')
 
-		elif key in int_fields:
-			einvoice[key] = cint(value)
+		label = field_validation.get('description') or fieldname
 
-	return einvoice
-
-def safe_json_load(json_string):
-	JSONDecodeError = ValueError if six.PY2 else json.JSONDecodeError
-	try:
-		return json.loads(json_string)
-	except JSONDecodeError as e:
-		# print a snippet of 40 characters around the location where error occured
-		pos = e.pos
-		start, end = max(0, pos-20), min(len(json_string)-1, pos+20)
-		snippet = json_string[start:end]
-		frappe.throw(_("Error in input data. Please check for any special characters near following input: <br> {}").format(snippet))
+		if value_type == 'string' and len(value) > max_length:
+			errors.append(_('{} should not exceed {} characters').format(label, max_length))
+		if value_type == 'number' and (value > maximum or value < minimum):
+			errors.append(_('{} {} should be between {} and {}').format(label, value, minimum, maximum))
+		if pattern_str and not pattern.match(value) and field_validation.get('validationMsg'):
+			errors.append(field_validation.get('validationMsg'))
+	
+	return errors
 
 class RequestFailed(Exception): pass
 
@@ -574,11 +560,14 @@ class GSPConnector():
 	def get_credentials(self):
 		if self.invoice:
 			gstin = self.get_seller_gstin()
+			if not self.e_invoice_settings.enable:
+				frappe.throw(_("E-Invoicing is disabled. Please enable it from {} to generate e-invoices.").format(get_link_to_form("E Invoice Settings", "E Invoice Settings")))
+
 			credentials_for_gstin = [d for d in self.e_invoice_settings.credentials if d.gstin == gstin]
 			if credentials_for_gstin:
 				self.credentials = credentials_for_gstin[0]
 			else:
-				frappe.throw(_('Cannot find e-invoicing credentials for selected Company GSTIN. Please check E-Invoice Settings'))
+				frappe.throw(_('Cannot find e-invoicing credentials for GSTIN {}. Please check E-Invoice Settings').format(gstin))
 		else:
 			credentials = self.e_invoice_settings.credentials[0] if self.e_invoice_settings.credentials else None
 		return credentials
