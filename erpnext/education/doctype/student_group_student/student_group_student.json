@@ -1,0 +1,151 @@
+{
+ "actions": [],
+ "creation": "2015-09-11 15:14:58.501830",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "student_eng_name",
+  "mobile",
+  "mobile_2",
+  "column_break_2",
+  "program_enrollment_note",
+  "active",
+  "program_enrollment",
+  "group_roll_number",
+  "status_section",
+  "status",
+  "initial_evaluation_section",
+  "instructor_evaluation",
+  "course_content_evaluation",
+  "equipment_evaluation",
+  "column_break_17",
+  "note"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "group_roll_number",
+   "fieldtype": "Int",
+   "label": "Group Roll Number"
+  },
+  {
+   "default": "1",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Data",
+   "label": "Program Enrollment",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.student_mobile_number",
+   "fieldname": "mobile",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Mobile",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.student_mobile_number2",
+   "fieldname": "mobile_2",
+   "fieldtype": "Data",
+   "label": "Mobile 2",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "program_enrollment_note",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Note",
+   "width": "0"
+  },
+  {
+   "fetch_from": "student.full_student_name_eng",
+   "fieldname": "student_eng_name",
+   "fieldtype": "Data",
+   "label": "Student Eng Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "default": "\u063a\u064a\u0631 \u0645\u0628\u0644\u063a",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\u063a\u064a\u0631 \u0645\u0628\u0644\u063a\n\u0645\u0628\u0644\u063a\n\u0633\u062d\u0628/\u0646\u0642\u0644"
+  },
+  {
+   "fieldname": "initial_evaluation_section",
+   "fieldtype": "Section Break",
+   "label": "Initial Evaluation"
+  },
+  {
+   "fieldname": "instructor_evaluation",
+   "fieldtype": "Data",
+   "label": "Instructor Evaluation"
+  },
+  {
+   "fieldname": "course_content_evaluation",
+   "fieldtype": "Data",
+   "label": "Course Content Evaluation"
+  },
+  {
+   "fieldname": "equipment_evaluation",
+   "fieldtype": "Data",
+   "label": "Equipment Evaluation"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2022-05-11 17:42:32.700862",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student Group Student",
+ "owner": "Administrator",
+ "permissions": [],
+ "restrict_to_domain": "Education",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

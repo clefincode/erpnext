@@ -1,0 +1,579 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2015-09-07 13:00:55.938280",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_1",
+  "enabled",
+  "status",
+  "column_break_5",
+  "student_barcode",
+  "section_break_3",
+  "first_name",
+  "last_name",
+  "middle_name",
+  "mother_name",
+  "full_student_name_eng",
+  "student_email_id",
+  "column_break_12",
+  "date_of_birth",
+  "cardid",
+  "gender",
+  "nationality",
+  "joining_date",
+  "column_break_4",
+  "current_country",
+  "city",
+  "marketing_channel",
+  "user",
+  "address_line_1",
+  "naming_series",
+  "image",
+  "contact_details",
+  "code1",
+  "code2",
+  "column_break_29",
+  "student_mobile_number",
+  "student_mobile_number2",
+  "column_break_22",
+  "landline",
+  "landline2",
+  "experience_and_education_info_section",
+  "grade",
+  "institute",
+  "column_break_34",
+  "year",
+  "division",
+  "column_break_37",
+  "note",
+  "experience_info_section",
+  "company",
+  "job_position",
+  "column_break_42",
+  "company_number",
+  "company_email",
+  "column_break_45",
+  "note_experience",
+  "section_break_7",
+  "blood_group",
+  "column_break_3",
+  "student_applicant",
+  "section_break_22",
+  "address_line_2",
+  "pincode",
+  "column_break_20",
+  "state",
+  "section_break_18",
+  "guardians",
+  "section_break_20",
+  "siblings",
+  "exit",
+  "date_of_leaving",
+  "leaving_certificate_number",
+  "column_break_31",
+  "reason_for_leaving",
+  "title",
+  "customer_details_section",
+  "customer"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break",
+   "label": "Personal Info"
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "First Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "middle_name",
+   "fieldtype": "Data",
+   "label": "Father Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "Last Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "User ID",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "no_copy": 1,
+   "options": "STU-",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "student_email_id",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "Student Email Address",
+   "unique": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "student_mobile_number",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student Mobile Number",
+   "unique": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "joining_date",
+   "fieldtype": "Date",
+   "label": "Joining Date"
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image",
+   "width": "10"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Personal Details"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "blood_group",
+   "fieldtype": "Select",
+   "label": "Blood Group",
+   "options": "\nA+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "reqd": 1
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
+  },
+  {
+   "fieldname": "student_applicant",
+   "fieldtype": "Link",
+   "label": "Student Applicant",
+   "options": "Student Applicant",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_22",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Home Address"
+  },
+  {
+   "fieldname": "address_line_1",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "fieldname": "address_line_2",
+   "fieldtype": "Data",
+   "label": "Address Line 2"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Pincode"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "\u062f\u0645\u0634\u0642",
+   "fieldname": "city",
+   "fieldtype": "Select",
+   "label": "Current City",
+   "options": "\n\u062f\u0645\u0634\u0642\n\u062d\u0644\u0628\n\u062d\u0645\u0635\n\u0627\u0644\u0644\u0627\u0630\u0642\u064a\u0629\n\u0637\u0631\u0637\u0648\u0633\n\u0627\u0644\u0633\u0648\u064a\u062f\u0627\u0621\n\u062e\u0627\u0631\u062c \u0627\u0644\u0628\u0644\u0627\u062f",
+   "reqd": 1
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State"
+  },
+  {
+   "fieldname": "section_break_18",
+   "fieldtype": "Section Break",
+   "label": "Guardian Details"
+  },
+  {
+   "fieldname": "guardians",
+   "fieldtype": "Table",
+   "label": "Guardians",
+   "options": "Student Guardian"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_20",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Sibling Details",
+   "options": "Country"
+  },
+  {
+   "fieldname": "siblings",
+   "fieldtype": "Table",
+   "label": "Siblings",
+   "options": "Student Sibling"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "exit",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Exit"
+  },
+  {
+   "fieldname": "date_of_leaving",
+   "fieldtype": "Date",
+   "label": "Date of Leaving"
+  },
+  {
+   "fieldname": "leaving_certificate_number",
+   "fieldtype": "Data",
+   "label": "Leaving Certificate Number"
+  },
+  {
+   "fieldname": "column_break_31",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason_for_leaving",
+   "fieldtype": "Text",
+   "label": "Reason For Leaving"
+  },
+  {
+   "bold": 1,
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "in_filter": 1,
+   "in_global_search": 1,
+   "in_preview": 1,
+   "label": "Title",
+   "unique": 1
+  },
+  {
+   "fieldname": "full_student_name_eng",
+   "fieldtype": "Data",
+   "label": "Full Student Name Eng"
+  },
+  {
+   "fieldname": "contact_details",
+   "fieldtype": "Section Break",
+   "label": "Contact Details"
+  },
+  {
+   "fieldname": "student_mobile_number2",
+   "fieldtype": "Data",
+   "label": "Student Mobile Number2"
+  },
+  {
+   "fieldname": "column_break_22",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "landline",
+   "fieldtype": "Data",
+   "label": "Student Landline Number"
+  },
+  {
+   "fieldname": "landline2",
+   "fieldtype": "Data",
+   "label": "Student Landline Number"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "experience_and_education_info_section",
+   "fieldtype": "Section Break",
+   "label": "Education Info"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Prospective\nStudent",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "name.name",
+   "fieldname": "student_barcode",
+   "fieldtype": "Barcode",
+   "label": "Student Barcode"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "marketing_channel",
+   "fieldtype": "Link",
+   "label": "Marketing Channel",
+   "options": "Marketing Channel",
+   "reqd": 1
+  },
+  {
+   "default": "Syria",
+   "fieldname": "current_country",
+   "fieldtype": "Link",
+   "label": "Current Country",
+   "options": "Country",
+   "reqd": 1
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Select",
+   "label": "Grade",
+   "options": "\u062c\u0627\u0645\u0639\u064a\n\u0645\u0627\u062c\u0633\u062a\u064a\u0631\n\u062f\u0643\u062a\u0648\u0631\u0627\n\u062f\u0628\u0644\u0648\u0645\n\u0645\u0639\u0647\u062f\n\u062a\u0639\u0644\u064a\u0645 \u062b\u0627\u0646\u0648\u064a\n\u063a\u064a\u0631 \u0630\u0644\u0643"
+  },
+  {
+   "fieldname": "institute",
+   "fieldtype": "Data",
+   "label": "Institute"
+  },
+  {
+   "fieldname": "column_break_34",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "year",
+   "fieldtype": "Data",
+   "label": "Year"
+  },
+  {
+   "fieldname": "division",
+   "fieldtype": "Data",
+   "label": "Division"
+  },
+  {
+   "fieldname": "column_break_37",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Education Note"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "experience_info_section",
+   "fieldtype": "Section Break",
+   "label": "Experience Info"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Data",
+   "label": "Company"
+  },
+  {
+   "fieldname": "job_position",
+   "fieldtype": "Data",
+   "label": "Job Position"
+  },
+  {
+   "fieldname": "column_break_42",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company_number",
+   "fieldtype": "Data",
+   "label": "Company Number"
+  },
+  {
+   "fieldname": "company_email",
+   "fieldtype": "Data",
+   "label": "Company Email"
+  },
+  {
+   "fieldname": "column_break_45",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "note_experience",
+   "fieldtype": "Small Text",
+   "label": "Note Experience"
+  },
+  {
+   "fieldname": "cardid",
+   "fieldtype": "Data",
+   "label": "CardID"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "+963",
+   "fieldname": "code1",
+   "fieldtype": "Data",
+   "label": "Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "code2",
+   "fieldtype": "Data",
+   "label": "Code"
+  },
+  {
+   "fieldname": "column_break_29",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "mother_name",
+   "fieldtype": "Data",
+   "label": "Mother Name"
+  },
+  {
+   "fieldname": "customer_details_section",
+   "fieldtype": "Section Break",
+   "label": "Customer Details"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Table",
+   "label": "Customer",
+   "options": "Student Customer"
+  }
+ ],
+ "image_field": "image",
+ "links": [
+  {
+   "group": "Student Activity",
+   "link_doctype": "Student Interest",
+   "link_fieldname": "student"
+  },
+  {
+   "group": "Fee",
+   "link_doctype": "Student Discount Plan",
+   "link_fieldname": "student"
+  },
+  {
+   "group": "Fee",
+   "link_doctype": "Discount Voucher",
+   "link_fieldname": "student"
+  },
+  {
+   "group": "Student Activity",
+   "link_doctype": "Certificate",
+   "link_fieldname": "student"
+  },
+  {
+   "group": "Admission",
+   "link_doctype": "Program Disenrollment",
+   "link_fieldname": "student"
+  },
+  {
+   "group": "Fee",
+   "link_doctype": "Service Invoice",
+   "link_fieldname": "student"
+  }
+ ],
+ "modified": "2021-08-16 16:01:07.112963",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "role": "Instructor"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "LMS User",
+   "share": 1
+  }
+ ],
+ "restrict_to_domain": "Education",
+ "search_fields": "title,student_mobile_number",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}

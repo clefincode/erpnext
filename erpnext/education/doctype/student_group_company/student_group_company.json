@@ -1,0 +1,172 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2022-01-19 15:41:33.673868",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "program",
+  "program_ar_name",
+  "company",
+  "company_abbr",
+  "instructor",
+  "grading_scale",
+  "column_break_5",
+  "start_date",
+  "end_date",
+  "total_hours",
+  "time_from",
+  "time_till",
+  "maximum_score",
+  "section_break_11",
+  "students",
+  "naming_series",
+  "total",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "company.abbr",
+   "fieldname": "company_abbr",
+   "fieldtype": "Data",
+   "label": "Company Abbr",
+   "read_only": 1
+  },
+  {
+   "fieldname": "instructor",
+   "fieldtype": "Data",
+   "label": "Instructor"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "End Date",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "program.hours",
+   "fetch_if_empty": 1,
+   "fieldname": "total_hours",
+   "fieldtype": "Data",
+   "label": "Total Hours",
+   "reqd": 1
+  },
+  {
+   "fieldname": "time_from",
+   "fieldtype": "Time",
+   "label": "Time From"
+  },
+  {
+   "fieldname": "time_till",
+   "fieldtype": "Time",
+   "label": "Time Till"
+  },
+  {
+   "fieldname": "section_break_11",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "students",
+   "fieldtype": "Table",
+   "label": "Students",
+   "options": "Student Group Company Student"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "program.-.company_abbr.-.##"
+  },
+  {
+   "fetch_from": "program.program_name_ar",
+   "fetch_if_empty": 1,
+   "fieldname": "program_ar_name",
+   "fieldtype": "Data",
+   "label": "Program Ar Name"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Student Group Company",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "label": "Total",
+   "read_only": 1
+  },
+  {
+   "default": "Stander",
+   "fieldname": "grading_scale",
+   "fieldtype": "Link",
+   "label": "Grading Scale",
+   "options": "Grading Scale"
+  },
+  {
+   "default": "100",
+   "fieldname": "maximum_score",
+   "fieldtype": "Int",
+   "label": "Maximum Score"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2022-03-27 16:31:21.841520",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student Group Company",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1,
+ "track_seen": 1
+}

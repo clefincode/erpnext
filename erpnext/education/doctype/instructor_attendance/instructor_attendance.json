@@ -1,0 +1,158 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "naming_series:",
+ "creation": "2021-09-08 21:51:59.918611",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student_group",
+  "instructor",
+  "company",
+  "date",
+  "is_present",
+  "invoiced",
+  "column_break_4",
+  "time_in",
+  "time_out",
+  "count_of_hours",
+  "signature",
+  "naming_series",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student Group",
+   "options": "Student Group",
+   "reqd": 1
+  },
+  {
+   "fieldname": "instructor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Instructor",
+   "options": "Instructor",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student_group.company",
+   "fieldname": "company",
+   "fieldtype": "Data",
+   "label": "Company",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_present",
+   "fieldtype": "Check",
+   "label": "Present"
+  },
+  {
+   "default": "0",
+   "fieldname": "invoiced",
+   "fieldtype": "Check",
+   "label": "Invoiced",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "is_present",
+   "fieldname": "time_in",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Time In",
+   "mandatory_depends_on": "is_present"
+  },
+  {
+   "depends_on": "is_present",
+   "fieldname": "time_out",
+   "fieldtype": "Time",
+   "label": "Time Out",
+   "mandatory_depends_on": "is_present"
+  },
+  {
+   "depends_on": "is_present",
+   "fieldname": "count_of_hours",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Count of Hours",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "is_present",
+   "fieldname": "signature",
+   "fieldtype": "Signature",
+   "label": "Signature",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "EDU-INSATT-.YYYY.-"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Instructor Attendance",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Instructor Attendance",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-09-09 12:56:04.743139",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Instructor Attendance",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "instructor",
+ "track_changes": 1
+}

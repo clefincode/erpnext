@@ -1,0 +1,62 @@
+{
+ "actions": [],
+ "creation": "2021-10-12 11:51:40.787638",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "program",
+  "repetition",
+  "stu_count",
+  "enrollment_fee",
+  "estimated_income"
+ ],
+ "fields": [
+  {
+   "columns": 5,
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "columns": 1,
+   "fieldname": "repetition",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Repetition"
+  },
+  {
+   "columns": 2,
+   "fieldname": "enrollment_fee",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Enrollment Fee"
+  },
+  {
+   "columns": 2,
+   "fieldname": "estimated_income",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Estimated Income"
+  },
+  {
+   "fieldname": "stu_count",
+   "fieldtype": "Data",
+   "label": "Stu Count"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2021-11-02 17:06:09.858301",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Training Plan Tool Program",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,38 @@
+{
+ "actions": [],
+ "creation": "2021-10-05 13:27:55.518843",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "program",
+  "avr_rate"
+ ],
+ "fields": [
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "avr_rate",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Avr Rate"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2021-10-05 13:31:45.511995",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Instructor Specialties",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

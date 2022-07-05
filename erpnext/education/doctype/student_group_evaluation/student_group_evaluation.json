@@ -1,0 +1,77 @@
+{
+ "actions": [],
+ "creation": "2021-10-11 16:51:43.782294",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student_group",
+  "student",
+  "section_break_3",
+  "evaluation_question",
+  "column_break_5",
+  "category",
+  "evaluation"
+ ],
+ "fields": [
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "label": "Student Group",
+   "options": "Student Group"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Data",
+   "label": "Student"
+  },
+  {
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "evaluation_question",
+   "fieldtype": "Link",
+   "label": "Evaluation Question",
+   "options": "Evaluation Question"
+  },
+  {
+   "fieldname": "evaluation",
+   "fieldtype": "Data",
+   "label": "Evaluation"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Data",
+   "label": "Category"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-10-17 13:47:57.993667",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student Group Evaluation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

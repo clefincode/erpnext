@@ -1,0 +1,457 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2021-03-22 16:07:54.235929",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "status",
+  "company",
+  "company_abbr",
+  "date_from",
+  "date_till",
+  "student_group",
+  "program",
+  "program_name_ar",
+  "hours",
+  "delivered",
+  "delivery_date",
+  "column_break_3",
+  "student",
+  "student_name",
+  "student_eng_name",
+  "gender",
+  "certificate_structure",
+  "assessment_result",
+  "grade",
+  "grade_eng",
+  "total_score",
+  "amended_from",
+  "student_group_company",
+  "section_break_8",
+  "t1_en",
+  "t2_en",
+  "t3_en",
+  "t4_en",
+  "t5_en",
+  "e1_en",
+  "p1_en",
+  "e2_en",
+  "p2_en",
+  "e3_en",
+  "p3_en",
+  "column_break_32",
+  "t1_ar",
+  "t1_ar_f",
+  "t2_ar",
+  "t2_ar_f",
+  "t3_ar",
+  "t3_ar_f",
+  "t4_ar",
+  "t4_ar_f",
+  "t5_ar",
+  "t5_ar_f",
+  "e1_ar",
+  "p1_ar",
+  "e2_ar",
+  "p2_ar",
+  "e3_ar",
+  "p3_ar",
+  "naming_series"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "label": "Student Group",
+   "options": "Student Group"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "certificate_structure",
+   "fieldtype": "Link",
+   "label": "Certificate Structure",
+   "options": "Certificate Structure",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Certificate",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "student.title",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student_group.program",
+   "fetch_if_empty": 1,
+   "fieldname": "program",
+   "fieldtype": "Data",
+   "label": "Program",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break",
+   "label": "Text"
+  },
+  {
+   "fetch_from": "certificate_structure.t1_en",
+   "fieldname": "t1_en",
+   "fieldtype": "Data",
+   "label": "T1 En"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t2_en",
+   "fetch_if_empty": 1,
+   "fieldname": "t2_en",
+   "fieldtype": "Data",
+   "label": "T2 En"
+  },
+  {
+   "fetch_from": "certificate_structure.t3_en",
+   "fieldname": "t3_en",
+   "fieldtype": "Data",
+   "label": "T3 En"
+  },
+  {
+   "fetch_from": "certificate_structure.t4_en",
+   "fieldname": "t4_en",
+   "fieldtype": "Data",
+   "label": "T4 En"
+  },
+  {
+   "fetch_from": "certificate_structure.t5_en",
+   "fieldname": "t5_en",
+   "fieldtype": "Data",
+   "label": "T5 En"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "student.full_student_name_eng",
+   "fieldname": "student_eng_name",
+   "fieldtype": "Data",
+   "label": "Student Eng Name"
+  },
+  {
+   "fetch_from": "student_group.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "company.abbr",
+   "fieldname": "company_abbr",
+   "fieldtype": "Data",
+   "label": "Company Abbr",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "assessment_result",
+   "fieldtype": "Link",
+   "label": "Assessment Result",
+   "options": "Assessment Result"
+  },
+  {
+   "fetch_from": "assessment_result.grade",
+   "fetch_if_empty": 1,
+   "fieldname": "grade",
+   "fieldtype": "Data",
+   "label": "Grade Ar"
+  },
+  {
+   "fetch_from": "student_group.start_date",
+   "fieldname": "date_from",
+   "fieldtype": "Date",
+   "label": "Date From",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student_group.end_date",
+   "fieldname": "date_till",
+   "fieldtype": "Date",
+   "label": "Date Till",
+   "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "SY-"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "delivered",
+   "fieldtype": "Check",
+   "label": "Delivered"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "delivered",
+   "fieldname": "delivery_date",
+   "fieldtype": "Date",
+   "label": "Delivery Date",
+   "mandatory_depends_on": "delivered"
+  },
+  {
+   "fetch_from": "student_group.total_hours",
+   "fetch_if_empty": 1,
+   "fieldname": "hours",
+   "fieldtype": "Data",
+   "label": "Hours"
+  },
+  {
+   "fetch_from": "certificate_structure.e1_en",
+   "fieldname": "e1_en",
+   "fieldtype": "Data",
+   "label": "E1 En"
+  },
+  {
+   "fetch_from": "certificate_structure.p1_en",
+   "fieldname": "p1_en",
+   "fieldtype": "Data",
+   "label": "P1 En"
+  },
+  {
+   "fetch_from": "certificate_structure.e2_en",
+   "fieldname": "e2_en",
+   "fieldtype": "Data",
+   "label": "E2 En"
+  },
+  {
+   "fetch_from": "certificate_structure.p2_en",
+   "fieldname": "p2_en",
+   "fieldtype": "Data",
+   "label": "P2 En"
+  },
+  {
+   "fetch_from": "certificate_structure.e3_en",
+   "fieldname": "e3_en",
+   "fieldtype": "Data",
+   "label": "E3 En"
+  },
+  {
+   "fetch_from": "certificate_structure.p3_en",
+   "fieldname": "p3_en",
+   "fieldtype": "Data",
+   "label": "P3 En"
+  },
+  {
+   "fetch_from": "assessment_result.grade_description",
+   "fetch_if_empty": 1,
+   "fieldname": "grade_eng",
+   "fieldtype": "Data",
+   "label": "Grade Eng"
+  },
+  {
+   "fetch_from": "assessment_result.total_score",
+   "fetch_if_empty": 1,
+   "fieldname": "total_score",
+   "fieldtype": "Data",
+   "label": "Total Score"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t1_ar",
+   "fieldname": "t1_ar",
+   "fieldtype": "Data",
+   "label": "T1 Ar M"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t2_ar",
+   "fieldname": "t2_ar",
+   "fieldtype": "Data",
+   "label": "T2 Ar M"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t3_ar",
+   "fieldname": "t3_ar",
+   "fieldtype": "Data",
+   "label": "T3 Ar M"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t4_ar",
+   "fieldname": "t4_ar",
+   "fieldtype": "Data",
+   "label": "T4 Ar M"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t5_ar",
+   "fieldname": "t5_ar",
+   "fieldtype": "Data",
+   "label": "T5 Ar M"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.e1_ar",
+   "fieldname": "e1_ar",
+   "fieldtype": "Data",
+   "label": "E1 Ar"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.p1_ar",
+   "fieldname": "p1_ar",
+   "fieldtype": "Data",
+   "label": "P1 Ar"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.e2_ar",
+   "fieldname": "e2_ar",
+   "fieldtype": "Data",
+   "label": "E2 Ar"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.p2_ar",
+   "fieldname": "p2_ar",
+   "fieldtype": "Data",
+   "label": "P2 Ar"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.e3_ar",
+   "fieldname": "e3_ar",
+   "fieldtype": "Data",
+   "label": "E3 Ar"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.p3_ar",
+   "fieldname": "p3_ar",
+   "fieldtype": "Data",
+   "label": "P3 Ar"
+  },
+  {
+   "fieldname": "column_break_32",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t1_ar_f",
+   "fieldname": "t1_ar_f",
+   "fieldtype": "Data",
+   "label": "T1 Ar F"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t2_ar_f",
+   "fieldname": "t2_ar_f",
+   "fieldtype": "Data",
+   "label": "T2 Ar F"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t3_ar_f",
+   "fieldname": "t3_ar_f",
+   "fieldtype": "Data",
+   "label": "T3 Ar F"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t4_ar_f",
+   "fieldname": "t4_ar_f",
+   "fieldtype": "Data",
+   "label": "T4 Ar F"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "certificate_structure.t5_ar_f",
+   "fieldname": "t5_ar_f",
+   "fieldtype": "Data",
+   "label": "T5 Ar F"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "student.gender",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "student_group.program_name_ar",
+   "fieldname": "program_name_ar",
+   "fieldtype": "Data",
+   "label": "Program Name Ar"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "UnPrinted",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "UnPrinted\nPrinted"
+  },
+  {
+   "fieldname": "student_group_company",
+   "fieldtype": "Link",
+   "label": "Student Group Company",
+   "options": "Student Group Company",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2022-04-12 13:58:36.742142",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Certificate",
+ "name_case": "UPPER CASE",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,52 @@
+{
+ "actions": [],
+ "creation": "2021-02-21 18:18:44.113084",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "program",
+  "dis_type",
+  "value"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "dis_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Dis Type",
+   "options": "Percent\nAmount",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "value",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Value",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-02-21 19:05:17.992340",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student Discount Plan Program",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

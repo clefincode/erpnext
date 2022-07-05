@@ -1,0 +1,31 @@
+{
+ "attach_print": 0,
+ "channel": "System Notification",
+ "creation": "2021-09-21 15:30:53.666982",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Student Group",
+ "enabled": 1,
+ "event": "Value Change",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "<b>Student Group</b>: {{ doc.name }}<br>\n<b>Status</b>: {{ doc.status }}",
+ "modified": "2022-01-17 14:17:26.655014",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student Group Status",
+ "owner": "Administrator",
+ "recipients": [
+  {
+   "receiver_by_role": "Sales Manager - Edu"
+  },
+  {
+   "receiver_by_role": "Sales User"
+  }
+ ],
+ "send_system_notification": 0,
+ "send_to_all_assignees": 0,
+ "subject": "{{doc.name}} has been Changed",
+ "value_changed": "status"
+}

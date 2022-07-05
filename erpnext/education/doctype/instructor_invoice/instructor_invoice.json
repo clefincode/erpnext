@@ -1,0 +1,210 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2021-03-06 13:56:59.518681",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "instructor",
+  "posting_date",
+  "student_group",
+  "column_break_5",
+  "company",
+  "employee",
+  "attendance_table_section",
+  "get_instructor_attendance",
+  "instructor_attendance",
+  "section_break_11",
+  "total_count_hour",
+  "column_break_12",
+  "total_invoice_amount",
+  "amended_from",
+  "accounting_section",
+  "invoice_method",
+  "percent",
+  "amount_dependent_on_percent",
+  "amount_per_hour",
+  "column_break_21",
+  "grand_total",
+  "outstanding_amount",
+  "cost_center"
+ ],
+ "fields": [
+  {
+   "fieldname": "instructor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Instructor",
+   "options": "Instructor",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student Group",
+   "options": "Student Group",
+   "reqd": 1
+  },
+  {
+   "fieldname": "attendance_table_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Table"
+  },
+  {
+   "fieldname": "get_instructor_attendance",
+   "fieldtype": "Button",
+   "label": "Get Instructor Attendance",
+   "options": "get_instructor_attendance"
+  },
+  {
+   "fieldname": "instructor_attendance",
+   "fieldtype": "Table",
+   "label": "Instructor Attendance",
+   "options": "Instructor Invoice Attendance"
+  },
+  {
+   "fieldname": "total_count_hour",
+   "fieldtype": "Data",
+   "label": "Total Count Hour"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Instructor Invoice",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "EDU-INSINV-.YYYY.-"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "instructor.employee",
+   "fieldname": "employee",
+   "fieldtype": "Data",
+   "label": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "accounting_section",
+   "fieldtype": "Section Break",
+   "label": "Accounting"
+  },
+  {
+   "fieldname": "invoice_method",
+   "fieldtype": "Select",
+   "label": "Invoice Method",
+   "options": "Percentage\nFixed Per Hour"
+  },
+  {
+   "depends_on": "eval:in_list([\"Percentage\"], doc.invoice_method)",
+   "fieldname": "percent",
+   "fieldtype": "Data",
+   "label": "Percent",
+   "mandatory_depends_on": "eval:in_list([\"Percentage\"], doc.invoice_method)"
+  },
+  {
+   "depends_on": "eval:in_list([\"Percentage\"], doc.invoice_method)",
+   "fieldname": "amount_dependent_on_percent",
+   "fieldtype": "Currency",
+   "label": "Amount Dependent on Percent",
+   "mandatory_depends_on": "eval:in_list([\"Percentage\"], doc.invoice_method)"
+  },
+  {
+   "depends_on": "eval:in_list([\"Fixed Per Hour\"], doc.invoice_method)",
+   "fieldname": "amount_per_hour",
+   "fieldtype": "Currency",
+   "label": "Amount Per Hour",
+   "mandatory_depends_on": "eval:in_list([\"Fixed Per Hour\"], doc.invoice_method)"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_invoice_amount",
+   "fieldtype": "Currency",
+   "label": "Total Invoice Amount"
+  },
+  {
+   "fetch_from": "student_group.cost_center",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_11",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "label": "Grand Total",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outstanding_amount",
+   "fieldtype": "Currency",
+   "label": "Outstanding Amount",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-07-31 13:03:06.521413",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Instructor Invoice",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,185 @@
+{
+ "actions": [],
+ "autoname": "EDU-DIE-.YYYY.-.#####",
+ "creation": "2021-05-06 16:26:33.590114",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "type",
+  "note",
+  "column_break_3",
+  "program_enrollment",
+  "student_group",
+  "date",
+  "student_interest",
+  "amended_from",
+  "section_break_7",
+  "fees",
+  "journal_entry",
+  "total_freezed_balance",
+  "unpaid_balance",
+  "new_enrollment_section",
+  "new_program_enrollment",
+  "new_fees"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Program Disenrollment",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.title",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "fees",
+   "fieldtype": "Table",
+   "label": "Fees",
+   "options": "Program Disenrollment Fees"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Type",
+   "options": "\n\u0627\u0646\u0633\u062d\u0627\u0628\n\u0627\u0646\u062a\u0642\u0627\u0644",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.type=='\u0627\u0646\u062a\u0642\u0627\u0644'",
+   "fieldname": "student_interest",
+   "fieldtype": "Link",
+   "label": "Student Interest",
+   "options": "Student Interest"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "program_enrollment.student_group",
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student Group",
+   "options": "Student Group",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "total_freezed_balance",
+   "fieldtype": "Currency",
+   "label": "Total Freezed Balance",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "unpaid_balance",
+   "fieldtype": "Currency",
+   "label": "Unpaid Balance",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.type=='\u0627\u0646\u062a\u0642\u0627\u0644'",
+   "fieldname": "new_enrollment_section",
+   "fieldtype": "Section Break",
+   "label": "New Enrollment"
+  },
+  {
+   "fieldname": "new_program_enrollment",
+   "fieldtype": "Link",
+   "label": "New Program Enrollment",
+   "mandatory_depends_on": "eval:doc.type=='\u0627\u0646\u062a\u0642\u0627\u0644'",
+   "options": "Program Enrollment"
+  },
+  {
+   "fieldname": "new_fees",
+   "fieldtype": "Table",
+   "label": "New Fees",
+   "mandatory_depends_on": "eval:doc.type=='\u0627\u0646\u062a\u0642\u0627\u0644'",
+   "options": "Program Disenrollment New Fees"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "options": "Journal Entry",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2022-05-15 13:10:59.292490",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Program Disenrollment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

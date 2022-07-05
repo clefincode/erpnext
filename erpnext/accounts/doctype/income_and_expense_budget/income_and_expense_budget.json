@@ -1,0 +1,176 @@
+{
+ "actions": [],
+ "creation": "2021-10-12 12:15:48.892558",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "budget_year",
+  "company",
+  "column_break_2",
+  "from_date",
+  "get_accounts",
+  "column_break_4",
+  "till_date",
+  "summary_section",
+  "expense_total",
+  "expense_growth_total",
+  "expense_difference",
+  "exp_difference_rate",
+  "column_break_13",
+  "income_total",
+  "income_growth_total",
+  "income_difference",
+  "inc_difference_rate",
+  "section_break_6",
+  "expenses",
+  "incomes",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "budget_year",
+   "fieldtype": "Data",
+   "label": "Budget Year"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "till_date",
+   "fieldtype": "Date",
+   "label": "Till Date"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "expenses",
+   "fieldtype": "Table",
+   "label": "Expenses",
+   "options": "Income and Expense Budget Expense"
+  },
+  {
+   "fieldname": "incomes",
+   "fieldtype": "Table",
+   "label": "Incomes",
+   "options": "Income and Expense Budget Income"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Income and Expense Budget",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "get_accounts",
+   "fieldtype": "Button",
+   "label": "Get Accounts",
+   "options": "get_accounts"
+  },
+  {
+   "fieldname": "expense_growth_total",
+   "fieldtype": "Currency",
+   "label": "Total Expense of Budget",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expense_total",
+   "fieldtype": "Currency",
+   "label": "Total Expense of Period",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expense_difference",
+   "fieldtype": "Currency",
+   "label": "Exp Difference Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "income_growth_total",
+   "fieldtype": "Currency",
+   "label": "Total Income of Budget",
+   "read_only": 1
+  },
+  {
+   "fieldname": "income_total",
+   "fieldtype": "Currency",
+   "label": "Total Income of Period"
+  },
+  {
+   "fieldname": "income_difference",
+   "fieldtype": "Currency",
+   "label": "Inc Difference Value",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "summary_section",
+   "fieldtype": "Section Break",
+   "label": "Summary"
+  },
+  {
+   "fieldname": "exp_difference_rate",
+   "fieldtype": "Data",
+   "label": "Exp Difference Rate",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "inc_difference_rate",
+   "fieldtype": "Data",
+   "label": "Inc Difference Rate",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-10-25 21:58:18.398706",
+ "modified_by": "Administrator",
+ "module": "Accounts",
+ "name": "Income and Expense Budget",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

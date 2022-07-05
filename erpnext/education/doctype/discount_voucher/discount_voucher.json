@@ -1,0 +1,229 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2021-02-21 15:59:29.403725",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "student",
+  "student_name",
+  "apply_for_fee",
+  "total_fee_amount",
+  "type",
+  "column_break_4",
+  "company",
+  "student_group",
+  "posting_date",
+  "remark",
+  "section_break_8",
+  "discount_method",
+  "direct_discount",
+  "discount_amount",
+  "column_break_10",
+  "amount",
+  "percentage",
+  "accounting_section",
+  "receivable_account",
+  "column_break_15",
+  "expense_account",
+  "cost_center",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "EDU-DIS-.YYYY.-"
+  },
+  {
+   "fetch_from": "apply_for_fee.student",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Discount Voucher",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.title",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "apply_for_fee",
+   "fieldtype": "Link",
+   "label": "Apply For Fee",
+   "options": "Fees",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:in_list([\"Amount\"], doc.discount_method)",
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "mandatory_depends_on": "eval:in_list([\"Amount\"], doc.discount_method)"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:in_list([\"Percent\"], doc.discount_method)",
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "label": "Percentage",
+   "mandatory_depends_on": "eval:in_list([\"Percent\"], doc.discount_method)"
+  },
+  {
+   "fieldname": "discount_amount",
+   "fieldtype": "Currency",
+   "label": "Discount Amount",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "accounting_section",
+   "fieldtype": "Section Break",
+   "label": "Accounting",
+   "permlevel": 1
+  },
+  {
+   "fetch_from": "company.student_account",
+   "fetch_if_empty": 1,
+   "fieldname": "receivable_account",
+   "fieldtype": "Link",
+   "label": "Receivable Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "company.student_discount_account",
+   "fetch_if_empty": 1,
+   "fieldname": "expense_account",
+   "fieldtype": "Link",
+   "label": "Expense Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "apply_for_fee.cost_center",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "apply_for_fee.grand_total",
+   "fieldname": "total_fee_amount",
+   "fieldtype": "Currency",
+   "label": "Total Fee Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "discount_method",
+   "fieldtype": "Select",
+   "label": "Discount Method",
+   "options": "Percent\nAmount",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Discount Type",
+   "options": "Discount Type",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "direct_discount",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Direct Discount"
+  },
+  {
+   "fetch_from": "apply_for_fee.student_group",
+   "fieldname": "student_group",
+   "fieldtype": "Data",
+   "label": "Student Group",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remark",
+   "fieldtype": "Small Text",
+   "label": "Remark"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-09-13 10:03:42.245677",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Discount Voucher",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "student_name",
+ "track_changes": 1
+}

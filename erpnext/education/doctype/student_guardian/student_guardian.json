@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "creation": "2016-09-01 14:28:39.174471",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "guardian",
+  "guardian_name",
+  "relation",
+  "guardian_mobile"
+ ],
+ "fields": [
+  {
+   "fieldname": "guardian",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Guardian",
+   "options": "Guardian",
+   "reqd": 1
+  },
+  {
+   "fieldname": "guardian_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Guardian Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "relation",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Relation",
+   "options": "\nMother\nFather\nOthers"
+  },
+  {
+   "fetch_from": "guardian.mobile_number",
+   "fieldname": "guardian_mobile",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Guardian Mobile",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-08-23 13:32:36.669688",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student Guardian",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "restrict_to_domain": "Education",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

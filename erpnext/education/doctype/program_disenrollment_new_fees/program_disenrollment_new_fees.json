@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "creation": "2021-09-13 13:56:25.864569",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "fee",
+  "type",
+  "grand_total",
+  "outstanding_amount",
+  "transfered_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "fee",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Fee",
+   "read_only": 1,
+   "reqd": 1,
+   "width": "2"
+  },
+  {
+   "columns": 1,
+   "fieldname": "type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Type",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "fee.grand_total",
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Grand Total",
+   "options": "fee.currency",
+   "read_only": 1,
+   "width": "2"
+  },
+  {
+   "columns": 2,
+   "fieldname": "transfered_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Transfered Amount",
+   "options": "fee.currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "outstanding_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Outstanding Amount",
+   "options": "fee.currency",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2021-09-15 17:09:25.086720",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Program Disenrollment New Fees",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

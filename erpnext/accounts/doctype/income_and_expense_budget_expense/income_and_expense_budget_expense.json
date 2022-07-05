@@ -1,0 +1,56 @@
+{
+ "actions": [],
+ "creation": "2021-10-12 12:14:29.496091",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "account",
+  "period_balance",
+  "growth_rate",
+  "growth_balance"
+ ],
+ "fields": [
+  {
+   "columns": 4,
+   "fieldname": "account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Expense Account",
+   "options": "Account"
+  },
+  {
+   "columns": 2,
+   "fieldname": "period_balance",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Period Balance"
+  },
+  {
+   "columns": 2,
+   "fieldname": "growth_rate",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Growth Rate"
+  },
+  {
+   "columns": 2,
+   "fieldname": "growth_balance",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Growth Balance"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2021-10-12 12:15:23.736813",
+ "modified_by": "Administrator",
+ "module": "Accounts",
+ "name": "Income and Expense Budget Expense",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

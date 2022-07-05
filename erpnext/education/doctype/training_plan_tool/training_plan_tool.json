@@ -1,0 +1,178 @@
+{
+ "actions": [],
+ "creation": "2021-10-12 11:40:27.401784",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "count_of_group",
+  "from_date",
+  "till_date",
+  "courses_count_in_period",
+  "column_break_4",
+  "top_course",
+  "repetition_t",
+  "column_break_7",
+  "high_income",
+  "repetition_h",
+  "column_break_10",
+  "low_income",
+  "repetition_l",
+  "section_break_14",
+  "plan_income_expected",
+  "required_income",
+  "column_break_17",
+  "difference",
+  "calc",
+  "section_break_13",
+  "programs",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "count_of_group",
+   "fieldtype": "Data",
+   "label": "Count of Group"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date"
+  },
+  {
+   "fieldname": "till_date",
+   "fieldtype": "Date",
+   "label": "Till Date"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "top_course",
+   "fieldtype": "Data",
+   "label": "Top Course"
+  },
+  {
+   "fieldname": "repetition_t",
+   "fieldtype": "Data",
+   "label": "Repetition"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "high_income",
+   "fieldtype": "Data",
+   "label": "High Income"
+  },
+  {
+   "fieldname": "repetition_h",
+   "fieldtype": "Data",
+   "label": "Repetition"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "low_income",
+   "fieldtype": "Data",
+   "label": "Low Income"
+  },
+  {
+   "fieldname": "repetition_l",
+   "fieldtype": "Data",
+   "label": "Repetition"
+  },
+  {
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Training Plan Tool",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "programs",
+   "fieldtype": "Table",
+   "label": "Programs",
+   "options": "Training Plan Tool Program"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "plan_income_expected",
+   "fieldtype": "Currency",
+   "label": "Plan Income Expected"
+  },
+  {
+   "fieldname": "required_income",
+   "fieldtype": "Currency",
+   "label": "Required Income"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "difference",
+   "fieldtype": "Currency",
+   "label": "Difference"
+  },
+  {
+   "fieldname": "calc",
+   "fieldtype": "Button",
+   "label": "calc",
+   "options": "get_top_programs"
+  },
+  {
+   "fieldname": "courses_count_in_period",
+   "fieldtype": "Data",
+   "label": "Courses Count in Period (last year)",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-11-02 13:55:13.355003",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Training Plan Tool",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,262 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:certificate_name",
+ "creation": "2021-03-15 13:33:32.446593",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "certificate_name",
+  "stock_item",
+  "condition_section",
+  "assessment",
+  "attendance",
+  "fees_is_paid",
+  "section_break_7",
+  "t1_en",
+  "t2_en",
+  "t3_en",
+  "t4_en",
+  "t5_en",
+  "t6_en",
+  "e1_en",
+  "p1_en",
+  "e2_en",
+  "p2_en",
+  "e3_en",
+  "p3_en",
+  "column_break_14",
+  "t1_ar",
+  "t1_ar_f",
+  "t2_ar",
+  "t2_ar_f",
+  "t3_ar",
+  "t3_ar_f",
+  "t4_ar",
+  "t4_ar_f",
+  "t5_ar",
+  "t5_ar_f",
+  "t6_ar",
+  "e1_ar",
+  "p1_ar",
+  "e2_ar",
+  "p2_ar",
+  "e3_ar",
+  "p3_ar"
+ ],
+ "fields": [
+  {
+   "fieldname": "certificate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Certificate Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "stock_item",
+   "fieldtype": "Link",
+   "label": "Stock Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "condition_section",
+   "fieldtype": "Section Break",
+   "label": "Condition"
+  },
+  {
+   "fieldname": "assessment",
+   "fieldtype": "Data",
+   "label": "Assessment"
+  },
+  {
+   "fieldname": "attendance",
+   "fieldtype": "Data",
+   "label": "Attendance"
+  },
+  {
+   "default": "0",
+   "fieldname": "fees_is_paid",
+   "fieldtype": "Check",
+   "label": "Fees is Paid"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "t1_en",
+   "fieldtype": "Data",
+   "label": "T1 En"
+  },
+  {
+   "fieldname": "t2_en",
+   "fieldtype": "Data",
+   "label": "T2 En"
+  },
+  {
+   "fieldname": "t3_en",
+   "fieldtype": "Data",
+   "label": "T3 En"
+  },
+  {
+   "fieldname": "t4_en",
+   "fieldtype": "Data",
+   "label": "T4 En"
+  },
+  {
+   "fieldname": "t5_en",
+   "fieldtype": "Data",
+   "label": "T5 En"
+  },
+  {
+   "fieldname": "t6_en",
+   "fieldtype": "Data",
+   "label": "T6 En"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "t1_ar",
+   "fieldtype": "Data",
+   "label": "T1 Ar"
+  },
+  {
+   "fieldname": "t2_ar",
+   "fieldtype": "Data",
+   "label": "T2 Ar"
+  },
+  {
+   "fieldname": "t3_ar",
+   "fieldtype": "Data",
+   "label": "T3 Ar"
+  },
+  {
+   "fieldname": "t4_ar",
+   "fieldtype": "Data",
+   "label": "T4 Ar"
+  },
+  {
+   "fieldname": "t5_ar",
+   "fieldtype": "Data",
+   "label": "T5 Ar"
+  },
+  {
+   "fieldname": "t6_ar",
+   "fieldtype": "Data",
+   "label": "T6 Ar"
+  },
+  {
+   "fieldname": "e1_en",
+   "fieldtype": "Data",
+   "label": "E1 En"
+  },
+  {
+   "fieldname": "p1_en",
+   "fieldtype": "Data",
+   "label": "P1 En"
+  },
+  {
+   "fieldname": "e2_en",
+   "fieldtype": "Data",
+   "label": "E2 En"
+  },
+  {
+   "fieldname": "p2_en",
+   "fieldtype": "Data",
+   "label": "P2 En"
+  },
+  {
+   "fieldname": "e3_en",
+   "fieldtype": "Data",
+   "label": "E3 En"
+  },
+  {
+   "fieldname": "p3_en",
+   "fieldtype": "Data",
+   "label": "P3 En"
+  },
+  {
+   "fieldname": "e1_ar",
+   "fieldtype": "Data",
+   "label": "E1 Ar"
+  },
+  {
+   "fieldname": "p1_ar",
+   "fieldtype": "Data",
+   "label": "P1 Ar"
+  },
+  {
+   "fieldname": "e2_ar",
+   "fieldtype": "Data",
+   "label": "E2 Ar"
+  },
+  {
+   "fieldname": "p2_ar",
+   "fieldtype": "Data",
+   "label": "P2 Ar"
+  },
+  {
+   "fieldname": "e3_ar",
+   "fieldtype": "Data",
+   "label": "E3 Ar"
+  },
+  {
+   "fieldname": "p3_ar",
+   "fieldtype": "Data",
+   "label": "P3 Ar"
+  },
+  {
+   "fieldname": "t1_ar_f",
+   "fieldtype": "Data",
+   "label": "T1 Ar F"
+  },
+  {
+   "fieldname": "t2_ar_f",
+   "fieldtype": "Data",
+   "label": "T2 Ar F"
+  },
+  {
+   "fieldname": "t3_ar_f",
+   "fieldtype": "Data",
+   "label": "T3 Ar F"
+  },
+  {
+   "fieldname": "t4_ar_f",
+   "fieldtype": "Data",
+   "label": "T4 Ar F"
+  },
+  {
+   "fieldname": "t5_ar_f",
+   "fieldtype": "Data",
+   "label": "T5 Ar F"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-01-18 13:52:59.803541",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Certificate Structure",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

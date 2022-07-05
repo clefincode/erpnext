@@ -1,0 +1,165 @@
+{
+ "actions": [],
+ "creation": "2021-02-21 17:23:05.415906",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series_section",
+  "amended_from",
+  "student",
+  "studnet_name",
+  "validity_section",
+  "validity_type",
+  "from",
+  "till",
+  "column_break_9",
+  "allow_multiple_discount",
+  "program_section",
+  "get_all_prgrams",
+  "programs",
+  "accounts_section",
+  "company",
+  "receivable_account",
+  "column_break_15",
+  "expense_account"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series_section",
+   "fieldtype": "Section Break",
+   "label": "Naming Series",
+   "options": "EDU-SDP-.YYYY.-"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Student Discount Plan",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fetch_from": "student.title",
+   "fieldname": "studnet_name",
+   "fieldtype": "Data",
+   "label": "Studnet Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "validity_section",
+   "fieldtype": "Section Break",
+   "label": "Validity"
+  },
+  {
+   "fieldname": "validity_type",
+   "fieldtype": "Select",
+   "label": "Validity Type",
+   "options": "Always Valid\nValid Between Date\nValid For One Enroll"
+  },
+  {
+   "depends_on": "eval:in_list([\"Valid Between Date\"], doc.validity_type)",
+   "fieldname": "from",
+   "fieldtype": "Date",
+   "label": "From",
+   "mandatory_depends_on": "eval:in_list([\"Valid Between Date\"], doc.validity_type)"
+  },
+  {
+   "depends_on": "eval:in_list([\"Valid Between Date\"], doc.validity_type)",
+   "fieldname": "till",
+   "fieldtype": "Date",
+   "label": "Till",
+   "mandatory_depends_on": "eval:in_list([\"Valid Between Date\"], doc.validity_type)"
+  },
+  {
+   "fieldname": "program_section",
+   "fieldtype": "Section Break",
+   "label": "Program"
+  },
+  {
+   "fieldname": "get_all_prgrams",
+   "fieldtype": "Button",
+   "label": "Get All Prgrams"
+  },
+  {
+   "fieldname": "programs",
+   "fieldtype": "Table",
+   "label": "Programs",
+   "options": "Student Discount Plan Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "accounts_section",
+   "fieldtype": "Section Break",
+   "label": "Accounts"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "receivable_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Receivable Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expense_account",
+   "fieldtype": "Link",
+   "label": "Expense Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_multiple_discount",
+   "fieldtype": "Check",
+   "label": "Allow Multiple Discount"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-02-22 16:35:16.518459",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student Discount Plan",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

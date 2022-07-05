@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "creation": "2021-12-28 16:13:02.196396",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "get_data",
+  "details",
+  "refresh_summaries",
+  "summary_student_group",
+  "summary",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "get_data",
+   "fieldtype": "Button",
+   "label": "Get Data"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Sales Commission",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Sales Commission",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "details",
+   "fieldtype": "Table",
+   "label": "Details",
+   "options": "Sales Commission Detail"
+  },
+  {
+   "fieldname": "summary_student_group",
+   "fieldtype": "Table",
+   "label": "Summary (Student Group)",
+   "options": "Sales Commission Summary by Student Group"
+  },
+  {
+   "fieldname": "refresh_summaries",
+   "fieldtype": "Button",
+   "label": "Refresh Summaries"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "summary",
+   "fieldtype": "Table",
+   "label": "Summary",
+   "options": "Sales Commission Summary"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2022-01-01 13:58:30.405325",
+ "modified_by": "Administrator",
+ "module": "Accounts",
+ "name": "Sales Commission",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

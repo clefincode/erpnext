@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "creation": "2016-05-19 05:52:56.322125",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "academic_term",
+  "fee_structure",
+  "student_category",
+  "description",
+  "column_break_3",
+  "due_date",
+  "amount",
+  "payment",
+  "percent_down_payment"
+ ],
+ "fields": [
+  {
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Academic Term",
+   "options": "Academic Term"
+  },
+  {
+   "columns": 3,
+   "fieldname": "fee_structure",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fee Structure",
+   "options": "Fee Structure",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_category",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Student Category",
+   "options": "Student Category"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Due Date"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "fee_structure.description",
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "label": "Description",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "fee_structure.percent_down_payment",
+   "fieldname": "percent_down_payment",
+   "fieldtype": "Data",
+   "label": "Percent Down Payment",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "payment",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Payment"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-05-25 16:17:11.764039",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Program Fee",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "restrict_to_domain": "Education",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
