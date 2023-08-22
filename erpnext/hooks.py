@@ -376,7 +376,8 @@ scheduler_events = {
 	],
 	"monthly_long": [
 		"erpnext.accounts.deferred_revenue.process_deferred_accounting",
-		"erpnext.loan_management.doctype.process_loan_interest_accrual.process_loan_interest_accrual.process_loan_interest_accrual_for_demand_loans"
+		"erpnext.loan_management.doctype.process_loan_interest_accrual.process_loan_interest_accrual.process_loan_interest_accrual_for_demand_loans",
+        "erpnext.accounts.doctype.repost_deferred_revenue.repost_deferred_revenue.repost_all_cost_centers"
 	]
 }
 
