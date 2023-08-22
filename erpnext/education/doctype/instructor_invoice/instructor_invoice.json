@@ -29,7 +29,8 @@
   "column_break_21",
   "grand_total",
   "outstanding_amount",
-  "cost_center"
+  "cost_center",
+  "status"
  ],
  "fields": [
   {
@@ -180,12 +181,18 @@
    "fieldtype": "Currency",
    "label": "Outstanding Amount",
    "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nCancelled\nPaid\nUnpaid"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-31 13:03:06.521413",
+ "modified": "2023-05-17 16:16:00.541385",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Instructor Invoice",

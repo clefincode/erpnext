@@ -306,6 +306,24 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Disenrollment Reason",
+   "link_to": "Disenrollment Reason",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Interest Channel",
+   "link_to": "Interest Channel",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Admission",
    "link_type": "",
    "onboard": 0,
@@ -745,9 +763,18 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Other Reports",
-   "link_type": "",
+   "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Education Selling Target",
+   "link_to": "Education Selling Target",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   },
   {
    "hidden": 0,
@@ -794,7 +821,7 @@
    "type": "Link"
   }
  ],
- "modified": "2022-02-02 15:36:17.509673",
+ "modified": "2023-05-07 14:41:37.333157",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Education",
@@ -821,6 +848,12 @@
    "label": "Student Group Over View",
    "link_to": "Student Group Over View",
    "type": "Report"
+  },
+  {
+   "doc_view": "Dashboard",
+   "label": "Education Dashboard",
+   "link_to": "Education",
+   "type": "Dashboard"
   }
  ],
  "shortcuts_label": ""

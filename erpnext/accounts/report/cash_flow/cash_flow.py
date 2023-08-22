@@ -67,9 +67,9 @@ def execute(filters=None):
 			section_data.append(account_data)
 
 		add_total_row_account(data, section_data, cash_flow_account['section_footer'],
-			period_list, company_currency, summary_data)
+			period_list, company_currency, summary_data, filters)
 
-	add_total_row_account(data, data, _("Net Change in Cash"), period_list, company_currency, summary_data)
+	add_total_row_account(data, data, _("Net Change in Cash"), period_list, company_currency, summary_data, filters)
 	columns = get_columns(filters.periodicity, period_list, filters.accumulated_values, filters.company)
 
 	chart = get_chart_data(columns, data)
@@ -87,7 +87,12 @@ def get_cash_flow_accounts():
 			{"account_type": "Depreciation", "label": _("Depreciation")},
 			{"account_type": "Receivable", "label": _("Net Change in Accounts Receivable")},
 			{"account_type": "Payable", "label": _("Net Change in Accounts Payable")},
-			{"account_type": "Stock", "label": _("Net Change in Inventory")}
+			{"account_type": "Stock", "label": _("Net Change in Inventory")},
+			{"account_type": "Stock Received But Not Billed", "label": _("Stock Received But Not Billed")},
+			{"account_type": "Other Debit", "label": _("Other Debit")},
+			{"account_type": "Other Credit", "label": _("Other Credit")},
+			{"account_type": "Temporary", "label": _("Temporary")}
+			
 		]
 	}
 
@@ -162,18 +167,26 @@ def get_start_date(period, accumulated_values, company):
 
 	return start_date
 
-def add_total_row_account(out, data, label, period_list, currency, summary_data, consolidated = False):
+def add_total_row_account(out, data, label, period_list, currency, summary_data, filters, consolidated=False):
 	total_row = {
 		"account_name": "'" + _("{0}").format(label) + "'",
 		"account": "'" + _("{0}").format(label) + "'",
 		"currency": currency
 	}
+
+	summary_data[label] = 0
+
+	# from consolidated financial statement
+	if filters.get('accumulated_in_group_company'):
+		period_list = get_filtered_list_for_consolidated_report(filters, period_list)
+
 	for row in data:
 		if row.get("parent_account"):
 			for period in period_list:
 				key = period if consolidated else period['key']
 				total_row.setdefault(key, 0.0)
 				total_row[key] += row.get(key, 0.0)
+				summary_data[label] += row.get(key)
 
 			total_row.setdefault("total", 0.0)
 			total_row["total"] += row["total"]
@@ -181,7 +194,6 @@ def add_total_row_account(out, data, label, period_list, currency, summary_data,
 	out.append(total_row)
 	out.append({})
 
-	summary_data[label] = total_row["total"]
 
 def get_report_summary(summary_data, currency):
 	report_summary = []
@@ -215,3 +227,11 @@ def get_chart_data(columns, data):
 	chart["fieldtype"] = "Currency"
 
 	return chart
+
+def get_filtered_list_for_consolidated_report(filters, period_list):
+	filtered_summary_list = []
+	for period in period_list:
+		if period == filters.get('company'):
+			filtered_summary_list.append(period)
+
+	return filtered_summary_list

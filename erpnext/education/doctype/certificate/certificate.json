@@ -114,7 +114,9 @@
    "label": "Text"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t1_en",
+   "fetch_if_empty": 1,
    "fieldname": "t1_en",
    "fieldtype": "Data",
    "label": "T1 En"
@@ -128,19 +130,25 @@
    "label": "T2 En"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t3_en",
+   "fetch_if_empty": 1,
    "fieldname": "t3_en",
    "fieldtype": "Data",
    "label": "T3 En"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t4_en",
+   "fetch_if_empty": 1,
    "fieldname": "t4_en",
    "fieldtype": "Data",
    "label": "T4 En"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t5_en",
+   "fetch_if_empty": 1,
    "fieldname": "t5_en",
    "fieldtype": "Data",
    "label": "T5 En"
@@ -229,37 +237,49 @@
    "label": "Hours"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.e1_en",
+   "fetch_if_empty": 1,
    "fieldname": "e1_en",
    "fieldtype": "Data",
    "label": "E1 En"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.p1_en",
+   "fetch_if_empty": 1,
    "fieldname": "p1_en",
    "fieldtype": "Data",
    "label": "P1 En"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.e2_en",
+   "fetch_if_empty": 1,
    "fieldname": "e2_en",
    "fieldtype": "Data",
    "label": "E2 En"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.p2_en",
+   "fetch_if_empty": 1,
    "fieldname": "p2_en",
    "fieldtype": "Data",
    "label": "P2 En"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.e3_en",
+   "fetch_if_empty": 1,
    "fieldname": "e3_en",
    "fieldtype": "Data",
    "label": "E3 En"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "certificate_structure.p3_en",
+   "fetch_if_empty": 1,
    "fieldname": "p3_en",
    "fieldtype": "Data",
    "label": "P3 En"
@@ -281,6 +301,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t1_ar",
+   "fetch_if_empty": 1,
    "fieldname": "t1_ar",
    "fieldtype": "Data",
    "label": "T1 Ar M"
@@ -288,6 +309,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t2_ar",
+   "fetch_if_empty": 1,
    "fieldname": "t2_ar",
    "fieldtype": "Data",
    "label": "T2 Ar M"
@@ -295,6 +317,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t3_ar",
+   "fetch_if_empty": 1,
    "fieldname": "t3_ar",
    "fieldtype": "Data",
    "label": "T3 Ar M"
@@ -302,6 +325,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t4_ar",
+   "fetch_if_empty": 1,
    "fieldname": "t4_ar",
    "fieldtype": "Data",
    "label": "T4 Ar M"
@@ -309,6 +333,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t5_ar",
+   "fetch_if_empty": 1,
    "fieldname": "t5_ar",
    "fieldtype": "Data",
    "label": "T5 Ar M"
@@ -316,6 +341,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.e1_ar",
+   "fetch_if_empty": 1,
    "fieldname": "e1_ar",
    "fieldtype": "Data",
    "label": "E1 Ar"
@@ -323,6 +349,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.p1_ar",
+   "fetch_if_empty": 1,
    "fieldname": "p1_ar",
    "fieldtype": "Data",
    "label": "P1 Ar"
@@ -330,6 +357,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.e2_ar",
+   "fetch_if_empty": 1,
    "fieldname": "e2_ar",
    "fieldtype": "Data",
    "label": "E2 Ar"
@@ -337,6 +365,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.p2_ar",
+   "fetch_if_empty": 1,
    "fieldname": "p2_ar",
    "fieldtype": "Data",
    "label": "P2 Ar"
@@ -344,6 +373,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.e3_ar",
+   "fetch_if_empty": 1,
    "fieldname": "e3_ar",
    "fieldtype": "Data",
    "label": "E3 Ar"
@@ -351,17 +381,20 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.p3_ar",
+   "fetch_if_empty": 1,
    "fieldname": "p3_ar",
    "fieldtype": "Data",
    "label": "P3 Ar"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "column_break_32",
    "fieldtype": "Column Break"
   },
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t1_ar_f",
+   "fetch_if_empty": 1,
    "fieldname": "t1_ar_f",
    "fieldtype": "Data",
    "label": "T1 Ar F"
@@ -369,6 +402,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t2_ar_f",
+   "fetch_if_empty": 1,
    "fieldname": "t2_ar_f",
    "fieldtype": "Data",
    "label": "T2 Ar F"
@@ -376,6 +410,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t3_ar_f",
+   "fetch_if_empty": 1,
    "fieldname": "t3_ar_f",
    "fieldtype": "Data",
    "label": "T3 Ar F"
@@ -383,6 +418,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t4_ar_f",
+   "fetch_if_empty": 1,
    "fieldname": "t4_ar_f",
    "fieldtype": "Data",
    "label": "T4 Ar F"
@@ -390,6 +426,7 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "certificate_structure.t5_ar_f",
+   "fetch_if_empty": 1,
    "fieldname": "t5_ar_f",
    "fieldtype": "Data",
    "label": "T5 Ar F"
@@ -428,7 +465,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-04-12 13:58:36.742142",
+ "modified": "2023-06-20 17:26:10.511646",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Certificate",

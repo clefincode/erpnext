@@ -17,6 +17,7 @@
   "cb0",
   "domain",
   "parent_company",
+  "enable_repost_deferred_revenue",
   "charts_section",
   "default_currency",
   "default_letter_head",
@@ -55,7 +56,7 @@
   "default_employee_advance_account",
   "default_expense_account",
   "default_income_account",
-  "default_achieved_income_account",
+  "default_deferred_income_account_for_fee",
   "default_deferred_revenue_account",
   "default_deferred_expense_account",
   "default_payroll_payable_account",
@@ -407,7 +408,7 @@
    "options": "Account"
   },
   {
-   "depends_on": "eval:!doc.__islocal",
+   "depends_on": "eval:!doc.__islocal && doc.enable_repost_deferred_revenue",
    "fieldname": "default_income_account",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
@@ -794,10 +795,17 @@
    "label": "Mob"
   },
   {
-   "fieldname": "default_achieved_income_account",
+   "depends_on": "eval: doc.enable_repost_deferred_revenue",
+   "fieldname": "default_deferred_income_account_for_fee",
    "fieldtype": "Link",
-   "label": "Default Achieved Income Account",
+   "label": "Default Deferred Income Account For Fee",
    "options": "Account"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_repost_deferred_revenue",
+   "fieldtype": "Check",
+   "label": "Enable Repost Deferred Revenue"
   }
  ],
  "icon": "fa fa-building",
@@ -805,7 +813,7 @@
  "image_field": "company_logo",
  "is_tree": 1,
  "links": [],
- "modified": "2021-11-27 14:22:37.444325",
+ "modified": "2023-08-02 15:37:05.045445",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Company",

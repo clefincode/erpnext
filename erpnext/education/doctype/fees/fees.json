@@ -23,6 +23,7 @@
   "student_details",
   "program_enrollment",
   "program",
+  "category",
   "student_group",
   "student_batch",
   "student_email",
@@ -328,6 +329,7 @@
   },
   {
    "fetch_from": "company.default_income_account",
+   "fetch_if_empty": 1,
    "fieldname": "income_account",
    "fieldtype": "Link",
    "label": "Income Account",
@@ -389,6 +391,13 @@
    "fieldtype": "Currency",
    "label": "Total Discount Applied for This Fee",
    "read_only": 1
+  },
+  {
+   "fetch_from": "program.category",
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "label": "Category",
+   "options": "Program Category"
   }
  ],
  "is_submittable": 1,
@@ -398,7 +407,7 @@
    "link_fieldname": "apply_for_fee"
   }
  ],
- "modified": "2022-05-21 15:12:51.394780",
+ "modified": "2023-08-22 12:10:53.396251",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Fees",

@@ -12,6 +12,7 @@
   "description",
   "account",
   "section_break_4",
+  "deferred_programs",
   "enable_commission",
   "column_break_6",
   "base_rate",
@@ -66,11 +67,17 @@
    "fieldname": "extra_rate",
    "fieldtype": "Data",
    "label": "Extra Commission Rate (y)"
+  },
+  {
+   "fieldname": "deferred_programs",
+   "fieldtype": "Table",
+   "label": "Deferred Programs",
+   "options": "Fee Category Deferred Program"
   }
  ],
  "icon": "fa fa-flag",
  "links": [],
- "modified": "2021-12-28 13:42:39.322997",
+ "modified": "2023-05-23 13:38:35.994421",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Fee Category",

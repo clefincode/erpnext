@@ -9,7 +9,9 @@
   "program_name",
   "program_name_ar",
   "need_placement_test",
+  "disabled",
   "column_break_3",
+  "company",
   "category",
   "evaluation_template",
   "department",
@@ -32,13 +34,21 @@
   "column_break_11",
   "intro_video",
   "hero_image",
-  "description"
+  "description",
+  "program_requirements_section",
+  "computers",
+  "internet_network",
+  "required_application",
+  "has_specific_specification",
+  "specifications",
+  "column_break_36",
+  "room_model"
  ],
  "fields": [
   {
    "fieldname": "program_name",
    "fieldtype": "Data",
-   "label": "Program Name Eng",
+   "label": "Program Name",
    "reqd": 1,
    "unique": 1
   },
@@ -133,7 +143,8 @@
   {
    "fieldname": "topics",
    "fieldtype": "Text",
-   "label": "Topics"
+   "label": "Topics",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_9",
@@ -142,7 +153,8 @@
   {
    "fieldname": "hours",
    "fieldtype": "Data",
-   "label": "Hours"
+   "label": "Hours",
+   "reqd": 1
   },
   {
    "fieldname": "instructor",
@@ -154,7 +166,8 @@
    "fieldname": "certificate",
    "fieldtype": "Table",
    "label": "Certificate",
-   "options": "Program Certificate"
+   "options": "Program Certificate",
+   "reqd": 1
   },
   {
    "fieldname": "cost",
@@ -195,12 +208,73 @@
    "fieldname": "salesman_owner",
    "fieldtype": "Link",
    "label": "Salesman Owner",
-   "options": "Salesman"
+   "options": "Salesman",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "program_requirements_section",
+   "fieldtype": "Section Break",
+   "label": "Program Requirements"
+  },
+  {
+   "default": "0",
+   "fieldname": "computers",
+   "fieldtype": "Check",
+   "label": "Computers"
+  },
+  {
+   "depends_on": "eval: doc.computers",
+   "fieldname": "internet_network",
+   "fieldtype": "Data",
+   "label": "Internet Network"
+  },
+  {
+   "depends_on": "eval: doc.computers",
+   "fieldname": "required_application",
+   "fieldtype": "Table MultiSelect",
+   "label": "Required Application",
+   "options": "Required Application"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.computers",
+   "fieldname": "has_specific_specification",
+   "fieldtype": "Check",
+   "label": "Has Specific Specification"
+  },
+  {
+   "depends_on": "eval: doc.has_specific_specification",
+   "fieldname": "specifications",
+   "fieldtype": "Small Text",
+   "label": "Specifications"
+  },
+  {
+   "fieldname": "column_break_36",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "room_model",
+   "fieldtype": "Select",
+   "label": "Room Model",
+   "options": "\nTheatrical\nU Shape\nGroup"
   }
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2022-05-26 15:05:48.400334",
+ "modified": "2023-05-03 13:02:13.844958",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program",

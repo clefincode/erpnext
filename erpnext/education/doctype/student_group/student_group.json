@@ -12,6 +12,7 @@
   "type",
   "program",
   "program_name_ar",
+  "category",
   "course",
   "group_based_on",
   "student_group_name",
@@ -25,7 +26,9 @@
   "batch",
   "student_category",
   "room",
+  "student_group_capacity",
   "room_capacity",
+  "available_laptops_count",
   "exception",
   "disabled",
   "customer",
@@ -52,7 +55,8 @@
   "cost_center",
   "column_break_38",
   "is_paid",
-  "naming_series"
+  "naming_series",
+  "salesman_owner"
  ],
  "fields": [
   {
@@ -84,7 +88,8 @@
    "description": "Set 0 for no limit",
    "fieldname": "max_strength",
    "fieldtype": "Int",
-   "label": "Max Strength"
+   "label": "Max Strength",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_3",
@@ -159,7 +164,8 @@
    "fieldname": "instructors",
    "fieldtype": "Table",
    "label": "Instructors",
-   "options": "Student Group Instructor"
+   "options": "Student Group Instructor",
+   "reqd": 1
   },
   {
    "fieldname": "student_category",
@@ -205,6 +211,7 @@
    "fieldname": "room",
    "fieldtype": "Link",
    "label": "Room",
+   "mandatory_depends_on": "eval:in_list([\"Private Course\",\"General Course\"], doc.type)",
    "options": "Room"
   },
   {
@@ -247,7 +254,8 @@
    "default": "Now",
    "fieldname": "time",
    "fieldtype": "Time",
-   "label": "Time From"
+   "label": "Time From",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_21",
@@ -256,13 +264,15 @@
   {
    "fieldname": "end_date",
    "fieldtype": "Date",
-   "label": "End Date"
+   "label": "End Date",
+   "reqd": 1
   },
   {
    "default": "Now",
    "fieldname": "session_duration",
    "fieldtype": "Time",
-   "label": "Time Till"
+   "label": "Time Till",
+   "reqd": 1
   },
   {
    "fetch_from": "company.abbr",
@@ -311,7 +321,7 @@
   },
   {
    "fieldname": "instructors_str",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Instructors",
    "read_only": 1
   },
@@ -356,6 +366,36 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Program Name Ar"
+  },
+  {
+   "fieldname": "student_group_capacity",
+   "fieldtype": "Int",
+   "label": "Student Group Capacity",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval:in_list([\"Private Course\",\"General Course\"], doc.type)",
+   "fetch_from": "room.available_laptops_count",
+   "fieldname": "available_laptops_count",
+   "fieldtype": "Int",
+   "label": "Available Laptops Count",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "program.category",
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "label": "Category",
+   "options": "Program Category"
+  },
+  {
+   "fetch_from": "program.salesman_owner",
+   "fetch_if_empty": 1,
+   "fieldname": "salesman_owner",
+   "fieldtype": "Link",
+   "label": "Salesman Owner",
+   "options": "Salesman",
+   "permlevel": 1
   }
  ],
  "links": [
@@ -385,7 +425,7 @@
    "link_fieldname": "student_group"
   }
  ],
- "modified": "2022-04-09 12:32:09.025114",
+ "modified": "2023-08-01 12:07:13.875547",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Group",

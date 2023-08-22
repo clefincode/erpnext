@@ -495,9 +495,9 @@ class StockController(AccountsController):
 		})
 		if future_sle_exists(args):
 			create_repost_item_valuation_entry(args)
-		elif not is_reposting_pending():
-			check_if_stock_and_account_balance_synced(self.posting_date,
-				self.company, self.doctype, self.name)
+		#elif not is_reposting_pending():
+		#	check_if_stock_and_account_balance_synced(self.posting_date,
+		#		self.company, self.doctype, self.name)
 
 def is_reposting_pending():
 	return frappe.db.exists("Repost Item Valuation",

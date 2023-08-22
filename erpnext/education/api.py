@@ -382,3 +382,11 @@ def get_current_enrollment(student, academic_year=None):
 		return program_enrollment_list[0]
 	else:
 		return None
+
+@frappe.whitelist()
+def set_program_values(args):
+	args = json.loads(args)
+	program = frappe.get_doc("Program", args.get("name"))
+	for k,v in args.items():
+		program.set(k,v)
+	program.save(ignore_permissions=1)

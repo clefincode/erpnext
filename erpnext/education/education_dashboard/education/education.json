@@ -11,6 +11,9 @@
   },
   {
    "card": "Student Applicants to Review"
+  },
+  {
+   "card": "Selling Target"
   }
  ],
  "charts": [
@@ -45,6 +48,10 @@
   {
    "chart": "Program wise Fee Collection",
    "width": "Full"
+  },
+  {
+   "chart": "Instructor Attendance",
+   "width": "Half"
   }
  ],
  "creation": "2020-07-22 18:51:02.195762",
@@ -54,7 +61,7 @@
  "idx": 0,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2021-11-17 15:17:55.060437",
+ "modified": "2023-08-08 16:41:50.705045",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Education",

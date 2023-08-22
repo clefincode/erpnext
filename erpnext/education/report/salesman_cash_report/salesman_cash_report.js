@@ -43,6 +43,11 @@ frappe.query_reports["Salesman Cash Report"] = {
 			'fieldtype': 'Link',
 			'label': 'Student Group',
 			'options': 'Student Group'
+		},
+		{
+			'fieldtype': 'Check',
+			'fieldname': 'show_only_enrollment_fees',
+			'label': "Show Only Enrollment Fees"
 		}
 	]
 };

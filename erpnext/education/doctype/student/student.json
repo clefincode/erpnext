@@ -525,7 +525,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2021-08-16 16:01:07.112963",
+ "modified": "2023-02-09 22:35:21.576296",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student",
@@ -573,7 +573,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "title",
- "track_changes": 1,
- "track_seen": 1,
- "track_views": 1
+ "track_changes": 1
 }

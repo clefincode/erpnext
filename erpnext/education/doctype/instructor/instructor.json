@@ -20,6 +20,8 @@
   "image",
   "log_details",
   "instructor_log",
+  "section_break_15",
+  "biography",
   "specialties_section",
   "instructor_specialties"
  ],
@@ -117,11 +119,21 @@
    "fieldtype": "Table",
    "label": "Instructor Specialties",
    "options": "Instructor Specialties"
+  },
+  {
+   "fieldname": "section_break_15",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "biography",
+   "fieldtype": "Text Editor",
+   "label": "Biography",
+   "reqd": 1
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2021-10-05 13:28:25.656939",
+ "modified": "2023-02-18 16:09:23.957365",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Instructor",

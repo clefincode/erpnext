@@ -9,11 +9,13 @@
  "field_order": [
   "student",
   "program",
+  "category",
   "student_group_type",
   "student_group",
   "student_category",
   "student_batch_name",
   "school_house",
+  "book_a_laptop",
   "fee_on_customer",
   "customer",
   "covering_percent",
@@ -278,12 +280,26 @@
    "fieldtype": "Check",
    "label": "Edit Salesman",
    "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "book_a_laptop",
+   "fieldtype": "Check",
+   "label": "Book a Laptop"
+  },
+  {
+   "fetch_from": "program.category",
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Category",
+   "options": "Program Category"
   }
  ],
  "image_field": "image",
  "is_submittable": 1,
  "links": [],
- "modified": "2022-05-11 17:06:15.859614",
+ "modified": "2023-05-17 15:54:28.590759",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",

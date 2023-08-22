@@ -124,6 +124,7 @@ class ProgramEnrollment(Document):
 		mode_of_payment = frappe.db.get_value('User Mode of Payment' ,{'parent' : frappe.session.user , 'is_default' : 1 } ,['mode_of_payment'])
 		for d in self.fees:
 			fee_components = get_fee_components(d.fee_structure)
+			fee_structure_accounts = frappe.db.get_value("Fee Structure", d.fee_structure, ["receivable_account", "income_account"], as_dict=1)
 			if fee_components:
 				fees = frappe.new_doc("Fees")
 				fees.update({
@@ -133,10 +134,13 @@ class ProgramEnrollment(Document):
 					"fee_structure": d.fee_structure,
 					"program": self.program,
 					"due_date": d.due_date,
+					"posting_date": self.enrollment_date,
 					"student_name": self.student_name,
 					"program_enrollment": self.name,
 					"components": fee_components,
-					"mode_of_payment" : mode_of_payment
+					"mode_of_payment" : mode_of_payment,
+					"receivable_account": fee_structure_accounts.receivable_account,
+					"income_account": fee_structure_accounts.income_account
 				})
 				fees.save()
 				fees.submit()
@@ -145,6 +149,7 @@ class ProgramEnrollment(Document):
 					if not mode_of_payment :
 						frappe.throw(_('There is no mode of payment for this user'))
 					pe = get_payment_entry(fees.doctype , fees.name)
+					pe.posting_date = self.enrollment_date
 					pe.paid_amount = d.payment
 					pe.received_amount = d.payment
 					pe.reference_date = pe.posting_date

@@ -9,10 +9,12 @@
   "student",
   "student_name",
   "type",
+  "disenrollment_reason",
   "note",
   "column_break_3",
   "program_enrollment",
   "student_group",
+  "salesman",
   "date",
   "student_interest",
   "amended_from",
@@ -21,6 +23,7 @@
   "journal_entry",
   "total_freezed_balance",
   "unpaid_balance",
+  "sales_paid_amount",
   "new_enrollment_section",
   "new_program_enrollment",
   "new_fees"
@@ -151,12 +154,33 @@
    "label": "Journal Entry",
    "options": "Journal Entry",
    "read_only": 1
+  },
+  {
+   "fetch_from": "program_enrollment.salesman",
+   "fieldname": "salesman",
+   "fieldtype": "Link",
+   "label": "Salesman",
+   "options": "Salesman",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sales_paid_amount",
+   "fieldtype": "Currency",
+   "label": "Sales Paid Amount"
+  },
+  {
+   "depends_on": "eval: doc.type == \"\u0627\u0646\u0633\u062d\u0627\u0628\"",
+   "fieldname": "disenrollment_reason",
+   "fieldtype": "Link",
+   "label": "Disenrollment Reason",
+   "mandatory_depends_on": "eval: doc.type == \"\u0627\u0646\u0633\u062d\u0627\u0628\"",
+   "options": "Disenrollment Reason"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-05-15 13:10:59.292490",
+ "modified": "2023-05-03 13:56:00.587964",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Disenrollment",

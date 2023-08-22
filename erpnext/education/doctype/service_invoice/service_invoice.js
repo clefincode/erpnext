@@ -46,7 +46,20 @@ frappe.ui.form.on('Service Invoice', {
 				'filters' : [['Mode of Payment','name','in', lis.join(',')]]
 			};
 		});
-	}
+	},
+	make_payment_entry: function(frm) {
+		return frappe.call({
+			method: "erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry",
+			args: {
+				"dt": frm.doc.doctype,
+				"dn": frm.doc.name
+			},
+			callback: function(r) {
+				var doc = frappe.model.sync(r.message);
+				frappe.set_route("Form", doc[0].doctype, doc[0].name);
+			}
+		});
+	},
 });
 
 frappe.ui.form.on('Service Invoice Item', {

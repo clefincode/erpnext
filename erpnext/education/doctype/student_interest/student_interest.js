@@ -4,8 +4,15 @@
 frappe.ui.form.on('Student Interest', {
 
 	refresh: function(frm) {
+		frm.set_query("program", function(){
+			return{
+				filters:{
+					disabled: false
+				}
+			}
+		})
 		if(frm.doc.status != 'تم التسجيل'){
-			frm.add_custom_button('New Comminucation', function(){
+			var btn = frm.add_custom_button('New Comminucation', function(){
 				frappe.prompt(
 					[
 						{
@@ -51,6 +58,7 @@ frappe.ui.form.on('Student Interest', {
 						})
 					});
 			});
+			$(btn[0].parentElement).removeClass("hidden-xs hidden-md");
 		}
 
 	},

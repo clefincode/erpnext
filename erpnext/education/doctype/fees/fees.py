@@ -37,9 +37,9 @@ class Fees(AccountsController):
 				fields=["default_receivable_account", "default_income_account", "cost_center"],
 				filters={"name": self.company})[0]
 		if not self.receivable_account:
-			self.receivable_account = accounts_details.default_receivable_account
+			self.receivable_account = receivable_account if receivable_account else accounts_details.default_receivable_account
 		if not self.income_account:
-			self.income_account = accounts_details.default_income_account
+			self.income_account = income_account if income_account else accounts_details.default_income_account
 		if not self.cost_center:
 			self.cost_center = accounts_details.cost_center
 		if not self.student_email:

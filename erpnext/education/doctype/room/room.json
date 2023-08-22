@@ -10,7 +10,8 @@
   "room_name",
   "company",
   "room_number",
-  "seating_capacity"
+  "seating_capacity",
+  "available_laptops_count"
  ],
  "fields": [
   {
@@ -39,10 +40,15 @@
    "label": "Company",
    "options": "Company",
    "reqd": 1
+  },
+  {
+   "fieldname": "available_laptops_count",
+   "fieldtype": "Int",
+   "label": "Available Laptops Count"
   }
  ],
  "links": [],
- "modified": "2021-03-17 11:33:07.869961",
+ "modified": "2023-02-22 15:19:52.423844",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Room",

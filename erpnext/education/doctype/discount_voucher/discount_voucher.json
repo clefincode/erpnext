@@ -10,6 +10,7 @@
   "student",
   "student_name",
   "apply_for_fee",
+  "fee_structure",
   "total_fee_amount",
   "type",
   "column_break_4",
@@ -73,6 +74,7 @@
    "fieldtype": "Link",
    "label": "Apply For Fee",
    "options": "Fees",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -130,7 +132,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "company.student_discount_account",
+   "fetch_from": "fee_structure.discount_account",
    "fetch_if_empty": 1,
    "fieldname": "expense_account",
    "fieldtype": "Link",
@@ -195,12 +197,20 @@
    "fieldname": "remark",
    "fieldtype": "Small Text",
    "label": "Remark"
+  },
+  {
+   "fetch_from": "apply_for_fee.fee_structure",
+   "fieldname": "fee_structure",
+   "fieldtype": "Link",
+   "label": "Fee Structure",
+   "options": "Fee Structure",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-13 10:03:42.245677",
+ "modified": "2023-05-23 15:52:42.721520",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Discount Voucher",

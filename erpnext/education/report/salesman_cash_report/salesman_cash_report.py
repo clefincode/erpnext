@@ -20,14 +20,14 @@ def execute(filters=None):
 	{
       "fieldname": "party_type",
 	  "label": _("Party Type"),
-	  "fieldtype": "Data",
 	  "width": 100
 	},
 	{
 
     	"fieldname": "party",
 		"label": _("Party"),
-		"fieldtype": "Data",
+		"fieldtype": "Dynamic Link",
+		"options": "party_type",
 		"width": 170
 
 	},
@@ -67,7 +67,7 @@ def execute(filters=None):
 	l = frappe.db.sql("""
 	select name, payment_type, party, party_type, party_name, paid_from, paid_amount, paid_to from `tabPayment Entry`
 	where company = %s and mode_of_payment in (%s) and posting_date between %s and %s and docstatus = 1
-	"""%('%s',', '.join(['%s']*len(filters.mode_of_payment)), '%s', '%s'), tuple([filters.company]+ filters.mode_of_payment + [filters.start_date, filters.end_date]), as_dict = 1, debug = 1)
+	"""%('%s',', '.join(['%s']*len(filters.mode_of_payment)), '%s', '%s'), tuple([filters.company]+ filters.mode_of_payment + [filters.start_date, filters.end_date]), as_dict = 1)
 	data=[]
 	balance=0
 	for k in l:
@@ -80,6 +80,9 @@ def execute(filters=None):
 				break
 		if filters.student_group and filters.student_group != student_group:
 			continue
+		if filters.show_only_enrollment_fees and fees_category != "Enrollment Fee":
+			continue
+		
 		if k.payment_type=="Receive":
 			balance+=k.paid_amount
 		else :

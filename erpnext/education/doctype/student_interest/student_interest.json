@@ -26,6 +26,7 @@
   "interest_owner",
   "edit_interest_owner",
   "marketing_channel",
+  "interest_channel",
   "web_link",
   "placement_test_mark",
   "city",
@@ -263,11 +264,17 @@
    "fieldtype": "Check",
    "label": "Edit Interest Owner",
    "permlevel": 1
+  },
+  {
+   "fieldname": "interest_channel",
+   "fieldtype": "Link",
+   "label": "Interest Channel",
+   "options": "Interest Channel"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-11 17:00:17.873412",
+ "modified": "2023-05-03 13:49:53.108723",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Interest",

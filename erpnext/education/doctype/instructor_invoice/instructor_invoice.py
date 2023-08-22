@@ -19,11 +19,13 @@ class InstructorInvoice(AccountsController):
 
 	def validate(self):
 		self.validate_completed_instructor_attendance()
+		self.set_status();
 
 	def on_cancel(self):
 		self.ignore_linked_doctypes = ('GL Entry', 'Stock Ledger Entry')
 		self.make_instructor_attendance_as_submitted()
 		make_reverse_gl_entries(voucher_type=self.doctype, voucher_no=self.name)
+		self.set_status();
 	
 	def validate_completed_instructor_attendance(self):
 		for i,d in enumerate(self.instructor_attendance) : 
@@ -58,8 +60,7 @@ class InstructorInvoice(AccountsController):
 			"credit": self.grand_total,
 			"credit_in_account_currency": self.grand_total,
 			"against_voucher": self.name,
-			"against_voucher_type": "Instructor Invoice",
-			"cost_center": cost_center
+			"against_voucher_type": "Instructor Invoice"
 		}, item=self)
 
 
@@ -122,3 +123,17 @@ class InstructorInvoice(AccountsController):
 		je.insert()
 		je.submit()
 		frappe.msgprint(('Journal Entry Records Created - <a href="#Form/Journal Entry/%s" target="_blank">%s</a>')%(je.name,je.name))
+
+	def set_status(self, update=False, status=None, update_modified=True):
+		if self.docstatus == 2:
+			self.status = "Cancelled"
+		elif self.docstatus == 0:
+			self.status = "Draft"
+		else:
+			if self.outstanding_amount <= 0:
+				self.status = "Paid"
+			else:
+				self.status = "Unpaid"
+		
+		if update:
+			self.db_set('status', self.status, update_modified = update_modified)

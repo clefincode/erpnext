@@ -30,7 +30,8 @@ class InstructorAttendance(Document):
 		count = frappe.db.count("Instructor Attendance",{
 			"instructor": self.instructor,
 			"date": self.date,
-			"student_group": self.student_group
+			"student_group": self.student_group,
+			"docstatus": 1
 		})
 		if count >= 1:
 			frappe.throw(_("Can not create more than one attendance for same instructor,date and student group"))

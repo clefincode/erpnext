@@ -37,6 +37,7 @@
   "get_items",
   "section_break_12",
   "from_warehouse",
+  "default_cost_center",
   "source_warehouse_address",
   "source_address_display",
   "cb0",
@@ -657,6 +658,12 @@
    "label": "Student Group",
    "mandatory_depends_on": "eval:in_list([\"Delivery To Student\"], doc.stock_entry_type)",
    "options": "Student Group"
+  },
+  {
+   "fieldname": "default_cost_center",
+   "fieldtype": "Link",
+   "label": "Default Cost Center",
+   "options": "Cost Center"
   }
  ],
  "icon": "fa fa-file-text",
@@ -664,7 +671,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-16 13:39:05.106617",
+ "modified": "2023-05-17 16:30:51.337723",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Stock Entry",

@@ -14,6 +14,7 @@ class StudentGroup(Document):
 	def validate(self):
 		self.validate_mandatory_fields()
 		self.validate_strength()
+		self.validate_available_labptops()
 		self.validate_students()
 		self.validate_and_set_child_table_fields()
 		self.calculate_active_student_count()
@@ -36,6 +37,14 @@ class StudentGroup(Document):
 				active_student +=1
 		if self.max_strength and active_student > self.max_strength:
 			frappe.throw(_("""Cannot enroll more than {0} students for this student group.""").format(self.max_strength))
+	
+	def validate_available_labptops(self):
+		booked_labtops = 0
+		for student in self.students:
+			if student.book_a_laptop and student.active:
+				booked_labtops += 1
+		if booked_labtops > flt(self.available_laptops_count):
+			frappe.throw(_("There Is No Available Laptops"))
 
 	def validate_students(self):
 		program_enrollment = get_program_enrollment(self.academic_year, self.academic_term, self.program, self.batch, self.student_category, self.course)
@@ -117,7 +126,7 @@ class StudentGroup(Document):
 				exist_student = True
 				break
 		if not exist_student and is_active:
-			self.append("students" , {'student': program_enrollment.student ,'program_enrollment': program_enrollment.name,'program_enrollment_note': program_enrollment.note, 'active': is_active})
+			self.append("students" , {'student': program_enrollment.student ,'program_enrollment': program_enrollment.name,'program_enrollment_note': program_enrollment.note, 'active': is_active, "book_a_laptop": program_enrollment.book_a_laptop})
 			self.save(ignore_permissions=True)
 
 

@@ -35,6 +35,7 @@
   "accounts",
   "receivable_account",
   "income_account",
+  "discount_account",
   "column_break_16",
   "company",
   "amended_from",
@@ -139,6 +140,7 @@
    "fieldname": "income_account",
    "fieldtype": "Link",
    "label": "Income Account",
+   "no_copy": 1,
    "options": "Account",
    "read_only": 1,
    "reqd": 1
@@ -258,12 +260,21 @@
    "fieldname": "disable_commission",
    "fieldtype": "Check",
    "label": "Disable Commission"
+  },
+  {
+   "fieldname": "discount_account",
+   "fieldtype": "Link",
+   "label": "Discount Account",
+   "no_copy": 1,
+   "options": "Account",
+   "read_only": 1,
+   "reqd": 1
   }
  ],
  "icon": "fa fa-flag",
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-28 15:19:40.336467",
+ "modified": "2023-08-09 17:49:44.374782",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Fee Structure",
@@ -316,6 +327,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "program",
- "track_changes": 1,
- "track_views": 1
+ "track_changes": 1
 }
