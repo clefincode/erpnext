@@ -201,6 +201,9 @@ class WebsiteItem(WebsiteGenerator):
 		context.show_search = True
 		context.search_link = "/search"
 		context.body_class = "product-page"
+		# custom update add batch_no and expiry date to context		
+		context.batch_no =frappe.form_dict.get('batch')	
+		context.expiry_date = frappe.get_value('Batch' , frappe.form_dict.get('batch'), 'expiry_date')		
 
 		context.parents = get_parent_item_groups(self.item_group, from_item=True) # breadcumbs
 		self.attributes = frappe.get_all("Item Variant Attribute",
@@ -395,7 +398,14 @@ class WebsiteItem(WebsiteGenerator):
 
 	def set_shopping_cart_data(self, context):
 		from erpnext.e_commerce.shopping_cart.product_info import get_product_info_for_website
-		context.shopping_cart = get_product_info_for_website(self.item_code, skip_quotation_creation=True)
+		# custom update add batch_no	
+		if context.batch_no:
+			context.shopping_cart = get_product_info_for_website(self.item_code, True , context.batch_no )
+		else:
+			context.shopping_cart = get_product_info_for_website(self.item_code, True)
+		
+		# if not context.shopping_cart.product_info or not context.shopping_cart.product_info['price']:
+		# 	context.shopping_cart = get_product_info_for_website(self.item_code, True)		
 
 	@frappe.whitelist()
 	def copy_specification_from_item_group(self):

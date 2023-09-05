@@ -256,7 +256,8 @@ erpnext.PointOfSale.Controller = class {
 					this.customer_details = details;
 					// will add/remove LP payment method
 					this.payment.render_loyalty_points_payment_mode();
-				}
+				},
+				apply_pricing_rule_on_transaction:() => this.apply_pricing_rule_on_transaction()
 			}
 		})
 	}
@@ -322,7 +323,7 @@ erpnext.PointOfSale.Controller = class {
 					this.cart.prev_action = null;
 					this.cart.toggle_item_highlight();
 				},
-				get_available_stock: (item_code, warehouse) => this.get_available_stock(item_code, warehouse)
+				get_available_stock: (item_code, warehouse ,batch_no ) => this.get_available_stock(item_code, warehouse , batch_no)
 			}
 		});
 	}
@@ -521,6 +522,8 @@ erpnext.PointOfSale.Controller = class {
 
 				if (this.is_current_item_being_edited(item_row) || from_selector) {
 					await frappe.model.set_value(item_row.doctype, item_row.name, field, value);
+					// Move item at the top of cart when update qty
+					($(`[data-row-name=${item_row.name}] , [data-row-name=${item_row.name}]+div.seperator`)).prependTo('.cart-items-section');
 					this.update_cart_html(item_row);
 				}
 
@@ -548,15 +551,44 @@ erpnext.PointOfSale.Controller = class {
 				if (field === 'qty' && value !== 0 && !this.allow_negative_stock)
 					await this.check_stock_availability(item_row, value, this.frm.doc.set_warehouse);
 
-				await this.trigger_new_item_events(item_row);
+					await this.trigger_new_item_events(item_row);
+					await this.validate_batch_no(item_row);
 
-				this.update_cart_html(item_row);
-
-				if (this.item_details.$component.is(':visible'))
-					this.edit_item_details_of(item_row);
-
-				if (this.check_serial_batch_selection_needed(item_row))
-					this.edit_item_details_of(item_row);
+					// var batched = item_row.has_batch_no;
+					// var no_batch_selected = !item_row.batch_no;
+					// if (batched && no_batch_selected) {
+					// 	// frappe.dom.freeze();					
+					// 		let dialog = frappe.msgprint('<br /><br /><br /><b>No Batch Found</b><br /><br />Check With System Administrator<br /><br /><br /><br />','Error');
+					// 		// disable bind input event for scan barcode
+					// 		$('.search-field input.input-with-feedback').attr('data-scan','false');																															
+					// 		// Disable click outside the dialog
+					// 		dialog.$wrapper.unbind('click');
+					// 		// hide close button from the dialog
+					// 		dialog.get_close_btn().hide();
+					// 		// Set cancel button
+					// 		dialog.set_secondary_action_label(__('Cancel'));						
+					// 		dialog.set_secondary_action(() => {							
+					// 			frappe.utils.play_sound("cancel");
+					// 			this.edit_item_details_of(item_row);
+					// 			this.remove_item_from_cart();
+					// 			// enable bind input event for scan barcode
+					// 			$('.search-field input').removeAttr('data-scan');																		
+					// 			dialog.hide();														
+					// 		});			
+					
+					// }else{
+					// 	this.update_cart_html(item_row);				
+					// 	//checking price				
+						if(item_row.price_list_rate == 0 || item_row.rate == 0 ){					
+							this.validate_price(item_row);
+						}
+					// 	if (this.item_details.$component.is(':visible'))
+					// 		this.edit_item_details_of(item_row);
+	
+					// 	if (this.check_serial_batch_selection_needed(item_row))
+					// 		this.edit_item_details_of(item_row);
+					
+					// }
 			}
 
 		} catch (error) {
@@ -566,6 +598,36 @@ erpnext.PointOfSale.Controller = class {
 			return item_row;
 		}
 	}
+	// custom update
+	validate_price(item) {
+		let msg = frappe.msgprint({
+			title: __('Notification'),
+			message: __('Item will be removed since no price available.<br />'+ item.item_name + ' (' + item.item_code + ')'),
+			primary_action: {
+				'label': 'Ok',
+				action() {
+					// enable bind input event for scan barcode
+					$('.search-field input').removeAttr('data-scan');
+					this.hide();	
+				}
+			}
+		});
+		frappe.show_alert({
+			message: __("Item will be removed since no price available."),
+			indicator: 'orange'
+		});
+		// Disable scan barcode
+		$('.search-field input.input-with-feedback').attr('data-scan','false');			
+		// Disable click outside the message
+		msg.$wrapper.unbind('click');
+		// hide close button from the message
+		msg.get_close_btn().hide();
+		frappe.utils.play_sound("cancel");
+		//to delete item we should first edit its details then we use  this.remove_item_from_cart();
+		this.edit_item_details_of(item);
+		this.remove_item_from_cart();
+		
+	}	
 
 	raise_customer_selection_alert() {
 		frappe.dom.unfreeze();
@@ -589,7 +651,9 @@ erpnext.PointOfSale.Controller = class {
 				i => i.item_code === item_code
 					&& (!has_batch_no || (has_batch_no && i.batch_no === batch_no))
 					&& (i.uom === uom)
-					&& (i.rate == rate)
+					// custom update for remove duplicate same item in pos cart
+					//  when rate doesn't match between item selector in search result and item in cart when apply pricing rule.
+					// && (i.rate == rate)
 			);
 		}
 
@@ -628,26 +692,98 @@ erpnext.PointOfSale.Controller = class {
 		await this.frm.script_manager.trigger('item_code', item_row.doctype, item_row.name);
 		await this.frm.script_manager.trigger('qty', item_row.doctype, item_row.name);
 	}
-
+	async validate_batch_no(item_row) {
+		frappe.db.get_value("Batch", {"name": item_row.batch_no}, "item", (r) => {
+			if(item_row.item_code != r.item){
+				console.log("kensingtonbn");
+				let dialog = frappe.throw(`Wrong <b>Batch</b> for <b>Item ${item_row.item_code}</b>`);
+				// disable bind input event for scan barcode
+				//$('.search-field input.input-with-feedback').attr('data-scan','false');																															
+				// Disable click outside the dialog
+				dialog.$wrapper.unbind('click');
+				// hide close button from the dialog
+				dialog.get_close_btn().hide();
+				// Set cancel button
+				//dialog.set_secondary_action_label(__('Ok'));						
+				//dialog.set_secondary_action(() => {							
+				//	frappe.utils.play_sound("cancel");
+				//	this.edit_item_details_of(item_row);
+				//	this.remove_item_from_cart();
+					// enable bind input event for scan barcode
+				//	$('.search-field input').removeAttr('data-scan');																		
+				//	dialog.hide();														
+				//});
+			}
+		});
+	}
 	async check_stock_availability(item_row, qty_needed, warehouse) {
-		const available_qty = (await this.get_available_stock(item_row.item_code, warehouse)).message;
+		const available_qty = (await this.get_available_stock(item_row.item_code, warehouse , item_row.batch_no)).message;
 
 		frappe.dom.unfreeze();
 		const bold_item_code = item_row.item_code.bold();
 		const bold_warehouse = warehouse.bold();
-		const bold_available_qty = available_qty.toString().bold()
-		if (!(available_qty > 0)) {
+		const bold_available_qty = available_qty.toString().bold();
+	
+		if(available_qty == 'no_batch'){
 			frappe.model.clear_doc(item_row.doctype, item_row.name);
-			frappe.throw({
-				title: __("Not Available"),
-				message: __('Item Code: {0} is not available under warehouse {1}.', [bold_item_code, bold_warehouse])
-			})
+			let dialog = frappe.msgprint('<br /><br /><br /><b>No Batch Found</b><br /><br />Check With System Administrator<br /><br /><br /><br />','Error');
+						// disable bind input event for scan barcode
+						$('.search-field input.input-with-feedback').attr('data-scan','false');																															
+						// Disable click outside the dialog
+						dialog.$wrapper.unbind('click');
+						// hide close button from the dialog
+						dialog.get_close_btn().hide();
+						// Set cancel button
+						dialog.set_secondary_action_label(__('Ok'));						
+						dialog.set_secondary_action(() => {							
+							frappe.utils.play_sound("cancel");
+							this.edit_item_details_of(item_row);
+							this.remove_item_from_cart();
+							// enable bind input event for scan barcode
+							$('.search-field input').removeAttr('data-scan');																		
+							dialog.hide();														
+						});
+						
+		}
+		else if (!(available_qty > 0)) {
+			frappe.model.clear_doc(item_row.doctype, item_row.name);
+			let dialog = frappe.msgprint(`Item Code: ${bold_item_code} is not available under warehouse ${bold_warehouse}.` , 'Error');
+						// disable bind input event for scan barcode
+						$('.search-field input.input-with-feedback').attr('data-scan','false');																															
+						// Disable click outside the dialog
+						dialog.$wrapper.unbind('click');
+						// hide close button from the dialog
+						dialog.get_close_btn().hide();
+						// Set cancel button
+						dialog.set_secondary_action_label(__('Ok'));						
+						dialog.set_secondary_action(() => {							
+							frappe.utils.play_sound("cancel");
+							this.edit_item_details_of(item_row);
+							this.remove_item_from_cart();
+							// enable bind input event for scan barcode
+							$('.search-field input').removeAttr('data-scan');																		
+							dialog.hide();														
+						});
+						
 		} else if (available_qty < qty_needed) {
-			frappe.show_alert({
-				message: __('Stock quantity not enough for Item Code: {0} under warehouse {1}. Available quantity {2}.', [bold_item_code, bold_warehouse, bold_available_qty]),
-				indicator: 'orange'
-			});
-			frappe.utils.play_sound("error");
+			let dialog = frappe.msgprint(`Stock quantity not enough for Item Code: ${bold_item_code} under warehouse ${bold_warehouse}. Available quantity ${bold_available_qty}.` , 'Error');
+						// disable bind input event for scan barcode
+						$('.search-field input.input-with-feedback').attr('data-scan','false');																															
+						// Disable click outside the dialog
+						dialog.$wrapper.unbind('click');
+						// hide close button from the dialog
+						dialog.get_close_btn().hide();
+						// Set cancel button
+						dialog.set_secondary_action_label(__('Ok'));						
+						dialog.set_secondary_action(() => {							
+							frappe.utils.play_sound("cancel");
+							this.edit_item_details_of(item_row);
+							this.remove_item_from_cart();
+							// enable bind input event for scan barcode
+							$('.search-field input').removeAttr('data-scan');																		
+							dialog.hide();														
+						});
+			
 		}
 		frappe.dom.freeze();
 	}
@@ -665,13 +801,14 @@ erpnext.PointOfSale.Controller = class {
 		}
 	}
 
-	get_available_stock(item_code, warehouse) {
+	get_available_stock(item_code, warehouse , batch_no) {
 		const me = this;
 		return frappe.call({
 			method: "erpnext.accounts.doctype.pos_invoice.pos_invoice.get_stock_availability",
 			args: {
 				'item_code': item_code,
 				'warehouse': warehouse,
+				'batch_no' : batch_no
 			},
 			callback(res) {
 				if (!me.item_stock_map[item_code])
@@ -707,4 +844,40 @@ erpnext.PointOfSale.Controller = class {
 			})
 			.catch(e => console.log(e));
 	}
+// custom update for apply transaction pricing rule before pos invoice submitted 
+apply_pricing_rule_on_transaction(){		
+	var me = this;			
+	return this.frm.call({
+		method: "erpnext.accounts.doctype.pos_invoice.pos_invoice.apply_pricing_rule_on_transaction",
+		args: {doc: me.frm.doc },
+		callback: function(r) {
+			if (!r.exc && r.message) {								
+				let discount_amount = r.message.discount_amount ;
+				let additional_discount = r.message.additional_discount ;
+				let apply_discount_on = r.message.apply_discount_on ;										
+				if( discount_amount != 0 && discount_amount != undefined ){												
+					me.frm.doc.discount_amount = discount_amount ;
+					me.frm.doc.apply_discount_on = apply_discount_on ;
+					
+				}else if(additional_discount != 0 && additional_discount != undefined){											
+					me.frm.doc.additional_discount_percentage = additional_discount ;						
+					me.frm.doc.apply_discount_on = apply_discount_on ;
+				}
+				else{						
+					me.frm.doc.discount_amount = 0 ;											
+					me.frm.doc.additional_discount_percentage =0 ;
+					me.frm.doc.apply_discount_on = 'Grand Total' ;
+				}
+				me.frm.trigger("apply_discount_on");
+				
+			}
+		}
+	});
+}
+
+
+
+
+
+
 };

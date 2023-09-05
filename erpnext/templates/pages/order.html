@@ -10,8 +10,22 @@
 {% block header %}
 	<h2 class="m-0">{{ doc.name }}</h2>
 {% endblock %}
+<!-- custom update for pay button -->
 
 {% block header_actions %}
+<div class="d-flex flex-row flex-wrap">
+	<div class="form-column mr-2 mb-2">
+		<div id="loyalty-points-status" style="text-align: right"></div>
+		<div class="page-header-actions-block" data-html-block="header-actions">
+			<p class="" style="float: right;">
+				<a href="/api/method/erpnext.accounts.doctype.payment_request.payment_request.make_payment_request?dn={{ doc.name }}&dt={{ doc.doctype }}&submit_doc=1&order_type=Shopping Cart"
+					class="btn btn-primary btn-sm"
+					id="pay-for-order">
+					{{ _("Pay") }} {{ doc.get_formatted("grand_total") }}
+				</a>
+			</p>
+		</div>
+	</div>
 	<div class="dropdown">
 		<button class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
 			<span class="font-md">{{ _('Actions') }}</span>
@@ -27,6 +41,7 @@
 			</a>
 		</ul>
 	</div>
+</div>
 {% endblock %}
 
 {% block page_content %}
@@ -138,7 +153,7 @@
 							<div class="page-header-actions-block" data-html-block="header-actions">
 								<p class="mt-2" style="float: right;">
 									<a href="/api/method/erpnext.accounts.doctype.payment_request.payment_request.make_payment_request?dn={{ doc.name }}&dt={{ doc.doctype }}&submit_doc=1&order_type=Shopping Cart"
-										class="btn btn-primary btn-sm"
+										class="btn btn-primary btn-sm pay-for-order"
 										id="pay-for-order">
 										{{ _("Pay") }} {{ doc.get_formatted("grand_total") }}
 									</a>
@@ -153,7 +168,33 @@
 		</div>
 	{% endif %}
 
+<!-- custom update for note section -->
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<div class="row">
+			<div class="form-column col-sm-6 address-title">
+				<strong>Note</strong>
+			</div>
+		</div>
 
+		<div class="row my-2">
+			<div class="form-column col-sm-6 address-title note-area">
+				 {% if doc.customer_description %}						
+					<hr><p>{{ doc.customer_description }}</p>					
+				{% else %}
+					<textarea id="salesNote" class="form-control border border-primary"></textarea>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="form-column col-sm-6 address-title">
+				<button  class="btn btn-primary btn-sm" id="saveNote" onclick="saveNote();">Save</button>
+			</div>
+		</div>
+			{% endif %}
+	</div>
+</div>
+<!-- end cutstom update -->
 	{% if attachments %}
 		<div class="order-item-table">
 			<div class="row order-items order-item-header text-muted">
@@ -174,11 +215,11 @@
 	{% endif %}
 	</div>
 
-	{% if doc.terms %}
+	<!-- {% if doc.terms %}
 		<div class="terms-and-condition text-muted small">
 			<hr><p>{{ doc.terms }}</p>
 		</div>
-	{% endif %}
+	{% endif %} -->
 {% endblock %}
 
 {% block script %}
@@ -191,5 +232,29 @@
 			grand_total: '{{ doc.grand_total }}',
 			currency: '{{ doc.currency }}'
 		}
+		// custom update for disable pay button if item out of stock
+		pre_order = '{{doc.pre_order}}'
+		
+		if(pre_order == 1){
+			$('.pay-for-order').addClass('disabled');
+		}
+		// custom update for note section
+		function saveNote(){			
+			let noteValue = document.querySelector('#salesNote').value;			
+			 frappe.call({
+					method: 'erpnext.e_commerce.shopping_cart.cart.save_note',
+					args: {
+						doc_name : '{{doc.name}}',
+						note_value : noteValue				
+					},
+					callback: function(r) {						
+						document.querySelector('.note-area').innerHTML = `<div class="terms-and-condition text-muted small">
+						<hr><p>${r.message}</p></div>`;
+						document.querySelector('#saveNote').style.display = 'none';
+						
+					}
+				});
+			}
+		// end custom update
 	</script>
 {% endblock %}

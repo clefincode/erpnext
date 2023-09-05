@@ -104,7 +104,11 @@ def _get_pricing_rules(apply_on, args, values):
 	if apply_on_field in ['item_code', 'brand']:
 		item_conditions = "{child_doc}.{apply_on_field}= %({apply_on_field})s".format(child_doc=child_doc,
 			apply_on_field = apply_on_field)
-
+		# start custom update add batch no to pricing rules conditions
+		if item_conditions and apply_on_field == 'item_code' and args.get('batch_no'):
+			item_conditions += " AND {child_doc}.batch_no = %(batch_no)s".format(child_doc=child_doc)
+			values["batch_no"] = args.get("batch_no")
+		# end custom update
 		if apply_on_field == 'item_code':
 			if "variant_of" not in args:
 				args.variant_of = frappe.get_cached_value("Item", args.item_code, "variant_of")
@@ -454,6 +458,10 @@ def get_qty_amount_data_for_cumulative(pr_doc, doc, items=None):
 
 def apply_pricing_rule_on_transaction(doc):
 	conditions = "apply_on = 'Transaction'"
+	if doc.doctype in ["Purchase Order", "Purchase Invoice", "Purchase Receipt"]:
+		conditions += " and buying = 1 "
+	elif doc.doctype in ["Sales Order", "Sales Invoice", "Delivery Note"]:
+		conditions += " and selling = 1 "
 
 	values = {}
 	conditions = get_other_conditions(conditions, values, doc)

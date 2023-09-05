@@ -6,6 +6,13 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, get_datetime
+import datetime
+from frappe.utils import cstr
+from datetime import time
+
+
+import pandas as pd
+
 
 from erpnext.hr.doctype.shift_assignment.shift_assignment import (
 	get_actual_start_end_datetime_of_shift,
@@ -42,6 +49,323 @@ class EmployeeCheckin(Document):
 				self.shift_end = shift_actual_timings[2].end_datetime
 		else:
 			self.shift = None
+
+
+	def after_insert(self):
+		frappe.log_error("error_message", "Save called.  ")
+		print("Calling after save")
+		""" after insert the checkin Attendance will be created.  """
+		data_time_date_day = set_time_date_day(self.time)
+		check_previous_att_record = frappe.db.get_value('Attendance', 
+			 {
+				 "employee" : self.employee,
+				 "attendance_date" : data_time_date_day.get("attendance_date")
+
+	 		}, ['name'])
+		if check_previous_att_record:
+			doc = check_previous_att_record
+			frappe.log_error("check_previous_att_record", ".  doc {} ".format(doc))
+
+			print("Yes Attendance is already store. please update the records ")
+			if  self.log_type == 'IN':
+				print("Here we are updating  data. For in logtype ")
+				update_attendance_for_in_record(doc , self.time)
+			if  self.log_type == 'OUT':
+				print("Here we are storing data. For out logtype ")	
+				update_attendance_for_out_record(doc, self.time)	
+		else:
+			print("Attendance not Found, Please create the new one. ")
+			frappe.log_error("check_previous_att_record Not FOund. Attendance. ", ".  check_previous_att_record {} ".format(check_previous_att_record))
+
+			create_attendance_record(self)
+
+
+def create_attendance_record(obj):
+
+	frappe.log_error("create_attendance_record", "  create_attendance_record.  ")
+	data_time_date_day = set_time_date_day(obj.time)
+	data_before_entry = compare_time_before_entry(obj.employee , str(data_time_date_day.get("attendance_time")) , data_time_date_day.get("attendance_day_no") )
+	doc_attendance = frappe.new_doc('Attendance')
+	doc_attendance.employee = obj.employee
+	doc_attendance.status = 'Present'
+	doc_attendance.attendance_date =  str(data_time_date_day.get("attendance_date"))
+	doc_attendance.docstatus  =  0
+	doc_attendance.early_exit =  0
+	doc_attendance.early_exit_time =  "00:00:00"
+	doc_attendance.late_exit =  0
+	doc_attendance.late_exit_time =  "00:00:00"
+	doc_attendance.late_entry =   data_before_entry.get("late_entry") 
+	doc_attendance.late_entry_time =   data_before_entry.get("late_entry_time") 
+	doc_attendance.early_entry =   data_before_entry.get("early_entry") 
+	doc_attendance.early_entry_time =   data_before_entry.get("early_entry_time") 
+	doc_attendance.late_entry_time_hours =   data_before_entry.get("late_entry_time_hours") 
+	doc_attendance.early_entry_time_hours =   round(data_before_entry.get("early_entry_time_hours"),2)
+	doc_attendance.timein  =  str(data_time_date_day.get("attendance_time"))
+	doc_attendance.first_time_in_time  =  str(data_time_date_day.get("attendance_time"))
+	doc_attendance.timeout  =   ""
+	doc_attendance.attendance_day  =   data_time_date_day.get("day_name")
+	doc_attendance.attendance_day_no  =   data_time_date_day.get("attendance_day_no")
+	doc_attendance.last_log_type  =  obj.log_type
+	doc_attendance.last_update_in_time  =  str(data_time_date_day.get("attendance_time"))	
+	doc_attendance.last_update_out_time  =  "00:00:00"
+	try:
+		doc_attendance.insert(
+		ignore_permissions=True, # ignore write permissions during insert
+		ignore_links=True, # ignore Link validation in the document
+		ignore_if_duplicate=True, # dont insert if DuplicateEntryError is thrown
+		ignore_mandatory=True # insert even if mandatory fields are not set
+		)
+	except Exception as e:
+		print ("Process terminate : {}".format(e))
+		error_message = frappe.get_traceback()+"\n{}\n{}".format(str(e))
+		frappe.log_error(error_message, "Error in Create Attendance.  ")
+
+
+
+def update_attendance_for_in_record(doc , time):
+	data_time_date_day = set_time_date_day(time)
+	doc_attendance = frappe.get_doc('Attendance', doc )
+	doc_attendance.timeout  =  str(data_time_date_day.get("attendance_time"))
+	doc_attendance.docstatus = 0
+	doc_attendance.last_log_type  =  "IN"
+	doc_attendance.last_update_in_time  =  str(data_time_date_day.get("attendance_time"))
+	doc_attendance.early_exit =   0
+	doc_attendance.early_exit_time =  "00:00:00"
+	doc_attendance.late_exit =  0
+	doc_attendance.late_exit_time =  "00:00:00"
+	try:
+		doc_attendance.save(
+		ignore_permissions=True, # ignore write permissions during insert
+		ignore_version=True # do not create a version record
+		)
+	except Exception as e:
+		print ("Process terminate : {}".format(e))
+		error_message = frappe.get_traceback()+"\n{}\n{}".format(str(e))
+		frappe.log_error(error_message, "Error in Update Attendance.  ")
+
+
+def update_attendance_for_out_record(doc , time):
+	data_time_date_day = set_time_date_day(time)
+	doc_attendance = frappe.get_doc('Attendance', doc )
+	data_before_exist = compare_time_before_exist(doc_attendance.get("employee") , str(data_time_date_day.get("attendance_time")) , data_time_date_day.get("attendance_day_no") )
+	doc_attendance.timeout  =  str(data_time_date_day.get("attendance_time"))
+	doc_attendance.docstatus = 0
+	doc_attendance.last_log_type  =  "OUT"
+	doc_attendance.early_exit = data_before_exist.get("early_exit")
+	doc_attendance.late_exit = data_before_exist.get("late_exit")
+	doc_attendance.late_exit_time = data_before_exist.get("late_exit_time")
+	doc_attendance.early_exit_time = data_before_exist.get("early_exit_time")
+	doc_attendance.early_exit_time_hours = data_before_exist.get("early_exit_time_hours")
+	doc_attendance.late_exit_time_hours = data_before_exist.get("late_exit_time_hours")
+	doc_attendance.last_update_out_time  =  str(data_time_date_day.get("attendance_time"))
+	last_worked_hour = 0.0
+	if doc_attendance.working_hours:
+		print("already working hours. ")
+		last_worked_hour = doc_attendance.working_hours
+	time_diff = time_different(doc_attendance.timein , doc_attendance.timeout )
+	doc_attendance.working_hours  =(float(time_diff) + float(last_worked_hour))
+	try:
+		doc_attendance.save(
+		ignore_permissions=True, # ignore write permissions during insert
+		ignore_version=True # do not create a version record
+		)
+	except Exception as e:
+		print ("Process terminate : {}".format(e))
+		error_message = frappe.get_traceback()+"\n{}\n{}".format(str(e))
+		frappe.log_error(error_message, "Error in Update Attendance.  ")
+
+
+
+
+def set_time_date_day(time):
+	data = {}
+	a = str(datetime.datetime.strptime(str(time), "%Y-%m-%d %H:%M:%S"))
+	d = a.split(" ")
+	attendance_date = d[0]
+
+	weedend = pd.Timestamp(attendance_date)
+	attendance_day_no = weedend.dayofweek
+
+
+	new_time = d[1]
+	new_hour = new_time.split(":")[0]
+	new_minutes = new_time.split(":")[1]
+	attendance_time = new_hour +":"+new_minutes+ ":00"
+
+
+	data = {
+		"attendance_date" :attendance_date ,
+		"day_name" : weedend.day_name().capitalize(),
+		"attendance_day_no" :attendance_day_no ,
+		"attendance_time" :attendance_time ,
+
+	}
+
+
+	return data
+
+
+
+
+def time_different(start_time , end_time):
+	from datetime import datetime
+	start_time = datetime.strptime(str(start_time), "%H:%M:%S")
+	end_time = datetime.strptime(str(end_time), "%H:%M:%S")	
+	# get difference
+	delta = end_time - start_time
+	sec = delta.total_seconds()
+	min = sec / 60
+	# get difference in hours
+	hours = sec / (60 * 60)
+	print('difference in hours:', hours)
+	hours = round(hours,2)
+	return hours
+
+
+
+
+
+
+def compare_time_before_entry(employee_id , started_Work_time , weekend_no ):
+	data = {
+		"early_entry" : 0,
+		"late_entry" : 0,
+		"early_entry_time" : "",
+		"late_entry_time" : "" , 
+		"early_entry_time_hours" : 0.0,
+		"late_entry_time_hours" : 0.0
+	}
+	# started_Work_time = time(hour = 12, minute = 10, second = 0)
+	# start_Working_shift_time = time(hour = 11, minute = 00, second = 0)
+
+
+	shift_time_dict = frappe.db.get_value('Employee Shift Timing', {
+		'parent' : employee_id,
+		'day_no' : str(weekend_no)
+		}, ['day_name', 'status' , 'time_in' , 'time_out'], as_dict = 1)
+
+	if shift_time_dict:
+		started_Work_time = datetime.datetime.strptime(str(started_Work_time), "%H:%M:%S")
+		start_Working_shift_time = datetime.datetime.strptime(str(shift_time_dict.get("time_in")), "%H:%M:%S")
+		if started_Work_time > start_Working_shift_time and start_Working_shift_time < started_Work_time :
+			float_hours = time_diff_date_type(started_Work_time , start_Working_shift_time)
+			late_entry_in_time = float_hours_to_time(float(abs(float_hours)))
+			data["early_entry"] = 0
+			data["late_entry"] = 1
+			data["late_entry_time"] = str(late_entry_in_time)
+			data["early_entry_time"] = "00:00:00"
+			data["early_entry_time_hours"] = 0.0
+			data["late_entry_time_hours"] = abs(float_hours)
+		if started_Work_time == start_Working_shift_time and start_Working_shift_time == started_Work_time :
+
+			data["early_entry_time"] = "00:00:00"
+			data["late_entry_time"] = "00:00:00"
+
+			data["early_entry"] = 0
+			data["late_entry"] = 0
+			data["early_entry_time_hours"] = 0.0
+			data["late_entry_time_hours"] = 0.0
+
+		if started_Work_time < start_Working_shift_time and start_Working_shift_time > started_Work_time :
+			float_hours = time_diff_date_type(started_Work_time , start_Working_shift_time)
+			early_entry_time = float_hours_to_time(float(float_hours))
+			data["early_entry"] = 1
+			data["late_entry"] = 0
+
+			data["early_entry_time"] = str(early_entry_time)
+			data["late_entry_time"] = "00:00:00"
+			data["early_entry_time_hours"] = float_hours
+			data["late_entry_time_hours"] = 0.0
+	else:
+		frappe.log_error("shift_time_dict", " Shift Not Found " )
+	return data
+
+
+def compare_time_before_exist(employee_id , ended_Work_time , weekend_no):
+	data  = {
+	"early_exit" : 0,
+	"late_exit" : 0,
+	"late_exit_time" : "",
+	"early_exit_time"  : "",
+	"early_exit_time_hours" : 0.0,
+	"late_exit_time_hours": 0.0
+	}
+	shift_time_dict = frappe.db.get_value('Employee Shift Timing', {
+		'parent' : employee_id,
+		'day_no' : str(weekend_no)
+		}, ['day_name', 'status' , 'time_in' , 'time_out'], as_dict = 1)
+	if shift_time_dict:
+		ended_Working_shift_time = shift_time_dict.get("time_out")
+		ended_Work_time = datetime.datetime.strptime(str(ended_Work_time), "%H:%M:%S")
+		ended_Working_shift_time = datetime.datetime.strptime(str(ended_Working_shift_time), "%H:%M:%S")
+
+		if ended_Work_time > ended_Working_shift_time and ended_Working_shift_time < ended_Work_time :	
+			float_hours = time_diff_date_type(ended_Work_time , ended_Working_shift_time)
+			early_exit_time = float_hours_to_time(float(abs(float_hours)))			
+			data["early_exit"] = 0
+			data["late_exit"]  = 1
+			data["late_exit_time"] = str(early_exit_time)
+			data["early_exit_time"] = "00:00:00"
+			data["early_exit_time_hours"] = 0.0
+			data["late_exit_time_hours"] = float(abs(float_hours))
+		if ended_Work_time == ended_Working_shift_time and ended_Working_shift_time == ended_Work_time :
+			data["early_exit"] = 0
+			data["late_exit"]  = 0
+			data["late_exit_time"] = "00:00:00"
+			data["early_exit_time"] = "00:00:00"
+			data["early_exit_time_hours"] = 0.0
+			data["late_exit_time_hours"] = 0.0
+
+		if ended_Work_time < ended_Working_shift_time and ended_Working_shift_time > ended_Work_time :
+			float_hours = time_diff_date_type(ended_Work_time , ended_Working_shift_time)
+			early_exit_time = float_hours_to_time(float(float_hours))
+			data["early_exit"] = 1
+			data["late_exit"]  = 0
+			data["late_exit_time"] = "00:00:00"
+			data["early_exit_time"] = str(early_exit_time)
+			data["early_exit_time_hours"] = float_hours
+			data["late_exit_time_hours"] = 0.0
+	else:
+		print("shift_time_dict = Record Not Found. ")
+	return data
+
+
+
+def time_diff_date_type(start_time , end_time ):
+	hours  = 0.0
+	from datetime import datetime
+	print('start_time time_diff_date_type :', start_time)
+	print('end_time - time_diff_date_type :', end_time)
+
+	# get difference
+	delta = end_time - start_time
+
+	sec = delta.total_seconds()
+	print('difference in seconds:', sec)
+
+	min = sec / 60
+	print('difference in minutes:', min)
+
+	# get difference in hours
+	hours = sec / (60 * 60)
+	print('difference in hours:', hours)
+
+	return hours
+
+
+
+def float_hours_to_time(float_hours):
+	import datetime
+	hours = int(float_hours)
+	minutes = int((float_hours * 60) % 60)
+	seconds = int((float_hours * 3600) % 60)
+
+	time = datetime.time(hours, minutes, seconds)
+
+	return time
+
+# Example usage
+
 
 @frappe.whitelist()
 def add_log_based_on_employee_field(employee_field_value, timestamp, device_id=None, log_type=None, skip_auto_attendance=0, employee_fieldname='attendance_device_id'):
@@ -178,3 +502,7 @@ def time_diff_in_hours(start, end):
 
 def find_index_in_dict(dict_list, key, value):
 	return next((index for (index, d) in enumerate(dict_list) if d[key] == value), None)
+
+
+
+

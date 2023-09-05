@@ -2038,19 +2038,17 @@
    "link_fieldname": "consolidated_invoice"
   }
  ],
- "modified": "2021-10-21 20:19:38.667508",
+ "modified": "2023-07-06 16:31:29.330986",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",
  "name_case": "Title Case",
- "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
    "amend": 1,
    "cancel": 1,
    "create": 1,
-   "delete": 1,
    "email": 1,
    "print": 1,
    "read": 1,
@@ -2082,6 +2080,18 @@
    "permlevel": 1,
    "read": 1,
    "role": "All"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
   }
  ],
  "quick_entry": 1,

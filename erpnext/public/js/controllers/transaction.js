@@ -363,7 +363,19 @@ erpnext.TransactionController = erpnext.taxes_and_totals.extend({
 					return;
 				}
 
-				me.modify_table_after_scan(data);
+				// me.modify_table_after_scan(data);
+				// start custom update
+				// checkdoctype for deleting batch_no from added row in Container Reconciliation
+				if (this.frm.doctype=="Container Reconciliation") {
+					data.batch_no= '';									
+					me.modify_table_after_scan(data);
+				}
+				else{
+					me.modify_table_after_scan(data);
+				}
+				// end custom update
+
+
 			});
 		}
 		return false;
@@ -386,7 +398,7 @@ erpnext.TransactionController = erpnext.taxes_and_totals.extend({
 
 		if (!row_to_modify) {
 			// add new row if new item/batch is scanned
-			row_to_modify = frappe.model.add_child(this.frm.doc, cur_grid.doctype, 'items');
+			row_to_modify = frappe.model.add_child(this.frm.doc, cur_grid.doctype, 'items', 1);
 		}
 
 		this.show_scan_message(row_to_modify.idx, row_to_modify.item_code);
@@ -400,6 +412,21 @@ erpnext.TransactionController = erpnext.taxes_and_totals.extend({
 			item_code: data.item_code,
 			qty: (row_to_modify.qty || 0) + 1
 		});
+		// custom update move updated item to top		
+		let new_list = [];
+		let idx = 1 ;
+		for(let i in this.frm.doc.items){			
+			if(this.frm.doc.items[i].name == row_to_modify.name){
+				this.frm.doc.items[i].idx = 1 ;
+				new_list.unshift(this.frm.doc.items[i]);
+			}else{
+				this.frm.doc.items[i].idx = idx + 1 ;
+				new_list.push(this.frm.doc.items[i]);
+				idx++;
+			}			
+		}		
+		this.frm.doc.items = new_list;				
+		// end custom update
 
 		['serial_no', 'batch_no', 'barcode'].forEach(field => {
 			if (data[field] && frappe.meta.has_field(row_to_modify.doctype, field)) {
@@ -1200,6 +1227,12 @@ erpnext.TransactionController = erpnext.taxes_and_totals.extend({
 	},
 
 	toggle_conversion_factor: function(item) {
+		// custom update (default uom -> Box) in Container Reconciliation Item
+		if(item.doctype == 'Container Reconciliation Item'){
+			item.uom = 'Box';
+			this.uom(this.frm.doc , item.doctype , item.name)
+		}
+		// end custom update		
 		// toggle read only property for conversion factor field if the uom and stock uom are same
 		if(this.frm.get_field('items').grid.fields_map.conversion_factor) {
 			this.frm.fields_dict.items.grid.toggle_enable("conversion_factor",
@@ -1219,6 +1252,17 @@ erpnext.TransactionController = erpnext.taxes_and_totals.extend({
 		let item = frappe.get_doc(cdt, cdn);
 		item.stock_uom_rate = flt(item.rate)/flt(item.conversion_factor);
 		refresh_field("stock_uom_rate", item.name, item.parentfield);
+		// custom update
+		if(item.doctype == "Purchase Invoice Item"){
+			var company_currency = this.get_company_currency();
+			if(this.frm.doc.currency != company_currency){
+				item.rate_of_stock_uom = item.stock_uom_rate * this.frm.doc.conversion_rate ;
+			}else{
+				item.rate_of_stock_uom = item.stock_uom_rate;
+			}
+			refresh_field("rate_of_stock_uom", item.name, item.parentfield);	
+		}
+		// end custom update
 	},
 	service_stop_date: function(frm, cdt, cdn) {
 		var child = locals[cdt][cdn];

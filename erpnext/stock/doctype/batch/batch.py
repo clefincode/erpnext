@@ -93,7 +93,24 @@ class Batch(Document):
 
 			if create_new_batch:
 				if batch_number_series:
-					self.batch_id = make_autoname(batch_number_series, doc=self)
+					best_value_date_str = getattr(self,'best_value_date')
+					if best_value_date_str:
+						from datetime import datetime
+						best_value_date = datetime.strptime(best_value_date_str, '%Y-%m-%d')
+						best_value_day = str(best_value_date.day)
+						best_value_month = str(best_value_date.month)
+						best_value_year = str(best_value_date.year)[2:]
+						if len(best_value_day) == 1:
+							best_value_day = '0' + best_value_day
+						if len(best_value_month) == 1:
+							best_value_month = '0' + best_value_month
+						if batch_number_series[len(batch_number_series) - 1 ] == '-':
+							condition = ''
+						else:
+							condition = '-'
+						self.batch_id = batch_number_series.replace('#','').replace('.','') + condition +  best_value_day + '-' + best_value_month + '-' + best_value_year
+					else:
+						self.batch_id = make_autoname(batch_number_series, doc=self)
 				elif batch_uses_naming_series():
 					self.batch_id = self.get_name_from_naming_series()
 				else:

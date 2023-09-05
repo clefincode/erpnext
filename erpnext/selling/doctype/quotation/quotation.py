@@ -167,9 +167,9 @@ def _make_sales_order(source_name, target_doc=None, ignore_permissions=False):
 	doclist = get_mapped_doc("Quotation", source_name, {
 			"Quotation": {
 				"doctype": "Sales Order",
-				"validation": {
-					"docstatus": ["=", 1]
-				}
+				# "validation": {
+				# 	"docstatus": ["=", 1]
+				# }
 			},
 			"Quotation Item": {
 				"doctype": "Sales Order Item",

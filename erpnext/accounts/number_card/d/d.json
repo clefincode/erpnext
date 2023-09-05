@@ -1,0 +1,22 @@
+{
+ "creation": "2023-07-09 17:54:56.611135",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "filters_json": "{\"from_date\":\"2023-07-09\",\"to_date\":\"2023-07-09\",\"company\":\"MAJESTICA\"}",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 0,
+ "is_standard": 1,
+ "label": "d",
+ "modified": "2023-07-09 17:54:56.750198",
+ "modified_by": "steissfx@gmail.com",
+ "module": "Accounts",
+ "name": "d",
+ "owner": "steissfx@gmail.com",
+ "report_field": "grand_total",
+ "report_function": "Average",
+ "report_name": "Daily POS Sales Total",
+ "show_percentage_stats": 1,
+ "stats_time_interval": "Daily",
+ "type": "Report"
+}

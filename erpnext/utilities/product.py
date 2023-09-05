@@ -9,7 +9,7 @@ from erpnext.accounts.doctype.pricing_rule.pricing_rule import get_pricing_rule_
 from erpnext.stock.doctype.batch.batch import get_batch_qty
 
 
-def get_web_item_qty_in_stock(item_code, item_warehouse_field, warehouse=None):
+def get_web_item_qty_in_stock(item_code, item_warehouse_field, warehouse=None , batch_no = None):
 	in_stock, stock_qty = 0, ''
 	template_item_code, is_stock_item = frappe.db.get_value("Item", item_code, ["variant_of", "is_stock_item"])
 
@@ -19,7 +19,7 @@ def get_web_item_qty_in_stock(item_code, item_warehouse_field, warehouse=None):
 	if not warehouse and template_item_code and template_item_code != item_code:
 		warehouse = frappe.db.get_value("Website Item", {"item_code": template_item_code}, item_warehouse_field)
 
-	if warehouse:
+	if warehouse and not batch_no:
 		stock_qty = frappe.db.sql("""
 			select GREATEST(S.actual_qty - S.reserved_qty - S.reserved_qty_for_production - S.reserved_qty_for_sub_contract, 0) / IFNULL(C.conversion_factor, 1)
 			from tabBin S
@@ -31,6 +31,17 @@ def get_web_item_qty_in_stock(item_code, item_warehouse_field, warehouse=None):
 			stock_qty = adjust_qty_for_expired_items(item_code, stock_qty, warehouse)
 			in_stock = stock_qty[0][0] > 0 and 1 or 0
 
+	if warehouse and  batch_no:
+		stock_qty = get_batch_qty(batch_no, warehouse, item_code)
+		in_stock = stock_qty > 0 and 1 or 0
+	if not warehouse and  batch_no:
+		stock_qty = 0
+		in_stock = stock_qty > 0 and 1 or 0
+		warehouse_qty_list = get_batch_qty(batch_no)
+		if warehouse_qty_list:
+			for qty in warehouse_qty_list:					
+				stock_qty += qty.qty
+				in_stock = stock_qty > 0 and 1 or 0		
 	return frappe._dict({"in_stock": in_stock, "stock_qty": stock_qty, "is_stock_item": is_stock_item})
 
 
@@ -68,13 +79,26 @@ def qty_from_all_warehouses(batch_info):
 
 	return qty
 
-def get_price(item_code, price_list, customer_group, company, qty=1):
+def get_price(item_code, price_list, customer_group, company, qty=1, batch_no = None, return_pr=False): ##Custom Update
 	template_item_code = frappe.db.get_value("Item", item_code, "variant_of")
 
 	if price_list:
-		price = frappe.get_all("Item Price", fields=["price_list_rate", "currency"],
-			filters={"price_list": price_list, "item_code": item_code})
+		# start custom update for fetch price based on batch_no
+		if batch_no:			
+			price = frappe.get_all("Item Price", fields=["price_list_rate", "currency"],
+				filters={"price_list": price_list, "item_code": item_code , "batch_no" : batch_no})
+		# end custom update	
+		else:
+			price = frappe.get_all("Item Price", fields=["price_list_rate", "currency"],
+				filters={"price_list": price_list, "item_code": item_code})
 
+		# custom update
+		if not price and batch_no:			
+			price = frappe.get_all("Item Price", fields=["price_list_rate", "currency"],
+				filters={"price_list": price_list, "item_code": item_code , "batch_no" : ''})									
+			# for i in price:				
+			# 	i.batch_no = batch_no
+				
 		if template_item_code and not price:
 			price = frappe.get_all("Item Price", fields=["price_list_rate", "currency"],
 				filters={"price_list": price_list, "item_code": template_item_code})
@@ -82,6 +106,7 @@ def get_price(item_code, price_list, customer_group, company, qty=1):
 		if price:
 			pricing_rule = get_pricing_rule_for_item(frappe._dict({
 				"item_code": item_code,
+				"batch_no": batch_no,
 				"qty": qty,
 				"stock_qty": qty,
 				"transaction_type": "selling",
@@ -91,7 +116,7 @@ def get_price(item_code, price_list, customer_group, company, qty=1):
 				"conversion_rate": 1,
 				"for_shopping_cart": True,
 				"currency": frappe.db.get_value("Price List", price_list, "currency")
-			}))
+			}), return_pr) ##Custom Update
 			price_obj = price[0]
 
 			if pricing_rule:
@@ -135,6 +160,7 @@ def get_price(item_code, price_list, customer_group, company, qty=1):
 				if not price_obj["formatted_price"]:
 					price_obj["formatted_price"], price_obj["formatted_mrp"] = "", ""
 
+			if return_pr and pricing_rule.pricing_rules: price_obj['pricing_rule'] =  pricing_rule.pricing_rules ###Custom Update
 			return price_obj
 
 def get_non_stock_item_status(item_code, item_warehouse_field):

@@ -226,7 +226,7 @@ def get_serial_no_for_item(args):
 		item_details.serial_no = get_serial_no(args)
 	return item_details
 
-def get_pricing_rule_for_item(args, price_list_rate=0, doc=None, for_validate=False):
+def get_pricing_rule_for_item(args, price_list_rate=0, doc=None, for_validate=False, return_pr= False): ###Custom Update
 	from erpnext.accounts.doctype.pricing_rule.utils import (
 		get_applied_pricing_rules,
 		get_pricing_rule_items,
@@ -306,12 +306,13 @@ def get_pricing_rule_for_item(args, price_list_rate=0, doc=None, for_validate=Fa
 
 		item_details.pricing_rules = frappe.as_json([d.pricing_rule for d in rules])
 
+		if not doc and return_pr: return item_details, pricing_rules[0]['name'] ###Custom Update
 		if not doc: return item_details
 
 	elif args.get("pricing_rules"):
 		item_details = remove_pricing_rule_for_item(args.get("pricing_rules"),
 			item_details, args.get('item_code'))
-
+	if return_pr: return item_details, pricing_rules[0]['name'] ###Custom Update
 	return item_details
 
 def update_args_for_pricing_rule(args):

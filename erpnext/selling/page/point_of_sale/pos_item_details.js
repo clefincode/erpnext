@@ -101,7 +101,13 @@ erpnext.PointOfSale.ItemDetails = class {
 
 		if ((serialized && no_serial_selected) || (batched && no_batch_selected) ||
 			(serialized && batched && (no_batch_selected || no_serial_selected))) {
-
+				frappe.msgprint({
+					title: __('Notification'),
+					message: __('Item will be removed since no serial / batch no selected.<br />'+ item_row.item_name + ' (' + item_row.item_code + ')'),
+					primary_action: {
+					'label': 'Proceed'
+					}
+				});
 			frappe.show_alert({
 				message: __("Item will be removed since no serial / batch no selected."),
 				indicator: 'orange'

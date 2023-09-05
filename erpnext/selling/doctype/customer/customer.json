@@ -161,6 +161,7 @@
    "options": "User"
   },
   {
+   "default": "Bronz",
    "fieldname": "customer_group",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -517,7 +518,7 @@
    "link_fieldname": "party"
   }
  ],
- "modified": "2021-09-06 17:38:54.196663",
+ "modified": "2023-06-29 13:42:18.392097",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Customer",

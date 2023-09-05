@@ -46,9 +46,9 @@ erpnext.PointOfSale.ItemSelector = class {
 			this.price_list = res.message.selling_price_list;
 		}
 
-		this.get_items({}).then(({message}) => {
-			this.render_item_list(message.items);
-		});
+		// this.get_items({}).then(({message}) => {
+		// 	this.render_item_list(message.items);
+		// });
 	}
 
 	get_items({start = 0, page_length = 40, search_term=''}) {
@@ -153,6 +153,7 @@ erpnext.PointOfSale.ItemSelector = class {
 				label: __('Item Group'),
 				fieldtype: 'Link',
 				options: 'Item Group',
+				hidden:1,
 				placeholder: __('Select item group'),
 				onchange: function() {
 					me.item_group = this.value;
@@ -241,11 +242,16 @@ erpnext.PointOfSale.ItemSelector = class {
 		});
 
 		this.search_field.$input.on('input', (e) => {
-			clearTimeout(this.last_search);
-			this.last_search = setTimeout(() => {
-				const search_term = e.target.value;
-				this.filter_items({ search_term });
-			}, 300);
+			if($('.search-field input').attr('data-scan') != 'false'){
+				clearTimeout(this.last_search);
+				this.last_search = setTimeout(() => {
+					const search_term = e.target.value;
+					this.filter_items({ search_term });
+				}, 300);
+			}
+			else{
+				frappe.utils.play_sound("error");
+			}
 		});
 	}
 
@@ -293,6 +299,7 @@ erpnext.PointOfSale.ItemSelector = class {
 	}
 
 	filter_items({ search_term='' }={}) {
+		if(search_term == ''){this.$items_container.html(''); return;}
 		if (search_term) {
 			search_term = search_term.toLowerCase();
 

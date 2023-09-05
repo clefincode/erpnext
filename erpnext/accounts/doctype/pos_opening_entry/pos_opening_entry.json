@@ -19,6 +19,17 @@
   "column_break_7",
   "user",
   "opening_balance_details_section",
+  "point_zero_one",
+  "point_zero_five",
+  "point_zero_ten",
+  "point_zero_twenty",
+  "point_zero_fifity",
+  "one_dollar",
+  "five_dollar",
+  "ten_dollar",
+  "fifty_dollar",
+  "hundred_dollar",
+  "total_currency_values",
   "balance_details",
   "section_break_9",
   "amended_from"
@@ -127,11 +138,78 @@
    "label": "Opening Balance Details",
    "options": "POS Opening Entry Detail",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "point_zero_one",
+   "fieldtype": "Float",
+   "label": "0.01"
+  },
+  {
+   "default": "0",
+   "fieldname": "point_zero_five",
+   "fieldtype": "Float",
+   "label": "0.05"
+  },
+  {
+   "default": "0",
+   "fieldname": "point_zero_ten",
+   "fieldtype": "Float",
+   "label": "0.10"
+  },
+  {
+   "default": "0",
+   "fieldname": "point_zero_twenty",
+   "fieldtype": "Float",
+   "label": "0.20"
+  },
+  {
+   "default": "0",
+   "fieldname": "point_zero_fifity",
+   "fieldtype": "Float",
+   "label": "0.50"
+  },
+  {
+   "default": "0",
+   "fieldname": "one_dollar",
+   "fieldtype": "Float",
+   "label": "1.00"
+  },
+  {
+   "default": "0",
+   "fieldname": "five_dollar",
+   "fieldtype": "Float",
+   "label": "5.00"
+  },
+  {
+   "default": "0",
+   "fieldname": "ten_dollar",
+   "fieldtype": "Float",
+   "label": "10.00"
+  },
+  {
+   "default": "0",
+   "fieldname": "fifty_dollar",
+   "fieldtype": "Float",
+   "label": "50.00"
+  },
+  {
+   "default": "0",
+   "fieldname": "hundred_dollar",
+   "fieldtype": "Float",
+   "label": "100.00"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_currency_values",
+   "fieldtype": "Float",
+   "label": "totalAmount",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-29 15:08:40.955310",
+ "modified": "2023-08-23 12:04:42.483570",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Opening Entry",

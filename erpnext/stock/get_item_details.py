@@ -705,9 +705,17 @@ def insert_item_price(args):
 			price_list_rate = (args.rate / args.get('conversion_factor')
 				if args.get("conversion_factor") else args.rate)
 
-			item_price = frappe.db.get_value('Item Price',
+			# Add 'batch_no': args.batch_no to item price filter if batch_no exist
+			# start custom update
+			if args.batch_no == '':
+				item_price = frappe.db.get_value('Item Price',
 				{'item_code': args.item_code, 'price_list': args.price_list, 'currency': args.currency},
 				['name', 'price_list_rate'], as_dict=1)
+			else:
+				item_price = frappe.db.get_value('Item Price',
+				{'item_code': args.item_code, 'price_list': args.price_list, 'currency': args.currency , 'batch_no': args.batch_no },
+				['name', 'price_list_rate'], as_dict=1)
+			# End custom update
 			if item_price and item_price.name:
 				if item_price.price_list_rate != price_list_rate and frappe.db.get_single_value('Stock Settings', 'update_existing_price_list_rate'):
 					frappe.db.set_value('Item Price', item_price.name, "price_list_rate", price_list_rate)
@@ -758,7 +766,7 @@ def get_item_price(args, item_code, ignore_party=False):
 		conditions += """ and %(posting_date)s between
 			ifnull(valid_from, '2000-01-01') and ifnull(valid_upto, '2500-12-31')"""
 
-	return frappe.db.sql(""" select name, price_list_rate, uom
+	return frappe.db.sql(""" select name, price_list_rate, uom , currency
 		from `tabItem Price` {conditions}
 		order by valid_from desc, batch_no desc, uom desc """.format(conditions=conditions), args)
 

@@ -5,13 +5,19 @@ from frappe.utils import floor
 
 
 class ProductFiltersBuilder:
-	def __init__(self, item_group=None):
+	def __init__(self, item_group=None, filters=None): ###Custom Update
 		if not item_group:
 			self.doc = frappe.get_doc("E Commerce Settings")
 		else:
 			self.doc = frappe.get_doc("Item Group", item_group)
 
 		self.item_group = item_group
+		### Custom Update
+		if filters:
+			self.filters = filters
+		else :
+			self.filters = None
+		### End Custom Update
 
 	def get_field_filters(self):
 		if not self.item_group and not self.doc.enable_field_filters:
@@ -23,8 +29,11 @@ class ProductFiltersBuilder:
 		# filter valid field filters i.e. those that exist in Item
 		item_meta = frappe.get_meta('Item', cached=True)
 		fields = [item_meta.get_field(field) for field in filter_fields if item_meta.has_field(field)]
-
+		### Custom update
+		filters = self.filters
 		for df in fields:
+			multi_select_filters = ''
+			child_doctype = ''
 			item_filters, item_or_filters = {}, []
 			link_doctype_values = self.get_filtered_link_doctype_records(df)
 
@@ -34,22 +43,89 @@ class ProductFiltersBuilder:
 						["item_group", "=", self.item_group],
 						["Website Item Group", "item_group", "=", self.item_group] # consider website item groups
 					])
+				## Custom Update
+				strQuery = "SELECT " + df.fieldname
+				strFrom = """ FROM `tabWebsite Item` AS w """
+				strWhere = "WHERE published = 1 "
+				if filters:
+					for filter_name in filters.keys():
+						for f in fields:
+							if f.fieldname == filter_name:
+								typefield = f.fieldtype
+								if typefield == 'Table MultiSelect':
+									child_doctype = f.options
+									child_meta = frappe.get_meta(child_doctype, cached=True)
+									doc_fields = child_meta.get("fields")
+									if doc_fields:
+										multi_select_filters= doc_fields[0].fieldname
+								break
+						if filter_name != df.fieldname and (typefield == "Link"):
+							strWhere += "AND "+ filter_name + "=" + "'"+ filters[filter_name][0] + "' "
+							for i  in range(1, len(filters[filter_name])):
+								strWhere += "OR " + filter_name + "=" + "'" + filters[filter_name][i] + "' "
+						else: 
+							if (typefield == 'Table MultiSelect'):
+								strFrom += " INNER JOIN `tab"+ child_doctype +"` ON w.item_code = `tab"+ child_doctype +"`.parent  "
+								strWhere +=" AND `tab"+ child_doctype +"`." +multi_select_filters+" IN ("+ "'" + filters[filter_name][0] + "'" +") "
+								for i  in range(2, len(filters[filter_name])):
+									strWhere += "OR `tab"+ child_doctype +"`." +multi_select_filters+" IN ("+ "'" + filters[filter_name][i] + "'" +") "
+				strQuery += strFrom + strWhere
+				res = frappe.db.sql(strQuery, as_list = 1)
+				res = sum(res, [])
+				## End Custom Update
 
 				# Get link field values attached to published items
-				item_filters['published_in_website'] = 1
-				item_values = frappe.get_all(
-					"Item",
-					fields=[df.fieldname],
-					filters=item_filters,
-					or_filters=item_or_filters,
-					distinct="True",
-					pluck=df.fieldname
-				)
-
-				values = list(set(item_values) & link_doctype_values) # intersection of both
+				### Custom Comments ###
+				# item_filters['published'] = 1  ###Custom Update
+				# item_values = frappe.get_all(
+				# 	"Website Item",   ###Custom Update
+				# 	fields=[df.fieldname],
+				# 	filters=item_filters,
+				# 	or_filters=item_or_filters,
+				# 	distinct="True",
+				# 	pluck=df.fieldname
+				# )
+				values = list(set(res) & link_doctype_values) # intersection of both
 			else:
-				# table multiselect
-				values = list(link_doctype_values)
+				### Custom Update
+				if df.fieldtype == 'Table MultiSelect':
+					child_doctype = df.options
+					child_meta = frappe.get_meta(child_doctype, cached=True)
+					doc_fields = child_meta.get("fields")
+					if doc_fields:
+						multi_select_filters= doc_fields[0].fieldname
+				if filters:
+					strQuery = "SELECT `tab"+ child_doctype +"`." + multi_select_filters
+					strFrom = " FROM `tabWebsite Item` AS w INNER JOIN `tab"+ child_doctype +"` ON w.item_code = `tab"+ child_doctype +"`.parent "
+					strWhere = "WHERE published = 1 "
+					for filter_name in filters.keys():
+						for f in fields:
+							if f.fieldname == filter_name:
+								typefield = f.fieldtype
+								if typefield == 'Table MultiSelect':
+									filter_child_doctype = f.options
+									child_meta = frappe.get_meta(filter_child_doctype, cached=True)
+									doc_fields = child_meta.get("fields")
+									if doc_fields:
+										field_multi_select_filters= doc_fields[0].fieldname
+								break
+						if filter_name != df.fieldname and (typefield == "Link"):
+							strWhere += "AND w."+ filter_name + "=" + "'"+ filters[filter_name][0] + "' "
+							for i  in range(2, len(filters[filter_name])):
+								strWhere += "OR w." + filter_name + "=" + "'" + filters[filter_name][i] + "' "
+						# if filter_name != df.fieldname and (typefield == "Table MultiSelect"):
+						# 	strFrom += " INNER JOIN `tab"+ filter_child_doctype +"` ON w.item_code = `tab"+ filter_child_doctype +"`.parent  "
+						# 	strWhere +=" AND `tab"+ filter_child_doctype +"`." +field_multi_select_filters+" IN ("+ "'" + filters[filter_name][0] + "'" +") "
+						# 	for i  in range(2, len(filters[filter_name])):
+						# 		strWhere += "OR `tab"+ filter_child_doctype +"`." +field_multi_select_filters+" IN ("+ "'" + filters[filter_name][i] + "'" +") "
+					strQuery += strFrom + strWhere
+					res = frappe.db.sql(strQuery, as_list = 1)
+					res = sum(res, [])
+					values = list(set(res) & link_doctype_values)
+				else:
+					# table multiselect
+					values = list(link_doctype_values)
+				### End Custom Update
 
 			# Remove None
 			if None in values:

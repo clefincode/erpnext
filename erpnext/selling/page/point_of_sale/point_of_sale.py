@@ -7,8 +7,10 @@ import json
 import frappe
 from frappe.utils.nestedset import get_root_of
 
-from erpnext.accounts.doctype.pos_invoice.pos_invoice import get_stock_availability
 from erpnext.accounts.doctype.pos_profile.pos_profile import get_item_groups
+from erpnext.accounts.doctype.pos_invoice.pos_invoice import get_stock_availability
+from erpnext.stock.get_item_details import get_item_price
+from datetime import date
 
 
 def search_by_term(search_term, warehouse, price_list):
@@ -23,13 +25,21 @@ def search_by_term(search_term, warehouse, price_list):
 		item_info = frappe.db.get_value("Item", item_code,
 			["name as item_code", "item_name", "description", "stock_uom", "image as item_image", "is_stock_item"],
 			as_dict=1)
+	
+		item_stock_qty = get_stock_availability(item_code, warehouse , batch_no)
 
-		item_stock_qty = get_stock_availability(item_code, warehouse)
-		price_list_rate, currency = frappe.db.get_value('Item Price', {
-			'price_list': price_list,
-			'item_code': item_code
-		}, ["price_list_rate", "currency"]) or [None, None]
-
+		args = {
+				'item_code' : item_code,
+				'price_list': price_list,
+				'uom' : item_info['stock_uom'],
+				'posting_date' : date.today(),
+				'batch_no' : batch_no
+				}		
+		price_info = get_item_price(args , item_code)
+		if price_info:
+			price_list_rate , currency = price_info[0][1] , price_info[0][3]			
+		else:	
+			price_list_rate , currency = [None, None]
 		item_info.update({
 			'serial_no': serial_no,
 			'batch_no': batch_no,
@@ -61,29 +71,30 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 
 	lft, rgt = frappe.db.get_value('Item Group', item_group, ['lft', 'rgt'])
 
-	bin_join_selection, bin_join_condition = "", ""
-	if hide_unavailable_items:
-		bin_join_selection = ", `tabBin` bin"
-		bin_join_condition = "AND bin.warehouse = %(warehouse)s AND bin.item_code = item.name AND bin.actual_qty > 0"
-
-	items_data = frappe.db.sql("""
-		SELECT
+	items_data = frappe.db.sql(f"""
+		SELECT DISTINCT
 			item.name AS item_code,
 			item.item_name,
 			item.description,
-			item.stock_uom,
+			item.stock_uom AS stock_uom,
 			item.image AS item_image,
-			item.is_stock_item
+			item.is_stock_item,
+			`tabBatch`.name AS batch_no
 		FROM
-			`tabItem` item {bin_join_selection}
+			`tabItem` item 
+				INNER JOIN `tabBatch` ON tabBatch.item =  item.item_code
+				AND tabBatch.disabled = 0 AND tabBatch.batch_qty > 0
+				AND (tabBatch.expiry_date > CURRENT_TIMESTAMP OR tabBatch.expiry_date = '' OR tabBatch.expiry_date is null)
+				INNER JOIN `tabStock Ledger Entry` AS tabStockLedgerEntry ON tabStockLedgerEntry.item_code = item.item_code
+				AND tabStockLedgerEntry.warehouse = '{warehouse}'  AND tabStockLedgerEntry.batch_no = tabBatch.name AND tabStockLedgerEntry.actual_qty > 0
+			
 		WHERE
 			item.disabled = 0
 			AND item.has_variants = 0
 			AND item.is_sales_item = 1
 			AND item.is_fixed_asset = 0
 			AND item.item_group in (SELECT name FROM `tabItem Group` WHERE lft >= {lft} AND rgt <= {rgt})
-			AND {condition}
-			{bin_join_condition}
+		
 		ORDER BY
 			item.name asc
 		LIMIT
@@ -93,44 +104,69 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 			page_length=page_length,
 			lft=lft,
 			rgt=rgt,
-			condition=condition,
-			bin_join_selection=bin_join_selection,
-			bin_join_condition=bin_join_condition
-		), {'warehouse': warehouse}, as_dict=1)
+			condition=condition		
+		), as_dict=1)
 
 	if items_data:
-		items_data = filter_service_items(items_data)
-		items = [d.item_code for d in items_data]
-		item_prices_data = frappe.get_all("Item Price",
-			fields = ["item_code", "price_list_rate", "currency"],
-			filters = {'price_list': price_list, 'item_code': ['in', items]})
+		items_data = filter_service_items(items_data)	
 
-		item_prices = {}
-		for d in item_prices_data:
-			item_prices[d.item_code] = d
+		for item in items_data:	
+			item_code = item.item_code	
+			batch_no = item.batch_no
+			stock_uom = item.stock_uom
+			args = {
+				'item_code' : item_code,
+				'price_list': price_list,
+				'uom' : stock_uom,
+				'posting_date' : date.today(),
+				'batch_no' : batch_no
+				}		
+			price_info = get_item_price(args , item_code)
+			if price_info:
+				price_list_rate , currency = price_info[0][1] , price_info[0][3]			
+			else:	
+				price_list_rate , currency = [None, None]
 
-		for item in items_data:
-			item_code = item.item_code
-			item_price = item_prices.get(item_code) or {}
-			item_stock_qty = get_stock_availability(item_code, warehouse)
+			item_stock_qty = get_stock_availability(item_code, warehouse , batch_no)	
 
-			row = {}
-			row.update(item)
-			row.update({
-				'price_list_rate': item_price.get('price_list_rate'),
-				'currency': item_price.get('currency'),
-				'actual_qty': item_stock_qty,
-			})
-			result.append(row)
-
+			if  hide_unavailable_items:
+				if item_stock_qty > 0:			
+					row = {}
+					row.update(item)
+					row.update({
+						'price_list_rate':price_list_rate ,
+						'currency': currency,
+						'actual_qty': item_stock_qty,
+					})
+					result.append(row)
+			else:
+				row = {}
+				row.update(item)
+				row.update({
+					'price_list_rate': price_list_rate,
+					'currency': currency,
+					'actual_qty': item_stock_qty,
+				})
+				result.append(row)
+	
 	return {'items': result}
 
 @frappe.whitelist()
 def search_for_serial_or_batch_or_barcode_number(search_value):
 	# search barcode no
-	barcode_data = frappe.db.get_value('Item Barcode', {'barcode': search_value}, ['barcode', 'parent as item_code'], as_dict=True)
+	barcode_data = frappe.db.get_value('Item Barcode', {'barcode': search_value}, ['barcode', 'batch_no', 'parent as item_code'], as_dict=True)
 	if barcode_data:
-		return barcode_data
+		# custom update
+		from datetime import date
+		barcode_data_nobatch = frappe.db.get_value('Item Barcode', {'barcode': search_value}, ['barcode', 'parent as item_code'], as_dict=True)
+		batch_no_validate = frappe.db.get_value('Batch', barcode_data.batch_no, ['name as batch_no', 'item as item_code','batch_qty','disabled','expiry_date'], as_dict=True)
+		if batch_no_validate:
+			if batch_no_validate.batch_qty==0 or batch_no_validate.disabled==1 or not batch_no_validate.expiry_date or batch_no_validate.expiry_date  < date.today():
+				return barcode_data_nobatch
+			else:
+				return barcode_data		
+		else:
+			return barcode_data
 
 	# search serial no
 	serial_no_data = frappe.db.get_value('Serial No', search_value, ['name as serial_no', 'item_code'], as_dict=True)

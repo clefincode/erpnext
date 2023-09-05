@@ -54,53 +54,63 @@ def create_customer_or_supplier():
 	if not doctype:
 		return
 
-	if party_exists(doctype, user):
-		return
+	# if party_exists(doctype, user):
+	# 	return
+	# ############################################
+	contact_name = frappe.db.get_value("Contact", {"email_id": user})
+	if contact_name:
+		contact = frappe.get_doc('Contact', contact_name)		
+		if contact.links:
+			for d in contact.links:
+				if d.link_doctype == doctype:
+					return
+		else:				
+			party = frappe.new_doc(doctype)
+			fullname = frappe.utils.get_fullname(user)
 
-	party = frappe.new_doc(doctype)
-	fullname = frappe.utils.get_fullname(user)
+			if doctype == 'Customer':
+				cart_settings = get_shopping_cart_settings()
 
-	if doctype == 'Customer':
-		cart_settings = get_shopping_cart_settings()
+				if cart_settings.enable_checkout:
+					debtors_account = get_debtors_account(cart_settings)
+				else:
+					debtors_account = ''
 
-		if cart_settings.enable_checkout:
-			debtors_account = get_debtors_account(cart_settings)
-		else:
-			debtors_account = ''
+				party.update({
+					"customer_name": fullname,
+					"customer_type": "Individual",
+					"customer_group": cart_settings.default_customer_group,
+					"territory": get_root_of("Territory")
+				})
 
-		party.update({
-			"customer_name": fullname,
-			"customer_type": "Individual",
-			"customer_group": cart_settings.default_customer_group,
-			"territory": get_root_of("Territory")
-		})
+				if debtors_account:
+					party.update({
+						"accounts": [{
+							"company": cart_settings.company,
+							"account": debtors_account
+						}]
+					})
+			else:
+				party.update({
+					"supplier_name": fullname,
+					"supplier_group": "All Supplier Groups",
+					"supplier_type": "Individual"
+				})
 
-		if debtors_account:
-			party.update({
-				"accounts": [{
-					"company": cart_settings.company,
-					"account": debtors_account
-				}]
-			})
-	else:
-		party.update({
-			"supplier_name": fullname,
-			"supplier_group": "All Supplier Groups",
-			"supplier_type": "Individual"
-		})
+			party.flags.ignore_mandatory = True
+			party.insert(ignore_permissions=True)
+			# append reference row for this customer in contact doctype
+			contact.append("links", {'link_doctype': doctype , 'link_name':party.name})
+			contact.save(ignore_permissions=True)
+	# alternate_doctype = "Customer" if doctype == "Supplier" else "Supplier"
 
-	party.flags.ignore_mandatory = True
-	party.insert(ignore_permissions=True)
+	# if party_exists(alternate_doctype, user):
+	# 	# if user is both customer and supplier, alter fullname to avoid contact name duplication
+	# 	fullname +=  "-" + doctype
 
-	alternate_doctype = "Customer" if doctype == "Supplier" else "Supplier"
+	# create_party_contact(doctype, fullname, user, party.name)
 
-	if party_exists(alternate_doctype, user):
-		# if user is both customer and supplier, alter fullname to avoid contact name duplication
-		fullname +=  "-" + doctype
-
-	create_party_contact(doctype, fullname, user, party.name)
-
-	return party
+	# return party
 
 def create_party_contact(doctype, fullname, user, party_name):
 	contact = frappe.new_doc("Contact")

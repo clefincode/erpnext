@@ -255,17 +255,45 @@ class StockController(AccountsController):
 		return stock_ledger
 
 	def make_batches(self, warehouse_field):
-		'''Create batches if required. Called before submit'''
+		'''Create batches if required. Called before submit'''		
 		for d in self.items:
 			if d.get(warehouse_field) and not d.batch_no:
-				has_batch_no, create_new_batch = frappe.db.get_value('Item', d.item_code, ['has_batch_no', 'create_new_batch'])
+				has_batch_no, create_new_batch , batch_number_series = frappe.db.get_value('Item', d.item_code, ['has_batch_no', 'create_new_batch' , 'batch_number_series'])
 				if has_batch_no and create_new_batch:
-					d.batch_no = frappe.get_doc(dict(
-						doctype='Batch',
-						item=d.item_code,
-						supplier=getattr(self, 'supplier', None),
-						reference_doctype=self.doctype,
-						reference_name=self.name)).insert().name
+					expiry_date = None
+					if d.best_value_date:
+						import datetime
+						best_value_date = datetime.datetime.strptime(d.best_value_date, '%Y-%m-%d')
+						expiry_date = best_value_date + datetime.timedelta(days=14),
+						# Check if batch_no exist
+						best_value_day = str(best_value_date.day)
+						best_value_month = str(best_value_date.month)
+						best_value_year = str(best_value_date.year)[2:]
+						if len(best_value_day) == 1:
+							best_value_day = '0' + best_value_day
+						if len(best_value_month) == 1:
+							best_value_month = '0' + best_value_month
+						if batch_number_series and batch_number_series[len(batch_number_series) - 1 ] == '-':
+							condition = ''
+						else:
+							condition = '-'
+						batch_id = batch_number_series.replace('#','').replace('.','') + condition +  best_value_day + '-' + best_value_month + '-' + best_value_year					
+						batch_list = frappe.get_all('Batch' , 'name')
+						match = 0
+						for batch in batch_list:
+							if batch_id == batch.name:							
+								match = 1
+								d.batch_no = batch.name
+						if match == 0:
+							#  Create Batch
+							d.batch_no = frappe.get_doc(dict(
+								doctype='Batch',
+								item=d.item_code,
+								best_value_date = d.best_value_date,
+								expiry_date = expiry_date,
+								supplier=getattr(self, 'supplier', None),
+								reference_doctype=self.doctype,
+								reference_name=self.name)).insert().name
 
 	def check_expense_account(self, item):
 		if not item.get("expense_account"):

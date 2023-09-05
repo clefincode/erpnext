@@ -2,6 +2,9 @@
 # License: GNU General Public License v3. See license.txt
 
 
+from ast import Not
+from pickle import FALSE
+from unittest import result
 import frappe
 import frappe.defaults
 from frappe import _, throw
@@ -56,7 +59,7 @@ def get_shipping_addresses(party=None):
 	if not party:
 		party = get_party()
 	addresses = get_address_docs(party=party)
-	return [{"name": address.name, "title": address.address_title, "display": address.display}
+	return [{"name": address.name, "title": address.address_title, "display": address.display,"tax_category":address.tax_category}
 		for address in addresses if address.address_type == "Shipping"
 	]
 
@@ -65,7 +68,7 @@ def get_billing_addresses(party=None):
 	if not party:
 		party = get_party()
 	addresses = get_address_docs(party=party)
-	return [{"name": address.name, "title": address.address_title, "display": address.display}
+	return [{"name": address.name, "title": address.address_title, "display": address.display,"tax_category":address.tax_category}
 		for address in addresses if address.address_type == "Billing"
 	]
 
@@ -77,19 +80,26 @@ def place_order():
 	quotation.company = cart_settings.company
 
 	quotation.flags.ignore_permissions = True
-	quotation.submit()
+	#quotation.submit()
 
 	if quotation.quotation_to == 'Lead' and quotation.party_name:
 		# company used to create customer accounts
 		frappe.defaults.set_user_default("company", quotation.company)
 
-	if not (quotation.shipping_address_name or quotation.customer_address):
-		frappe.throw(_("Set Shipping Address or Billing Address"))
+	# if not (quotation.shipping_address_name or quotation.customer_address): and quotation.shop_pickup == 0:
+		# frappe.throw(_("Set Shipping Address or Billing Address"))
 
 	from erpnext.selling.doctype.quotation.quotation import _make_sales_order
 	sales_order = frappe.get_doc(_make_sales_order(quotation.name, ignore_permissions=True))
+	sales_order.set_warehouse = "Kensington Main Store - M"
 	sales_order.payment_schedule = []
-
+	# start custom update
+	if not quotation.taxes_and_charges:
+		sales_order.set('tax_category', '')
+		sales_order.set('taxes_and_charges', '')
+		sales_order.set('taxes', [])
+	# end custom update
+	# custom update to set pre order if item out of stock 
 	if not cint(cart_settings.allow_items_not_in_stock):
 		for item in sales_order.get("items"):
 			item.warehouse = frappe.db.get_value(
@@ -101,16 +111,22 @@ def place_order():
 			)
 			is_stock_item = frappe.db.get_value("Item", item.item_code, "is_stock_item")
 
-			if is_stock_item:
+			if is_stock_item and not item.batch_no:
 				item_stock = get_web_item_qty_in_stock(item.item_code, "website_warehouse")
 				if not cint(item_stock.in_stock):
 					throw(_("{0} Not in Stock").format(item.item_code))
-				if item.qty > item_stock.stock_qty[0][0]:
-					throw(_("Only {0} in Stock for item {1}").format(item_stock.stock_qty[0][0], item.item_code))
+				if item.qty > item_stock.stock_qty:					
+					throw(_("Only {0} in Stock for item {1}").format(item_stock.stock_qty, item.item_code))
+			if is_stock_item and item.batch_no:
+				item_stock = get_web_item_qty_in_stock(item.item_code, "website_warehouse" , warehouse ="Kensington Main Store - M" , batch_no = item.batch_no)				
+				if not cint(item_stock.in_stock):
+					throw(_("{0} Not in Stock").format(item.item_code))
+				if  item.qty > item_stock.stock_qty:
+					throw(_("Only {0} in Stock for item {1}").format(item_stock.stock_qty, item.item_code))
 
 	sales_order.flags.ignore_permissions = True
 	sales_order.insert()
-	sales_order.submit()
+	#sales_order.submit()
 
 	if hasattr(frappe.local, "cookie_manager"):
 		frappe.local.cookie_manager.delete_cookie("cart_count")
@@ -121,30 +137,39 @@ def place_order():
 def request_for_quotation():
 	quotation = _get_cart_quotation()
 	quotation.flags.ignore_permissions = True
-	quotation.submit()
+	quotation.submit() #draft to open	
 	return quotation.name
 
 @frappe.whitelist()
-def update_cart(item_code, qty, additional_notes=None, with_items=False):
+def update_cart(item_code, qty, batch_no = 'NA', additional_notes=None, with_items=False):
 	quotation = _get_cart_quotation()
 
 	empty_card = False
 	qty = flt(qty)
 	if qty == 0:
-		quotation_items = quotation.get("items", {"item_code": ["!=", item_code]})
+		quotation_items = quotation.get("items", {"batch_no" :["!=", batch_no]}) #### custom update
 		if quotation_items:
 			quotation.set("items", quotation_items)
 		else:
 			empty_card = True
 
 	else:
-		quotation_items = quotation.get("items", {"item_code": item_code})
+		quotation_items = quotation.get("items", {"item_code": item_code , "batch_no" : batch_no})
 		if not quotation_items:
+			# Start custom update
+			if batch_no == 'NA':
+				batch_no = ''
+				expiry_date = ''		
+			else:				 
+				expiry_date = frappe.db.get_value('Batch',{"batch_id" : batch_no}, 'expiry_date')	
+			# End custom update	
 			quotation.append("items", {
 				"doctype": "Quotation Item",
 				"item_code": item_code,
 				"qty": qty,
-				"additional_notes": additional_notes
+				"additional_notes": additional_notes,		
+				"batch_no":batch_no, #custom update
+				"warehouse" : "Kensington Main Store - M"
 			})
 		else:
 			quotation_items[0].qty = qty
@@ -157,8 +182,21 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False):
 	if not empty_card:
 		quotation.save()
 	else:
-		quotation.delete()
-		quotation = None
+		# start custom update: if quotation link to sales orders, delete all linked sales orders before delete quotation
+		if quotation.has_sales_order:
+			sales_orders = frappe.db.sql(f"""
+			SELECT DISTINCT parent FROM `tabSales Order Item` WHERE prevdoc_docname='{quotation.name}'
+			""" , as_dict = True)
+			for order in sales_orders:				
+				sales_order_doc = frappe.get_doc('Sales Order' , order.parent )
+				sales_order_doc.flags.ignore_permissions = True
+				sales_order_doc.delete()			
+			quotation.delete()
+			quotation = None
+		# end custom update			
+		else:
+			quotation.delete()
+			quotation = None
 
 	set_cart_count(quotation)
 
@@ -234,11 +272,18 @@ def get_terms_and_conditions(terms_name):
 	return frappe.db.get_value('Terms and Conditions', terms_name, 'terms')
 
 @frappe.whitelist()
-def update_cart_address(address_type, address_name):
+def update_cart_address(address_type, address_name , shop_pickup = 'checked'):
 	quotation = _get_cart_quotation()
 	address_doc = frappe.get_doc("Address", address_name).as_dict()
 	address_display = get_address_display(address_doc)
-
+	
+	# start custom update
+	if  shop_pickup == 'notChecked':					
+		quotation.tax_category = get_tax_category(address_name)
+		cart_settings = frappe.get_doc("E Commerce Settings")
+		set_taxes(quotation, cart_settings)
+	# end custom update
+	
 	if address_type.lower() == "billing":
 		quotation.customer_address = address_name
 		quotation.address_display = address_display
@@ -263,6 +308,41 @@ def update_cart_address(address_type, address_name):
 		"address": frappe.render_template("templates/includes/cart/address_card.html",
 			context)
 	}
+
+# start custom update
+def get_tax_category(address_name=None):		
+	""" get tax_category based on postal code """
+	if address_name:
+		quotation = _get_cart_quotation()
+		address_doc = frappe.get_doc('Address' , address_name)				
+		pincode = frappe.db.get_value('Address' , address_doc.name, 'pincode')
+		allPostalCode = frappe.db.sql("""SELECT postal_code FROM `tabPostal Code` """, as_dict = True)	
+		if pincode != None and check_postal_code(allPostalCode, pincode):		
+			tax_category = frappe.db.sql("""SELECT 	`tabShipping Zone`.tax_category
+											FROM    `tabShipping Zone` , `tabPostal Code` 
+											WHERE  	`tabPostal Code`.parent = `tabShipping Zone`.name
+											AND  	`tabPostal Code`.postal_code = '""" + pincode + """'     
+			""", as_dict = True)
+			if tax_category != [] :
+				for t in tax_category:
+					quotation.tax_category = t.tax_category												
+			else:
+				quotation.tax_category = ''	
+
+		else:
+			quotation.tax_category = 'Public'
+	
+	return quotation.tax_category			
+	# end custom update
+
+
+# start custom update for check if postal code exist in postal codes in shipping zone
+def check_postal_code(postal_codes, pincode):    
+    for p in postal_codes:
+        if pincode in p.values():
+            return True
+    return False
+# end custom update
 
 def guess_territory():
 	territory = None
@@ -372,7 +452,8 @@ def set_price_list_and_rate(quotation, cart_settings):
 	quotation.price_list_currency = quotation.currency = \
 		quotation.plc_conversion_rate = quotation.conversion_rate = None
 	for item in quotation.get("items"):
-		item.price_list_rate = item.discount_percentage = item.rate = item.amount = None
+		#item.price_list_rate = item.discount_percentage = item.rate = item.amount = None
+		item.price_list_rate = item.discount_percentage  = item.amount = None
 
 	# refetch values
 	quotation.run_method("set_price_list_and_item_details")
@@ -463,15 +544,23 @@ def get_party(user=None):
 
 		customer.flags.ignore_mandatory = True
 		customer.insert(ignore_permissions=True)
-
-		contact = frappe.new_doc("Contact")
-		contact.update({
-			"first_name": fullname,
-			"email_ids": [{"email_id": user, "is_primary": 1}]
-		})
-		contact.append('links', dict(link_doctype='Customer', link_name=customer.name))
-		contact.flags.ignore_mandatory = True
-		contact.insert(ignore_permissions=True)
+		# start custom update (check if customer already has contact when login after update password)				
+		contact_name = frappe.get_value('Contact' , {'user':user} , 'name')		
+		if contact_name:
+			contact = frappe.get_doc('Contact' , contact_name)
+			contact.append('links' , {'link_doctype' : 'Customer' , 'link_name': customer.name})
+			contact.save(ignore_permissions = True)			
+			frappe.db.commit()
+		# end custom update
+		else:
+			contact = frappe.new_doc("Contact")
+			contact.update({
+				"first_name": fullname,
+				"email_ids": [{"email_id": user, "is_primary": 1}]
+			})
+			contact.append('links', dict(link_doctype='Customer', link_name=customer.name))
+			contact.flags.ignore_mandatory = True
+			contact.insert(ignore_permissions=True)
 
 		return customer
 
@@ -620,3 +709,126 @@ def apply_coupon_code(applied_code, applied_referral_sales_partner):
 			quotation.save()
 
 	return quotation
+
+# Start Custom Update for pickup at shop
+@frappe.whitelist(allow_guest=True)
+def remove_taxes_and_charges():
+	quotation = _get_cart_quotation()	
+	if quotation.taxes_and_charges:			
+		quotation.set('tax_category', '')	
+		quotation.set('taxes_and_charges', '')
+		quotation.set('taxes', [])		
+	quotation.set('shop_pickup', 1)						
+	quotation.flags.ignore_permissions = True
+	quotation.save()
+	frappe.db.commit()
+	return {'grand_total':quotation.get_formatted('grand_total')}	
+
+@frappe.whitelist(allow_guest=True)
+def restore_taxes_and_charges():
+	quotation = _get_cart_quotation()	
+	if not (quotation.shipping_address_name or quotation.customer_address):		
+		return 0	
+	quotation.set('shop_pickup', 0)			
+	quotation.tax_category = get_tax_category(quotation.shipping_address_name)	
+	cart_settings = frappe.get_doc("E Commerce Settings")
+	set_taxes(quotation, cart_settings)		
+	quotation.flags.ignore_permissions = True
+	quotation.save()		
+	frappe.db.commit()
+
+# End Custom Update
+
+# custom update for show recomended Items when customer press place order
+@frappe.whitelist(allow_guest=True)
+def show_suggested():
+	strQuery1 = """ SELECT  tabItem.item_code, tabItem.item_name, i.name , i.image, i.thumbnail, tabRecommended.batch_id, i.route, tabBatch.expiry_date AS expiry_date
+         FROM `tabRecommended For Order Items` AS tabRecommended
+             INNER JOIN `tabWebsite Item` as i on tabRecommended.item_code = i.item_code 
+             INNER JOIN tabItem on tabItem.item_code = i.item_code
+             INNER JOIN tabBatch ON tabBatch.item =  tabItem.name AND tabBatch.disabled = 0 AND (expiry_date > CURRENT_TIMESTAMP OR expiry_date is null)
+             
+			 
+			WHERE tabBatch.name = tabRecommended.batch_id OR tabRecommended.batch_id is null
+			
+		ORDER BY RAND()
+         LIMIT 3 """
+	strQuery2 = """
+
+         SELECT  tabItem.item_code, tabItem.item_name, i.name , i.image, i.thumbnail, tabSuggested.batch_id, i.route, tabBatch.expiry_date AS expiry_date, tabBatch.best_value_date AS best_value_date
+         
+         FROM `tabSuggested Items Item` AS tabSuggested
+             INNER JOIN `tabWebsite Item` as i on tabSuggested.item_code = i.item_code 
+             INNER JOIN tabItem on tabItem.item_code = i.item_code
+             INNER JOIN tabBatch ON tabBatch.item =  tabItem.name AND tabBatch.disabled = 0 AND (expiry_date > CURRENT_TIMESTAMP OR expiry_date is null)
+             
+			
+
+			WHERE tabBatch.name = tabSuggested.batch_id OR tabSuggested.batch_id is null
+
+		ORDER BY RAND()
+		LIMIT 3
+
+    
+         """
+	strQuery3 = """
+
+         SELECT tabItem.item_code, tabItem.item_name, i.name , i.image, i.thumbnail, tabItemBestValue.batch_id, i.route, tabBatch.expiry_date AS expiry_date
+         
+         FROM `tabItem Best Value` AS tabItemBestValue
+             INNER JOIN `tabWebsite Item` as i on tabItemBestValue.item_code = i.item_code 
+             INNER JOIN tabItem on tabItem.item_code = i.item_code
+             INNER JOIN tabBatch ON tabBatch.item =  tabItem.name AND tabBatch.disabled = 0 AND (expiry_date > CURRENT_TIMESTAMP OR expiry_date is null)
+             
+
+			 WHERE tabBatch.name = tabItemBestValue.batch_id OR tabItemBestValue.batch_id is null
+			
+
+		ORDER BY RAND()
+		LIMIT 3
+
+    
+         """
+	
+	recomended_items = frappe.db.sql(strQuery1 , as_dict = 1)
+	suggested_items = frappe.db.sql(strQuery2 , as_dict = 1)
+	best_value = frappe.db.sql(strQuery3 , as_dict = 1)	
+	results= [
+		recomended_items,
+		suggested_items,
+		best_value 
+	]		
+	for r in results:
+		for item in r:											
+			from erpnext.e_commerce.shopping_cart.product_info import get_product_info_for_website
+			if item.batch_id:
+				product_info = get_product_info_for_website(item.item_code , True , item.batch_id )
+				# check if item in stock
+				in_stock = get_web_item_qty_in_stock(item.item_code , "website_warehouse" , warehouse ="Kensington Main Store - M" ,  batch_no = item.batch_id).in_stock		
+			else:
+				product_info = get_product_info_for_website(item.item_code , True)
+				# check if item in stock
+				in_stock = get_web_item_qty_in_stock(item.item_code, "website_warehouse" , warehouse ="Kensington Main Store - M" ).in_stock
+							
+			item.update(product_info)
+			item.update({'in_stock':in_stock})
+			
+	return {
+		'recomended' : recomended_items,
+		'suggested' : suggested_items,
+		'best_value' : best_value ,
+		'settings' : frappe.get_doc("E Commerce Settings")		
+	 }
+
+@frappe.whitelist(allow_guest=True)
+def save_note(doc_name , note_value):
+	sales_order = frappe.get_doc('Sales Order' , doc_name)
+	sales_order.customer_description = note_value
+	sales_order.save(ignore_permissions=True)
+	frappe.db.commit()
+	return sales_order.customer_description
+
+
+
+
+

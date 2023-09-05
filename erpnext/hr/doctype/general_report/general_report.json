@@ -1,0 +1,143 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "GR",
+ "creation": "2023-09-02 14:34:46.188800",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "name1",
+  "date",
+  "staff_id",
+  "position_department",
+  "start_working_date",
+  "report_type",
+  "summary_of_incident",
+  "column_break_8",
+  "remarks",
+  "action_taken",
+  "column_break_11",
+  "employee_signature",
+  "manager_name",
+  "manager_signature",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "name1",
+   "fieldtype": "Data",
+   "label": "Name"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "staff_id",
+   "fieldtype": "Data",
+   "label": "staff id"
+  },
+  {
+   "fieldname": "position_department",
+   "fieldtype": "Data",
+   "label": "Position /Department"
+  },
+  {
+   "fieldname": "start_working_date",
+   "fieldtype": "Data",
+   "label": "Start working Date"
+  },
+  {
+   "fieldname": "report_type",
+   "fieldtype": "Select",
+   "label": "Report Type",
+   "options": "Attendance\nCarelessness\nTask incompletion\nDishonesty\nSafety\nIncident\nWork Quality\nCounselling\nOther"
+  },
+  {
+   "fieldname": "summary_of_incident",
+   "fieldtype": "Data",
+   "label": "Summary of incident "
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Data",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "action_taken",
+   "fieldtype": "Select",
+   "label": "Action taken",
+   "options": "Verbal Warning 1\nVerbal Warning 2\nVerbal Warning 3\nWritten Warning\nSuspension\nTermination\nOther"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_signature",
+   "fieldtype": "Signature",
+   "label": "Employee Signature"
+  },
+  {
+   "fieldname": "manager_name",
+   "fieldtype": "Data",
+   "label": "Manager Name"
+  },
+  {
+   "fieldname": "manager_signature",
+   "fieldtype": "Signature",
+   "label": "Manager Signature"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "General Report",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2023-09-02 14:35:20.501469",
+ "modified_by": "Administrator",
+ "module": "HR",
+ "name": "General Report",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

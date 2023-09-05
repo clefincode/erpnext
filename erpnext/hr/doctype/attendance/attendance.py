@@ -13,7 +13,7 @@ from erpnext.hr.utils import validate_active_employee
 class Attendance(Document):
 	def validate(self):
 		from erpnext.controllers.status_updater import validate_status
-		validate_status(self.status, ["Present", "Absent", "On Leave", "Half Day", "Work From Home"])
+		validate_status(self.status, ["Present", "Absent", "On Leave", "Half Day", "Work From Home", "Off"])
 		validate_active_employee(self.employee)
 		self.validate_attendance_date()
 		self.validate_duplicate_record()
@@ -79,6 +79,27 @@ class Attendance(Document):
 		 	self.employee)
 		if not emp:
 			frappe.throw(_("Employee {0} is not active or does not exist").format(self.employee))
+
+
+
+	def on_submit(self):
+		final_worked_hour = 0.0
+		if self.early_entry and self.early_entry_time_hours:
+			if float(self.early_entry_time_hours) < 1:
+				final_worked_hour= float(self.working_hours) - float(self.early_entry_time_hours)
+				self.actual_working_hours = final_worked_hour
+			if float(self.early_entry_time_hours) >= 1:
+				final_worked_hour = float(self.working_hours)
+				self.actual_working_hours = final_worked_hour
+		else:
+			self.actual_working_hours = self.working_hours			
+		if self.late_exit and self.late_exit_time_hours:
+			if float(self.late_exit_time_hours) < 1:
+				self.actual_working_hours = float(self.actual_working_hours) - float(self.late_exit_time_hours)
+			if float(self.late_exit_time_hours) >= 1:
+				print(" ate_exit_time_hours is Greater than 1 hours ")
+			
+
 
 @frappe.whitelist()
 def get_events(start, end, filters=None):

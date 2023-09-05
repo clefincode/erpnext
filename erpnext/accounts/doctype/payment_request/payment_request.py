@@ -19,7 +19,7 @@ from erpnext.accounts.doctype.subscription_plan.subscription_plan import get_pla
 from erpnext.accounts.party import get_party_account, get_party_bank_account
 from erpnext.accounts.utils import get_account_currency
 from erpnext.erpnext_integrations.stripe_integration import create_stripe_subscription
-
+from erpnext.e_commerce.shopping_cart.cart import _get_cart_quotation
 
 class PaymentRequest(Document):
 	def validate(self):
@@ -129,6 +129,12 @@ class PaymentRequest(Document):
 		if (hasattr(ref_doc, "order_type") and getattr(ref_doc, "order_type") == "Shopping Cart"):
 			from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 			si = make_sales_invoice(self.reference_name, ignore_permissions=True)
+			# start custom update			
+			if not ref_doc.taxes_and_charges:
+				si.set('tax_category', '')
+				si.set('taxes_and_charges', '')
+				si.set('taxes', [])
+			# end custom update		
 			si.allocate_advances_automatically = True
 			si = si.insert(ignore_permissions=True)
 			si.submit()
@@ -381,6 +387,16 @@ def make_payment_request(**args):
 			pr.submit()
 
 	if args.order_type == "Shopping Cart":
+		# custom update for submit sales order and quotation when customer click pay
+		if args.dt == 'Sales Order':
+			sales_order = frappe.get_doc('Sales Order' , args.dn)			
+			if sales_order.docstatus == 0:
+				sales_order.flags.ignore_permissions = True
+				sales_order.submit()
+				quotation = _get_cart_quotation()							
+				quotation.flags.ignore_permissions = True
+				quotation.submit()
+		# end custom update
 		frappe.db.commit()
 		frappe.local.response["type"] = "redirect"
 		frappe.local.response["location"] = pr.get_payment_url()

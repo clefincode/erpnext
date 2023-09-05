@@ -17,7 +17,7 @@ from erpnext.utilities.product import (
 
 
 @frappe.whitelist(allow_guest=True)
-def get_product_info_for_website(item_code, skip_quotation_creation=False):
+def get_product_info_for_website(item_code, skip_quotation_creation=False , batch_no = None):
 	"""get product price / stock info for website"""
 
 	cart_settings = get_shopping_cart_settings()
@@ -44,7 +44,9 @@ def get_product_info_for_website(item_code, skip_quotation_creation=False):
 				item_code,
 				selling_price_list,
 				cart_settings.default_customer_group,
-				cart_settings.company
+				cart_settings.company,
+				1,
+				batch_no
 			)
 
 	stock_status = None
@@ -54,7 +56,7 @@ def get_product_info_for_website(item_code, skip_quotation_creation=False):
 		if on_backorder:
 			stock_status = frappe._dict({"on_backorder": True})
 		else:
-			stock_status = get_web_item_qty_in_stock(item_code, "website_warehouse")
+			stock_status = get_web_item_qty_in_stock(item_code, "website_warehouse" , warehouse ="Kensington Main Store - M" ,  batch_no = batch_no)
 
 	product_info = {
 		"price": price,

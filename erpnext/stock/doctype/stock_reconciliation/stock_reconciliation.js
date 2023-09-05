@@ -21,8 +21,11 @@ frappe.ui.form.on("Stock Reconciliation", {
 			var item = locals[cdt][cdn];
 			return {
 				filters: {
-					'item': item.item_code
-				}
+					'item_code': item.item_code,
+					warehouse: item.warehouse,
+					posting_date: frappe.datetime.nowdate()
+				},
+				query: 'erpnext.controllers.queries.get_batch_no'
 			};
 		});
 
@@ -221,7 +224,7 @@ frappe.ui.form.on("Stock Reconciliation Item", {
 	warehouse: function(frm, cdt, cdn) {
 		var child = locals[cdt][cdn];
 		if (child.batch_no) {
-			frappe.model.set_value(child.cdt, child.cdn, "batch_no", "");
+			// frappe.model.set_value(child.cdt, child.cdn, "batch_no", ""); //custom update
 		}
 
 		frm.events.set_valuation_rate_and_qty(frm, cdt, cdn);
@@ -230,10 +233,23 @@ frappe.ui.form.on("Stock Reconciliation Item", {
 	item_code: function(frm, cdt, cdn) {
 		var child = locals[cdt][cdn];
 		if (child.batch_no) {
-			frappe.model.set_value(cdt, cdn, "batch_no", "");
+			// frappe.model.set_value(cdt, cdn, "batch_no", "");//custom update
 		}
 
 		frm.events.set_valuation_rate_and_qty(frm, cdt, cdn);
+
+		if(child.item_code){
+                        frappe.call({
+                                method: "kensingtonbn.whitelisted.get_proojected_qty",
+                                args: {"item_code": child.item_code, "company": cur_frm.doc.company, "warehouse": child.warehouse},
+                                freeze: 1,
+                                callback: function(r){
+                                        frappe.model.set_value(cdt, cdn, "reserved_for_pos_transactions", r.message);
+                                }
+                        });
+                }else{
+			frappe.model.set_value(cdt, cdn, "reserved_for_pos_transactions", 0);
+		}
 	},
 
 	batch_no: function(frm, cdt, cdn) {

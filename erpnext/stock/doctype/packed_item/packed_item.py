@@ -17,7 +17,7 @@ class PackedItem(Document):
 	pass
 
 def get_product_bundle_items(item_code):
-	return frappe.db.sql("""select t1.item_code, t1.qty, t1.uom, t1.description
+	return frappe.db.sql("""select t1.item_code, t1.qty, t1.uom, t1.description , t1.batch_no
 		from `tabProduct Bundle Item` t1, `tabProduct Bundle` t2
 		where t2.new_item_code=%s and t1.parent = t2.name order by t1.idx""", item_code, as_dict=1)
 
@@ -33,7 +33,7 @@ def get_bin_qty(item, warehouse):
 		where item_code = %s and warehouse = %s""", (item, warehouse), as_dict = 1)
 	return det and det[0] or frappe._dict()
 
-def update_packing_list_item(doc, packing_item_code, qty, main_item_row, description):
+def update_packing_list_item(doc, packing_item_code, qty, main_item_row, description , batch_no = None):
 	if doc.amended_from:
 		old_packed_items_map = get_old_packed_item_details(doc.packed_items)
 	else:
@@ -60,6 +60,7 @@ def update_packing_list_item(doc, packing_item_code, qty, main_item_row, descrip
 	pi.uom = item.stock_uom
 	pi.qty = flt(qty)
 	pi.conversion_factor = main_item_row.conversion_factor
+	pi.batch_no = batch_no
 	if description and not pi.description:
 		pi.description = description
 	if not pi.warehouse and not doc.amended_from:
@@ -85,7 +86,7 @@ def make_packing_list(doc):
 	for d in doc.get("items"):
 		if frappe.db.get_value("Product Bundle", {"new_item_code": d.item_code}):
 			for i in get_product_bundle_items(d.item_code):
-				update_packing_list_item(doc, i.item_code, flt(i.qty)*flt(d.stock_qty), d, i.description)
+				update_packing_list_item(doc, i.item_code, flt(i.qty)*flt(d.stock_qty), d, i.description , i.batch_no)
 
 			if [d.item_code, d.name] not in parent_items:
 				parent_items.append([d.item_code, d.name])

@@ -116,6 +116,11 @@ class PurchaseInvoice(BuyingController):
 		self.reset_default_field_value("rejected_warehouse", "items", "rejected_warehouse")
 		self.reset_default_field_value("set_from_warehouse", "items", "from_warehouse")
 
+		for d in self.items:
+			if d.stock_uom_rate:
+				base_stock_uom_rate = (self.conversion_rate or 1.0) * d.stock_uom_rate;
+				d.rate_of_stock_uom = base_stock_uom_rate
+
 	def validate_release_date(self):
 		if self.release_date and getdate(nowdate()) >= getdate(self.release_date):
 			frappe.throw(_('Release date must be in the future'))

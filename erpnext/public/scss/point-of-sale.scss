@@ -130,6 +130,7 @@
 				border-radius: var(--border-radius-md);
 				box-shadow: var(--shadow-base);
 				position: relative;
+				pointer-events: none;
 
 				&:hover {
 					transform: scale(1.02, 1.02);
@@ -513,7 +514,7 @@
 						}
 					}
 
-					> .grand-total-container {
+					> .grand-total-container , .transaction_discount-container {
 						display: flex;
 						align-items: center;
 						justify-content: space-between;
@@ -1148,5 +1149,12 @@
 				}
 			}
 		}
+	}
+}
+
+body[data-route=point-of-sale]{
+	.modal-backdrop.show {
+		opacity: 0.9;
+		background-color: #f00;
 	}
 }

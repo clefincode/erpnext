@@ -305,7 +305,8 @@
 
 		{% if values %}
 		<div class="filter-options">
-			{% for value in values %}
+			<!-- custom update for sorting filters alphabetically -->
+			{% for value in values |sort(case_sensitive=False) %}
 			<div class="checkbox" data-value="{{ value }}">
 				<label for="{{value}}">
 					<input type="checkbox"
@@ -386,7 +387,8 @@
 				{% if price.get('formatted_mrp') %}
 					<br>
 					<span class="striked-item-price">
-						<s>MRP {{ price.formatted_mrp }}</s>
+						<!-- custom update delete MRP -->
+						<s>{{ price.formatted_mrp }}</s>
 					</span>
 					<span class="in-green">
 						- {{ price.get('formatted_discount_percent') or price.get('formatted_discount_rate')}}

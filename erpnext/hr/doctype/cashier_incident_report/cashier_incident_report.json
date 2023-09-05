@@ -1,0 +1,116 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "CIR",
+ "creation": "2023-09-02 13:41:29.188617",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "name1",
+  "date",
+  "managers_notified",
+  "choose_incident",
+  "reason",
+  "total_amount_of_shortageover",
+  "reported_to",
+  "managers_action",
+  "amended_from",
+  "signature"
+ ],
+ "fields": [
+  {
+   "fieldname": "name1",
+   "fieldtype": "Data",
+   "label": "Name"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "managers_notified",
+   "fieldtype": "Select",
+   "label": "Managers Notified",
+   "options": "Yes\nNo"
+  },
+  {
+   "fieldname": "choose_incident",
+   "fieldtype": "Select",
+   "label": "Choose Incident",
+   "options": "Short on Money\nExcess on Money\nRed Screen in pos\nTypo inserting cash number\nWrong discount\nBIBD Terminal Transaction fail\nSubmission Error\nBarcode not working on item\nCustomer Complaints\nBIBD settlement error/Failed\nSystem Error/ Lag\nExchanage item /Request item\nRefund\nOther"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Data",
+   "label": "Reason"
+  },
+  {
+   "fieldname": "total_amount_of_shortageover",
+   "fieldtype": "Int",
+   "label": "Total amount of shortage/Over "
+  },
+  {
+   "fieldname": "managers_action",
+   "fieldtype": "Data",
+   "label": "Manager's Action"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Cashier incident report",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "reported_to",
+   "fieldtype": "Data",
+   "label": "Reported to"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Signature",
+   "label": "signature"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2023-09-02 13:47:23.779228",
+ "modified_by": "Administrator",
+ "module": "HR",
+ "name": "Cashier incident report",
+ "name_case": "Title Case",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

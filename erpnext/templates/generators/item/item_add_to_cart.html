@@ -16,7 +16,8 @@
 				<!-- Striked Price and Discount  -->
 				{% if price_info.formatted_mrp %}
 					<small class="formatted-price">
-						<s>MRP {{ price_info.formatted_mrp }}</s>
+						<!-- custom update delete MRP -->
+						<s>{{ price_info.formatted_mrp }}</s>
 					</small>
 					<small class="ml-1 formatted-price in-green">
 						-{{ price_info.get("formatted_discount_percent") or price_info.get("formatted_discount_rate")}}
@@ -24,12 +25,12 @@
 				{% endif %}
 
 				<!-- Price per UOM -->
-				<small class="formatted-price ml-2">
-					({{ price_info.formatted_price }} / {{ product_info.uom }})
-				</small>
+				<!-- <small class="formatted-price ml-2">
+					{# ({{ price_info.formatted_price }})  / {{ product_info.uom }} #}
+				</small> -->
 			</div>
-		{% else %}
-			{{ _("UOM") }} : {{ product_info.uom }}
+			{# {% else %}
+			{{ _("UOM") }} : {{ product_info.uom }} #}
 		{% endif %}
 
 		{% if cart_settings.show_stock_availability %}
@@ -46,13 +47,29 @@
 				<span class="in-green has-stock">
 					{{ _('In stock') }}
 					{% if product_info.show_stock_qty and product_info.stock_qty %}
-						({{ product_info.stock_qty[0][0] }})
+						{% if product_info.stock_qty is iterable %}
+							{% if product_info.stock_qty[0][0] > 20 %}
+								(20.0)
+							{% else %}
+								({{ product_info.stock_qty[0][0]}})
+							{% endif  %}
+						{% else %}
+							{% if product_info.stock_qty > 20 %}
+								(20.0)
+							{% else %}
+								({{ product_info.stock_qty}})
+							{% endif  %}	
+						{% endif  %}
 					{% endif %}
 				</span>
 			{% endif %}
 		</div>
 		{% endif %}
-
+		{% if expiry_date %}
+		<div class="mt-1">
+			<b>Best Before Date: </b><span>{{expiry_date}}</span>
+		</div>
+		{% endif %}
 		<!-- Offers -->
 		{% if doc.offers %}
 			<br>
@@ -98,7 +115,7 @@
 					</a>
 					<button
 						data-item-code="{{item_code}}"
-						class="btn btn-primary btn-add-to-cart mr-2 w-30-40"
+						class="btn btn-primary btn-add-to-cart mr-2 w-30-40" data-batch="{{batch_no or 'NA'}}"
 					>
 						<span class="mr-2">
 							<svg class="icon icon-md">
@@ -125,9 +142,11 @@
 			const $btn = $(e.currentTarget);
 			$btn.prop('disabled', true);
 			const item_code = $btn.data('item-code');
+			const batch_no = $btn.data('batch');
 			erpnext.e_commerce.shopping_cart.update_cart({
 				item_code,
 				qty: 1,
+				batch_no,
 				callback(r) {
 					$btn.prop('disabled', false);
 					if (r.message) {

@@ -29,37 +29,53 @@ def get_product_list(search=None, start=0, limit=12):
 
 	return [get_item_for_list_in_html(r) for r in data]
 
-def get_product_data(search=None, start=0, limit=12):
+def get_product_data(search=None ,start=0, limit=12, page=""): ##custom update
 	# limit = 12 because we show 12 items in the grid view
 	# base query
+	## custom update
 	query = """
-		SELECT
-			web_item_name, item_name, item_code, brand, route,
-			website_image, thumbnail, item_group,
-			description, web_long_description as website_description,
-			website_warehouse, ranking
-		FROM `tabWebsite Item`
-		WHERE published = 1
+		SELECT DISTINCT
+			tabWebsiteItem.web_item_name, tabWebsiteItem.item_name, tabWebsiteItem.item_code, tabWebsiteItem.brand, tabWebsiteItem.route,
+			tabWebsiteItem.website_image, tabWebsiteItem.thumbnail, tabWebsiteItem.item_group,
+			tabWebsiteItem.description, tabWebsiteItem.web_long_description as website_description,
+			tabWebsiteItem.website_warehouse, tabWebsiteItem.ranking , tabBatch.name AS batch_no,
+			tabBatch.ranking AS batch_ranking , tabBatch.expiry_date AS expiry_date
+		
 		"""
-
+	strFrom = """
+		FROM `tabWebsite Item` AS tabWebsiteItem				
+				INNER  JOIN `tabBatch` ON tabBatch.item =  tabWebsiteItem.item_name AND tabBatch.disabled = 0 AND (expiry_date > CURRENT_TIMESTAMP OR expiry_date = '' OR expiry_date is null)
+				INNER JOIN `tabStock Ledger Entry` AS tabStockLedgerEntry ON tabStockLedgerEntry.item_code = tabWebsiteItem.item_code
+				AND tabStockLedgerEntry.warehouse = 'Kensington Main Store - M'  AND tabStockLedgerEntry.batch_no = tabBatch.name
+				AND tabStockLedgerEntry.actual_qty > 0 
+	"""
+	strWhere = ' WHERE published = 1 ' 
 	# search term condition
 	if search:
-		query += """ and (item_name like %(search)s
-				or web_item_name like %(search)s
-				or brand like %(search)s
-				or web_long_description like %(search)s)"""
+		if (page=='best_value'):
+			strFrom += ' INNER JOIN `tabItem Best Value` AS  tabItemBestValue  ON tabItemBestValue.item_code = tabWebsiteItem.item_code '
+			strWhere += ' AND tabItemBestValue.batch_id = tabBatch.name '
+		else: 
+			if (page =='pre_order'):
+				strFrom += ' INNER JOIN `tabItem PreOrder` AS  tabItemPreOrder  ON tabItemPreOrder.item_code = tabWebsiteItem.item_code '
+				strWhere += ' AND tabItemPreOrder.batch_id = tabBatch.name '
+		strWhere += """ and (tabWebsiteItem.item_name like %(search)s
+				or tabWebsiteItem.web_item_name like %(search)s
+				or tabWebsiteItem.brand like %(search)s
+				or tabWebsiteItem._user_tags like %(search)s
+				or tabWebsiteItem.web_long_description like %(search)s)"""
 		search = "%" + cstr(search) + "%"
 
 	# order by
-	query += """ ORDER BY ranking desc, modified desc limit %s, %s""" % (cint(start), cint(limit))
+	query += strFrom + strWhere+ """ ORDER BY batch_ranking desc , tabWebsiteItem.modified desc limit %s, %s""" % (cint(start), cint(limit))
 
 	return frappe.db.sql(query, {
 		"search": search
 	}, as_dict=1)
 
 @frappe.whitelist(allow_guest=True)
-def search(query):
-	product_results = product_search(query)
+def search(query, page): ##custom update
+	product_results = product_search(query, page = page) ##custom update
 	category_results = get_category_suggestions(query)
 
 	return {
@@ -68,13 +84,13 @@ def search(query):
 	}
 
 @frappe.whitelist(allow_guest=True)
-def product_search(query, limit=10, fuzzy_search=True):
+def product_search(query, limit=10, fuzzy_search=True, page = ""): ##custom update
 	search_results = {"from_redisearch": True, "results": []}
 
 	if not is_search_module_loaded():
 		# Redisearch module not loaded
 		search_results["from_redisearch"] = False
-		search_results["results"] = get_product_data(query, 0, limit)
+		search_results["results"] = get_product_data(query, 0, limit, page) ##custom update
 		return search_results
 
 	if not query:

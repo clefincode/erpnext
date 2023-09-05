@@ -3,9 +3,11 @@
 
 
 import frappe
+import json
 from frappe import _
 from frappe.utils import cint, flt, get_link_to_form, getdate, nowdate
 from six import iteritems
+from six import string_types
 
 from erpnext.accounts.doctype.loyalty_program.loyalty_program import validate_loyalty_points
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
@@ -17,8 +19,8 @@ from erpnext.accounts.doctype.sales_invoice.sales_invoice import (
 )
 from erpnext.accounts.party import get_due_date, get_party_account
 from erpnext.stock.doctype.serial_no.serial_no import get_pos_reserved_serial_nos, get_serial_nos
-
-
+from erpnext.accounts.doctype.pricing_rule.utils import get_other_conditions
+from erpnext.accounts.doctype.pricing_rule.utils import filter_pricing_rules_for_qty_amount
 class POSInvoice(SalesInvoice):
 	def __init__(self, *args, **kwargs):
 		super(POSInvoice, self).__init__(*args, **kwargs)
@@ -154,7 +156,7 @@ class POSInvoice(SalesInvoice):
 				if allow_negative_stock:
 					return
 
-				available_stock = get_stock_availability(d.item_code, d.warehouse)
+				available_stock = get_stock_availability(d.item_code, d.warehouse , d.batch_no)
 
 				item_code, warehouse, qty = frappe.bold(d.item_code), frappe.bold(d.warehouse), frappe.bold(d.qty)
 				if flt(available_stock) <= 0:
@@ -471,10 +473,18 @@ class POSInvoice(SalesInvoice):
 			return frappe.get_doc('Payment Request', pr[0][0])
 
 @frappe.whitelist()
-def get_stock_availability(item_code, warehouse):
+def get_stock_availability(item_code, warehouse , batch_no='only_for_pos'):
 	if frappe.db.get_value('Item', item_code, 'is_stock_item'):
-		bin_qty = get_bin_qty(item_code, warehouse)
-		pos_sales_qty = get_pos_reserved_qty(item_code, warehouse)
+		from erpnext.stock.doctype.batch.batch  import get_batch_qty		
+		if batch_no =='only_for_pos':
+			bin_qty = get_bin_qty(item_code, warehouse)
+			pos_sales_qty = get_pos_reserved_qty(item_code, warehouse )
+		elif batch_no == '' or batch_no == None:	
+			return 'no_batch'			
+		elif batch_no:
+			bin_qty = get_batch_qty(batch_no=batch_no, warehouse=warehouse)			
+			pos_sales_qty = get_pos_reserved_qty(item_code, warehouse ,batch_no )	
+		
 		return bin_qty - pos_sales_qty
 	else:
 		if frappe.db.exists('Product Bundle', item_code):
@@ -486,7 +496,7 @@ def get_bundle_availability(bundle_item_code, warehouse):
 	bundle_bin_qty = 1000000
 	for item in product_bundle.items:
 		item_bin_qty = get_bin_qty(item.item_code, warehouse)
-		item_pos_reserved_qty = get_pos_reserved_qty(item.item_code, warehouse)
+		item_pos_reserved_qty = get_pos_reserved_qty(item.item_code, warehouse , item.batch_no)
 		available_qty = item_bin_qty - item_pos_reserved_qty
 
 		max_available_bundles = available_qty / item.qty
@@ -503,7 +513,11 @@ def get_bin_qty(item_code, warehouse):
 
 	return bin_qty[0].actual_qty or 0 if bin_qty else 0
 
-def get_pos_reserved_qty(item_code, warehouse):
+def get_pos_reserved_qty(item_code, warehouse , batch_no =None):	
+	if batch_no:		
+		condition = " and p_item.batch_no =" + "'" + batch_no + "'"
+	else:
+		condition = ''
 	reserved_qty = frappe.db.sql("""select sum(p_item.qty) as qty
 		from `tabPOS Invoice` p, `tabPOS Invoice Item` p_item
 		where p.name = p_item.parent
@@ -511,8 +525,8 @@ def get_pos_reserved_qty(item_code, warehouse):
 		and p_item.docstatus = 1
 		and p_item.item_code = %s
 		and p_item.warehouse = %s
-		""", (item_code, warehouse), as_dict=1)
-
+		""" + condition +"""
+		""", (item_code , warehouse),as_dict=1)
 	return reserved_qty[0].qty or 0 if reserved_qty else 0
 
 @frappe.whitelist()
@@ -562,3 +576,47 @@ def add_return_modes(doc, pos_profile):
 		if pos_payment_method.allow_in_returns and not [d for d in doc.get('payments') if d.mode_of_payment == mode_of_payment]:
 			payment_mode = get_mode_of_payment_info(mode_of_payment, doc.company)
 			append_payment(payment_mode[0])
+
+@frappe.whitelist(allow_guest = True)
+def apply_pricing_rule_on_transaction(doc):	
+	if isinstance(doc, string_types):
+		doc = json.loads(doc)
+		doc = frappe._dict(doc)
+
+	conditions = "apply_on = 'Transaction'"	
+	
+	doc.transaction_date = getdate(nowdate())
+	if doc.customer and doc.customer != '':		
+		doc.customer_group = frappe.get_value('Customer' , doc.customer  , 'customer_group')
+	else:
+		return {'discount_amount':0,'additional_discount' :0}				
+	
+	values = {}	
+	conditions = get_other_conditions(conditions, values, doc)
+
+	pricing_rules = frappe.db.sql(""" Select `tabPricing Rule`.* from `tabPricing Rule`
+		where  {conditions} and `tabPricing Rule`.disable = 0
+	""".format(conditions = conditions), values, as_dict=1)
+
+	if not pricing_rules:
+		return {'discount_amount':0,'additional_discount' :0}
+	else:
+		pricing_rules = filter_pricing_rules_for_qty_amount(doc.total_qty,
+			doc.total, pricing_rules)	
+
+		for d in pricing_rules:
+			if d.price_or_product_discount == 'Price':
+				if d.apply_discount_on:					
+					doc.apply_discount_on = d.apply_discount_on
+
+			if d.discount_percentage != 0:
+				doc.additional_discount_percentage = d.discount_percentage				
+				return {'additional_discount':doc.additional_discount_percentage,'apply_discount_on' :doc.apply_discount_on}				
+
+			elif d.discount_amount != 0 :
+				doc.discount_amount = d.discount_amount					
+				return {'discount_amount':doc.discount_amount,'apply_discount_on' :doc.apply_discount_on}				
+		
+		
+				
+	

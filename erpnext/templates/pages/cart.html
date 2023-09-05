@@ -128,7 +128,23 @@
 	{% endif %}
 </div>
 {% endif %}
+<!-- custom update modal for recomended items -->
+<div class="modal fade" id="recomendedItems" >
+	<div class="modal-dialog">
+	  <div class="modal-content">
+		<div class="modal-header">
+			<h5 class="modal-title">Recomended Items</h5> 
+		                                                             
+		</div> 
+		<div class="modal-body">
 
+		</div>   
+		<button type="button" class="btn btn-primary m-3" style="width: 20%; align-self: end;" data-dismiss="modal"  id="continue">Continue</button> 
+
+	  </div>                                                                       
+	</div>                                          
+  </div>
+<!-- end custom update -->
 {% endblock %}
 
 {% block base_scripts %}
@@ -138,4 +154,9 @@
 <script type="text/javascript" src="/assets/js/control.min.js"></script>
 <script type="text/javascript" src="/assets/js/dialog.min.js"></script>
 <script type="text/javascript" src="/assets/js/bootstrap-4-web.min.js"></script>
+<script>
+if(performance.navigation.type == 2){	
+	location.reload(true);
+}
+</script>	
 {% endblock %}
