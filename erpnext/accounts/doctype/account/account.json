@@ -131,7 +131,7 @@
    "label": "Account Type",
    "oldfieldname": "account_type",
    "oldfieldtype": "Select",
-   "options": "\nAccumulated Depreciation\nAsset Received But Not Billed\nBank\nCash\nChargeable\nCapital Work in Progress\nCost of Goods Sold\nDepreciation\nEquity\nExpense Account\nExpenses Included In Asset Valuation\nExpenses Included In Valuation\nFixed Asset\nIncome Account\nPayable\nReceivable\nRound Off\nStock\nStock Adjustment\nStock Received But Not Billed\nService Received But Not Billed\nTax\nTemporary\nOther Debit\nOther Credit"
+   "options": "\nAccumulated Depreciation\nAsset Received But Not Billed\nBank\nCash\nChargeable\nCapital Work in Progress\nCost of Goods Sold\nDepreciation\nEquity\nExpense Account\nExpenses Included In Asset Valuation\nExpenses Included In Valuation\nFixed Asset\nIncome Account\nPayable\nReceivable\nRound Off\nStock\nStock Adjustment\nStock Received But Not Billed\nService Received But Not Billed\nTax\nTemporary\nPrepaid Expense\nAccrued Expense"
   },
   {
    "description": "Rate at which this tax is applied",
@@ -208,7 +208,7 @@
  "idx": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2023-08-19 14:34:54.467579",
+ "modified": "2023-09-10 17:17:57.260554",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Account",

@@ -4,35 +4,109 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import cint, cstr
-from erpnext.accounts.report.financial_statements import (get_period_list, get_columns, get_data)
-from erpnext.accounts.report.profit_and_loss_statement.profit_and_loss_statement import get_net_profit_loss
-from erpnext.accounts.utils import get_fiscal_year
+from frappe.utils import cstr, add_to_date
+from erpnext.accounts.report.financial_statements import (get_period_list, get_columns)
+from erpnext.accounts.utils import get_fiscal_year, get_balance_on
 from six import iteritems
 
 
 def execute(filters=None):
-	if cint(frappe.db.get_single_value('Accounts Settings', 'use_custom_cash_flow')):
-		from erpnext.accounts.report.cash_flow.custom_cash_flow import execute as execute_custom
-		return execute_custom(filters=filters)
-
 	period_list = get_period_list(filters.from_fiscal_year, filters.to_fiscal_year,
 		filters.period_start_date, filters.period_end_date, filters.filter_based_on,
 		filters.periodicity, company=filters.company)
 
 	cash_flow_accounts = get_cash_flow_accounts()
-
-	# compute net profit / loss
-	income = get_data(filters.company, "Income", "Credit", period_list, filters=filters,
-		accumulated_values=filters.accumulated_values, ignore_closing_entries=True, ignore_accumulated_values_for_fy= True)
-	expense = get_data(filters.company, "Expense", "Debit", period_list, filters=filters,
-		accumulated_values=filters.accumulated_values, ignore_closing_entries=True, ignore_accumulated_values_for_fy= True)
-
-	net_profit_loss = get_net_profit_loss(income, expense, period_list, filters.company)
-
 	data = []
 	summary_data = {}
 	company_currency = frappe.get_cached_value('Company',  filters.company,  "default_currency")
+	data.append({
+		"account_type": "Cash Flow from Operations",
+		"parent_account": None,
+		"indent": 0.0,
+		"account": "Cash Flow from Operations"
+	})
+	#operation
+	section_data = []
+	receivable_data = get_account_type_based_data(filters.company,
+		"Receivable", period_list, filters.accumulated_values, filters)
+	income_data = get_account_type_based_data(filters.company,
+		"Income Account", period_list, filters.accumulated_values, filters)
+	
+	for key in receivable_data:
+		receivable_data[key] += income_data[key]
+
+	receivable_data.update({
+		"account_name": "Cash Receipt from Customer",
+		"account": "Cash Receipt from Customer",
+		"indent": 1,
+		"parent_account": "Cash Flow from Operations",
+		"currency": company_currency
+	})
+	data.append(receivable_data)
+	section_data.append(receivable_data)
+
+	#--------------------------------------------
+	payable_data = get_account_type_based_data(filters.company,
+		"Payable", period_list, filters.accumulated_values, filters)
+	#Cost of Goods Sold Type
+	cogs_data = get_account_type_based_data(filters.company,
+		"Cost of Goods Sold", period_list, filters.accumulated_values, filters)
+	stock_data = get_account_type_based_data(filters.company,
+		"Stock", period_list, filters.accumulated_values, filters)
+	#Stock Received But Not Billed
+	srbnb = get_account_type_based_data(filters.company,
+		"Stock Received But Not Billed", period_list, filters.accumulated_values, filters)
+	
+	
+	for key in payable_data:
+		payable_data[key] += cogs_data[key] + stock_data[key] + srbnb[key]
+
+	payable_data.update({
+		"account_name": "Cash Paid to Supplier",
+		"account": "Cash Paid to Supplier",
+		"indent": 1,
+		"parent_account": "Cash Flow from Operations",
+		"currency": company_currency
+	})
+	data.append(payable_data)
+	section_data.append(payable_data)
+	#--------------------------------------
+	other_debit_data = get_account_type_based_data(filters.company,
+		"Prepaid Expense", period_list, filters.accumulated_values, filters)
+	other_credit_data = get_account_type_based_data(filters.company,
+		"Accrued Expense", period_list, filters.accumulated_values, filters)
+	for key in other_debit_data:
+		other_debit_data[key] += other_credit_data[key]
+	for type in ["Expense Account", "Round Off", "Expenses Included In Valuation", "Chargeable", "Stock Adjustment"]:
+		minus_type = get_account_type_based_data(filters.company,
+		type, period_list, filters.accumulated_values, filters)
+		for key in other_debit_data:
+			other_debit_data[key] += minus_type[key]
+	other_debit_data.update({
+		"account_name": "Cash Paid to Expense",
+		"account": "Cash Paid to Expense",
+		"indent": 1,
+		"parent_account": "Cash Flow from Operations",
+		"currency": company_currency
+	})
+	data.append(other_debit_data)
+	section_data.append(other_debit_data)
+	#------------------------------------------
+	temporary_data = get_account_type_based_data(filters.company,
+		"Temporary", period_list, filters.accumulated_values, filters)
+	temporary_data.update({
+		"account_name": "Temporary",
+		"account": "Temporary",
+		"indent": 1,
+		"parent_account": "Cash Flow from Operations",
+		"currency": company_currency
+	})
+	data.append(temporary_data)
+	section_data.append(temporary_data)
+
+	add_total_row_account(data, section_data, "Net Cash from Operations",
+		period_list, company_currency, summary_data, filters) 
+
 
 	for cash_flow_account in cash_flow_accounts:
 		section_data = []
@@ -42,16 +116,6 @@ def execute(filters=None):
 			"indent": 0.0,
 			"account": cash_flow_account['section_header']
 		})
-
-		if len(data) == 1:
-			# add first net income in operations section
-			if net_profit_loss:
-				net_profit_loss.update({
-					"indent": 1,
-					"parent_account": cash_flow_accounts[0]['section_header']
-				})
-				data.append(net_profit_loss)
-				section_data.append(net_profit_loss)
 
 		for account in cash_flow_account['account_types']:
 			account_data = get_account_type_based_data(filters.company,
@@ -70,6 +134,9 @@ def execute(filters=None):
 			period_list, company_currency, summary_data, filters)
 
 	add_total_row_account(data, data, _("Net Change in Cash"), period_list, company_currency, summary_data, filters)
+	start, end = get_account_type_balance_data(["Bank", "Cash"], period_list, filters.company)
+	data.append(start)
+	data.append(end)
 	columns = get_columns(filters.periodicity, period_list, filters.accumulated_values, filters.company)
 
 	chart = get_chart_data(columns, data)
@@ -79,22 +146,6 @@ def execute(filters=None):
 	return columns, data, None, chart, report_summary
 
 def get_cash_flow_accounts():
-	operation_accounts = {
-		"section_name": "Operations",
-		"section_footer": _("Net Cash from Operations"),
-		"section_header": _("Cash Flow from Operations"),
-		"account_types": [
-			{"account_type": "Depreciation", "label": _("Depreciation")},
-			{"account_type": "Receivable", "label": _("Net Change in Accounts Receivable")},
-			{"account_type": "Payable", "label": _("Net Change in Accounts Payable")},
-			{"account_type": "Stock", "label": _("Net Change in Inventory")},
-			{"account_type": "Stock Received But Not Billed", "label": _("Stock Received But Not Billed")},
-			{"account_type": "Prepaid Expense", "label": _("Prepaid Expense")},
-			{"account_type": "Accrued Expense", "label": _("Accrued Expense")},
-			{"account_type": "Temporary", "label": _("Temporary")}
-			
-		]
-	}
 
 	investing_accounts = {
 		"section_name": "Investing",
@@ -115,7 +166,7 @@ def get_cash_flow_accounts():
 	}
 
 	# combine all cash flow accounts for iteration
-	return [operation_accounts, investing_accounts, financing_accounts]
+	return [ investing_accounts, financing_accounts]
 
 def get_account_type_based_data(company, account_type, period_list, accumulated_values, filters):
 	data = {}
@@ -235,3 +286,42 @@ def get_filtered_list_for_consolidated_report(filters, period_list):
 			filtered_summary_list.append(period)
 
 	return filtered_summary_list
+
+def get_account_type_balance_data(account_types, period_list, company):
+	start_data = {}
+	end_data = {}
+	first_period = period_list[0]
+	start_total, __ = get_balance_for_period(first_period, company, account_types)
+	last_period = period_list[-1]
+	__, end_total = get_balance_for_period(last_period, company, account_types)
+	
+	for period in period_list:
+		start_amount, end_amount = get_balance_for_period(period, company, account_types)
+		start_data.setdefault(period["key"], start_amount)
+		end_data.setdefault(period["key"], end_amount)
+
+	start_data.update({
+		"total": start_total,
+		"account_name": "Beginning Cash Balance",
+		"account": "Beginning Cash Balance"
+	})
+	end_data.update({
+		"total": end_total,
+		"account_name": "Ending Cash Balance",
+		"account": "Ending Cash Balance"
+	})
+	return start_data, end_data
+
+def get_balance_for_period(period, company, account_types):
+	start_date = add_to_date(get_start_date(period, 0, company), days=-1)
+	start_amount = get_balance_for_type(start_date, account_types, company)
+	end_amount = get_balance_for_type(period['to_date'], account_types, company)
+	return start_amount, end_amount
+
+
+def get_balance_for_type(date, types, company):
+	accounts = frappe.get_all("Account", filters={"account_type": ["in", types], "is_group": 0, "company": company}, pluck="name")
+	balance = 0
+	for acc in accounts:
+		balance += get_balance_on(account=acc, date=date, in_account_currency=False)
+	return balance

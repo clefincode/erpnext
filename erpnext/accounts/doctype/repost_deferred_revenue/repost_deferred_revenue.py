@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import nowdate, flt
+from frappe.utils import nowdate, flt, add_to_date
 
 class RepostDeferredRevenue(Document):
 	def before_submit(self):
@@ -14,12 +14,11 @@ class RepostDeferredRevenue(Document):
 		where is_cancelled = 0 and account = %(account)s and company = %(company)s
 		group by cost_center
 		"""
-		self.repost_date = nowdate()
 		company = frappe.get_doc("Company", self.company)
 		journal_entry = frappe.get_doc({
 			"doctype": "Journal Entry",
 			"company": company.name,
-			"posting_date": nowdate()
+			"posting_date": self.repost_date
 		})
 		deferred_balances = dict(frappe.db.sql(query,values={
 			"account": company.default_deferred_income_account_for_fee,
@@ -80,7 +79,7 @@ def repost_all_cost_centers():
 		repost_deferred_revenue = frappe.get_doc({
 			"doctype": "Repost Deferred Revenue",
 			"company": company,
-			"repost_date": nowdate()
+			"repost_date": add_to_date(nowdate(), days=-1, as_string=True)
 		})
 		repost_deferred_revenue.insert()
 		repost_deferred_revenue.submit()

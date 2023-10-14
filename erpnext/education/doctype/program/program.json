@@ -152,7 +152,7 @@
   },
   {
    "fieldname": "hours",
-   "fieldtype": "Data",
+   "fieldtype": "Float",
    "label": "Hours",
    "reqd": 1
   },
@@ -274,7 +274,7 @@
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2023-05-03 13:02:13.844958",
+ "modified": "2023-10-07 13:58:55.416360",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program",

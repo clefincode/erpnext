@@ -1,0 +1,85 @@
+{
+ "add_total_row": 0,
+ "columns": [
+  {
+   "fieldname": "name",
+   "fieldtype": "Link",
+   "label": "Name",
+   "options": "Student Group",
+   "width": 400
+  },
+  {
+   "fieldname": "count",
+   "fieldtype": "Int",
+   "label": "Count",
+   "width": 70
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "width": 100
+  },
+  {
+   "fieldname": "total_fee",
+   "fieldtype": "Currency",
+   "label": "Total Fee",
+   "width": 140
+  },
+  {
+   "fieldname": "discounts",
+   "fieldtype": "Currency",
+   "label": "Discounts",
+   "width": 140
+  },
+  {
+   "fieldname": "payments",
+   "fieldtype": "Currency",
+   "label": "Payments",
+   "width": 140
+  },
+  {
+   "fieldname": "balance",
+   "fieldtype": "Currency",
+   "label": "Balance",
+   "width": 140
+  }
+ ],
+ "creation": "2021-09-11 12:57:21.509799",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "javascript": "frappe.query_reports[\"Student Group Overview\"] = {\r\n\"filters\": [\r\n\t\t{\r\n\t\t\t\"fieldname\":\"company\",\r\n\t\t\t\"label\": __(\"Company\"),\r\n\t\t\t\"fieldtype\": \"Link\",\r\n\t\t\t\"options\": \"Company\",\r\n\t\t\t\"default\": frappe.defaults.get_user_default(\"Company\"),\r\n\t\t\t\"reqd\": 1\r\n\t\t},\r\n\t\t{\r\n\t\t    \"fieldname\":\"academic_year\",\r\n\t\t\t\"label\": __(\"Academic Year\"),\r\n\t\t\t\"fieldtype\": \"Link\",\r\n\t\t\t\"options\": \"Academic Year\",\r\n\t\t\t\"default\": frappe.defaults.get_user_default(\"academic_year\"),\r\n\t\t\t\"reqd\": 1,\r\n\t\t\t\"on_change\": function(query_report){\r\n\t\t\t    var academic_year = query_report.get_values().academic_year;\r\n\t\t\t    if(!academic_year){\r\n\t\t\t        return;\r\n\t\t\t    }\r\n\t\t\t    frappe.model.with_doc(\"Academic Year\", academic_year, function(r){\r\n\t\t\t        var ay = frappe.model.get_doc(\"Academic Year\", academic_year);\r\n\t\t\t        frappe.query_report.set_filter_value({\r\n\t\t\t            from_date: ay.year_start_date,\r\n\t\t\t            to_date: ay.year_end_date\r\n\t\t\t            });\r\n\t\t\t});\r\n\t\t\t}\r\n\t\t},\r\n\t\t{\r\n\t\t    \"fieldname\":\"program\",\r\n\t\t\t\"label\": __(\"Program\"),\r\n\t\t\t\"fieldtype\": \"Link\",\r\n\t\t\t\"options\": \"Program\"\r\n\t\t},\r\n\t\t{\r\n\t\t    \"fieldname\":\"status\",\r\n\t\t\t\"label\": __(\"Status\"),\r\n\t\t\t\"fieldtype\": \"Select\",\r\n\t\t\t\"options\": [\"\",\"Pending\" , \"Available\", \"Active\", \"Finished\"]\r\n\t\t},\r\n\t\t{\r\n\t\t    \"fieldname\":\"from_date\",\r\n\t\t\t\"label\": __(\"From\"),\r\n\t\t\t\"fieldtype\": \"Date\",\r\n\t\t\t\"default\": frappe.defaults.get_user_default(\"year_start_date\")\r\n\t\t},\r\n\t\t{\r\n\t\t    \"fieldname\":\"to_date\",\r\n\t\t\t\"label\": __(\"To\"),\r\n\t\t\t\"fieldtype\": \"Date\",\r\n\t\t\t\"default\": frappe.defaults.get_user_default(\"year_end_date\")\r\n\t\t}\r\n\t],\r\n\t\"onload\": function(){\r\n\t    var academic_year = frappe.defaults.get_user_default(\"academic_year\")\r\n\t    frappe.model.with_doc(\"Academic Year\", academic_year, function(r){\r\n\t\t\t        var ay = frappe.model.get_doc(\"Academic Year\", academic_year);\r\n\t\t\t        frappe.query_report.set_filter_value({\r\n\t\t\t            from_date: ay.year_start_date,\r\n\t\t\t            to_date: ay.year_end_date\r\n\t\t\t            });\r\n\t\t\t});\r\n\t}\r\n\t}",
+ "json": "{}",
+ "modified": "2023-08-29 15:08:05.294961",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student Group Overview",
+ "owner": "Administrator",
+ "prepared_report": 1,
+ "ref_doctype": "Student Group",
+ "report_name": "Student Group Overview",
+ "report_script": "last_result = []\r\nsg_filters = {\r\n    'company': filters.company,\r\n    'academic_year': filters.academic_year,\r\n    'start_date': ['between' , [filters.from_date , filters.to_date]]\r\n}\r\nif filters.status:\r\n    sg_filters.update({'status': filters.status})\r\nif filters.program:\r\n    sg_filters.update({'program': filters.program})\r\nstudent_groups = frappe.get_list('Student Group' ,filters = sg_filters , fields = ['name' , 'cost_center'] , order_by ='start_date desc')\r\nfor sg in student_groups:\r\n    cur_index = len(last_result)\r\n    total_fee = total_discounts = total_payments = balance = 0\r\n    cur_row = {\r\n    'indent': 0,\r\n    'name': sg.name,\r\n    'count': len(frappe.get_list('Student Group Student' , filters = {'parent':sg.name , 'active':1})),\r\n    'total_fee': 0 ,\r\n    'balance': 0,\r\n    'allocated': 0,\r\n    'date': frappe.get_doc('Student Group',sg.name).start_date\r\n    }\r\n    last_result.append(cur_row)\r\n    res = frappe.db.sql(\"\"\"select glt.party , glt.student_name , gld.discounts , glp.payments , glt.b , glt.d from (\r\n    (SELECT GL.party ,Stu.title as \"student_name\", sum(GL.credit) as c ,sum(GL.debit) as d , (sum(GL.debit)-sum(GL.credit))*-1 as b\r\n     FROM `tabGL Entry` as GL\r\n     LEFT JOIN tabStudent as Stu on GL.party= Stu.name\r\n     where (GL.party_type = \"Student\") and (GL.is_cancelled = 0) \r\n     and  (GL.cost_center = %(cost_center)s)\r\n     group by GL.party ,GL.cost_center,Stu.title) glt left join\r\n    (SELECT GL.party ,Stu.title as \"student_name\", sum(GL.credit) as discounts\r\n     FROM `tabGL Entry` as GL\r\n     LEFT JOIN tabStudent as Stu on GL.party= Stu.name\r\n     where (GL.party_type = \"Student\") and (GL.is_cancelled = 0) \r\n     and  (GL.cost_center = %(cost_center)s)\r\n     and (GL.voucher_type = \"Discount Voucher\")\r\n     group by GL.party ,GL.cost_center,Stu.title) gld \r\n     on glt.party = gld.party left join \r\n     (SELECT GL.party ,Stu.title as \"student_name\", sum(GL.credit) as payments\r\n     FROM `tabGL Entry` as GL\r\n     LEFT JOIN tabStudent as Stu on GL.party= Stu.name\r\n     where (GL.party_type = \"Student\") and (GL.is_cancelled = 0) \r\n     and  (GL.cost_center = %(cost_center)s)\r\n     and (GL.voucher_type != \"Discount Voucher\")\r\n     group by GL.party ,GL.cost_center,Stu.title) glp\r\n     on glt.party = glp.party)\r\n     \"\"\",values = sg , as_dict=1)\r\n    for r in res:\r\n        is_active = frappe.db.get_value('Student Group Student',{\r\n            'student': r.party,\r\n            'parent': sg.name\r\n            }, 'active')\r\n        if is_active:\r\n            row = {\r\n            'indent':1,\r\n            'name': r.student_name,\r\n            'total_fee': r.d,\r\n            'payments': r.payments,\r\n            'discounts': r.discounts,\r\n            'balance': r.b,\r\n            'count': 1,\r\n            'date': frappe.db.get_value('Program Enrollment' , {'student': r.party , 'student_group': sg.name} , 'enrollment_date')\r\n            }\r\n            last_result.append(row)\r\n            total_fee = total_fee + r.d\r\n            total_discounts = total_discounts + (r.discounts or 0)\r\n            total_payments = total_payments + (r.payments or 0)\r\n            balance = balance + (r.b or 0)\r\n    last_result[cur_index].update({'total_fee': total_fee , 'balance': balance , 'payments': total_payments , 'discounts': total_discounts})\r\nresult = last_result",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Academics User"
+  },
+  {
+   "role": "Instructor"
+  },
+  {
+   "role": "Operation Manager"
+  },
+  {
+   "role": "Sales User - Edu"
+  },
+  {
+   "role": "Sales Manager - Edu"
+  }
+ ]
+}
