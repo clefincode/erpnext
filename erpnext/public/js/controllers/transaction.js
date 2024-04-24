@@ -577,7 +577,7 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 			item.rate = flt(item.price_list_rate * (1 - item.discount_percentage / 100.0),
 				precision("rate", item));
 
-		this.calculate_taxes_and_totals();
+		//this.calculate_taxes_and_totals();
 	}
 
 	margin_rate_or_amount(doc, cdt, cdn) {
