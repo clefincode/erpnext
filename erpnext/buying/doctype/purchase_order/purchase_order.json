@@ -892,6 +892,7 @@
    "options": "fa fa-legal"
   },
   {
+   "default": "SABA Default Purchase Conditions",
    "fieldname": "tc_name",
    "fieldtype": "Link",
    "label": "Terms",

@@ -146,7 +146,7 @@
    "fieldname": "description",
    "fieldtype": "Text Editor",
    "in_global_search": 1,
-   "label": "Description",
+   "label": "Compose email",
    "oldfieldname": "problem_description",
    "oldfieldtype": "Text"
   },
@@ -415,6 +415,7 @@
  "sender_field": "raised_by",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "subject_field": "subject",
  "timeline_field": "customer",
  "title_field": "subject",

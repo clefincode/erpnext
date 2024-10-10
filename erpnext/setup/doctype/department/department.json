@@ -15,7 +15,8 @@
   "disabled",
   "lft",
   "rgt",
-  "old_parent"
+  "old_parent",
+  "email"
  ],
  "fields": [
   {
@@ -84,7 +85,13 @@
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
-  }
+  },
+  {
+    "fieldname": "email",
+    "fieldtype": "Link",
+    "label": "Email",
+    "options": "User"
+   }
  ],
  "icon": "fa fa-sitemap",
  "idx": 1,

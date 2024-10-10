@@ -33,6 +33,8 @@
   "company_details_section",
   "company",
   "department",
+  "email",
+  "vaction_mail",
   "employee_number",
   "column_break_25",
   "designation",
@@ -236,6 +238,7 @@
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Date of Birth",
    "oldfieldname": "date_of_birth",
    "oldfieldtype": "Date",
@@ -360,7 +363,6 @@
    "fieldname": "designation",
    "fieldtype": "Link",
    "in_global_search": 1,
-   "in_list_view": 1,
    "label": "Designation",
    "oldfieldname": "designation",
    "oldfieldtype": "Link",
@@ -455,6 +457,7 @@
    "description": "Provide Email Address registered in company",
    "fieldname": "company_email",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Company Email",
    "oldfieldname": "company_email",
    "oldfieldtype": "Data",
@@ -808,6 +811,17 @@
    "fieldname": "column_break_104",
    "fieldtype": "Column Break"
   },
+  {
+    "fieldname": "email",
+    "fieldtype": "Data",
+    "label": "Email"
+   },
+   {
+    "fieldname": "vaction_mail",
+    "fieldtype": "Table MultiSelect",
+    "label": "Vaction mail",
+    "options": "Vaction mail"
+   },
   {
    "fieldname": "column_break_heye",
    "fieldtype": "Column Break"
