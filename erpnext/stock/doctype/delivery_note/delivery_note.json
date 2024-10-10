@@ -1303,10 +1303,10 @@
    "label": "Accounting Dimensions"
   },
   {
+   "fetch_from": "project.cost_center",
    "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "label": "Cost Center",
-   "options": "Cost Center"
+   "fieldtype": "Data",
+   "label": "Cost Center"
   },
   {
    "fieldname": "dimension_col_break",
@@ -1401,7 +1401,7 @@
  "idx": 146,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-12-12 18:38:53.067799",
+ "modified": "2024-05-13 10:49:07.590901",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Delivery Note",

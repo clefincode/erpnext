@@ -164,7 +164,8 @@
   "column_break_152",
   "inter_company_order_reference",
   "party_account_currency",
-  "connections_tab"
+  "connections_tab",
+  "quotation"
  ],
  "fields": [
   {
@@ -1143,6 +1144,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "project",
    "fieldtype": "Link",
    "hide_days": 1,
@@ -1554,6 +1556,7 @@
    "label": "Accounting Dimensions"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "cost_center",
    "fieldtype": "Link",
    "label": "Cost Center",
@@ -1637,13 +1640,20 @@
    "fieldname": "named_place",
    "fieldtype": "Data",
    "label": "Named Place"
+  },
+  {
+   "fieldname": "quotation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Quotation",
+   "options": "Quotation"
   }
  ],
  "icon": "fa fa-file-text",
  "idx": 105,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-12-12 18:34:00.681780",
+ "modified": "2024-09-30 11:02:15.168818",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Sales Order",

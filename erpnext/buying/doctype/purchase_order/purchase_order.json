@@ -888,6 +888,8 @@
    "options": "fa fa-legal"
   },
   {
+   "default": "SABA Default Purchase Conditions",
+   "allow_on_submit": 1,
    "fieldname": "tc_name",
    "fieldtype": "Link",
    "label": "Terms",
@@ -1187,8 +1189,7 @@
   {
    "fieldname": "dashboard",
    "fieldtype": "Tab Break",
-   "label": "Dashboard",
-   "show_dashboard": 1
+   "label": "Dashboard"
   },
   {
    "fieldname": "column_break_7",
@@ -1269,7 +1270,7 @@
  "idx": 105,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-12-25 18:08:59.074182",
+ "modified": "2024-10-01 09:09:45.671355",
  "modified_by": "Administrator",
  "module": "Buying",
  "name": "Purchase Order",
