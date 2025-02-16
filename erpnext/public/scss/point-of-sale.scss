@@ -524,10 +524,25 @@
 						font-size: var(--text-lg);
 					}
 
-					> .checkout-btn {
-						@extend .primary-action;
-						background-color: var(--blue-200);
-						color: white;
+					> .button-container {
+						display: flex;
+						justify-content: space-between; 
+						align-items: center; 
+						margin-top: 10px; 
+						padding: 10px;
+						gap: 10px;
+
+						> .checkout-btn {
+							@extend .primary-action;
+							background-color: var(--blue-200);
+							color: white;
+						}
+						> .complete_order {
+							@extend .primary-action;
+							background-color: var(--blue-200);
+							color: white;
+						}
+											
 					}
 
 					> .edit-cart-btn {
@@ -588,12 +603,25 @@
 						}
 					}
 
-					> .checkout-btn {
-						@extend .primary-action;
-						margin: 0px;
-						margin-bottom: var(--margin-sm);
-						background-color: var(--blue-200);
-						color: white;
+					> .button-container {
+						display: flex;
+						justify-content: space-between; 
+						align-items: center; 
+						margin-top: 10px; 
+						padding: 10px;
+						gap: 10px;
+
+						> .checkout-btn {
+							@extend .primary-action;
+							background-color: var(--blue-200);
+							color: white;
+						}
+						> .complete_order {
+							@extend .primary-action;
+							background-color: var(--blue-200);
+							color: white;
+						}
+											
 					}
 				}
 			}

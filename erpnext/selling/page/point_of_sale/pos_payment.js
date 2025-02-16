@@ -225,6 +225,7 @@ erpnext.PointOfSale.Payment = class {
 		});
 
 		frappe.ui.form.on("POS Invoice", "paid_amount", (frm) => {
+			console.log('====5====');
 			this.update_totals_section(frm.doc);
 
 			// need to re calculate cash shortcuts after discount is applied
@@ -343,6 +344,7 @@ erpnext.PointOfSale.Payment = class {
 	render_payment_section() {
 		this.render_payment_mode_dom();
 		this.make_invoice_fields_control();
+		console.log('====6====');
 		this.update_totals_section();
 		this.focus_on_default_mop();
 	}
@@ -369,6 +371,11 @@ erpnext.PointOfSale.Payment = class {
 		this.render_payment_section();
 		this.after_render();
 	}
+	
+	 submit_invoice() {
+		return  this.events.submit_invoice();
+	}
+
 
 	toggle_remarks_control() {
 		if (this.$remarks.find(".frappe-control").length) {
@@ -589,6 +596,7 @@ erpnext.PointOfSale.Payment = class {
 	}
 
 	update_totals_section(doc) {
+		console.log('====7====');
 		if (!doc) doc = this.events.get_frm().doc;
 		const paid_amount = doc.paid_amount;
 		const grand_total = cint(frappe.sys_defaults.disable_rounded_total)

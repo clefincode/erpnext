@@ -114,6 +114,7 @@ erpnext.selling.POSInvoiceController = class POSInvoiceController extends erpnex
 						this.frm.allow_print_before_pay = r.message.allow_print_before_pay;
 					}
 					this.frm.script_manager.trigger("update_stock");
+					
 					this.calculate_taxes_and_totals();
 					this.frm.doc.taxes_and_charges && this.frm.script_manager.trigger("taxes_and_charges");
 					frappe.model.set_default_values(this.frm.doc);

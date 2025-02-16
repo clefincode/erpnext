@@ -8,7 +8,7 @@ erpnext.PointOfSale.ItemSelector = class {
 		this.pos_profile = pos_profile;
 		this.hide_images = settings.hide_images;
 		this.auto_add_item = settings.auto_add_item_to_cart;
-
+		this.is_coupon_available = true ;
 		this.inti_component();
 	}
 
@@ -19,6 +19,10 @@ erpnext.PointOfSale.ItemSelector = class {
 		this.bind_events();
 		this.attach_shortcuts();
 	}
+
+
+
+
 
 	prepare_dom() {
 		this.wrapper.append(
@@ -47,7 +51,7 @@ erpnext.PointOfSale.ItemSelector = class {
 		}
 
 		this.get_items({}).then(({ message }) => {
-			this.render_item_list(message.items);
+			this.render_item_list(message.items,message.gram);
 		});
 	}
 
@@ -65,16 +69,16 @@ erpnext.PointOfSale.ItemSelector = class {
 		});
 	}
 
-	render_item_list(items) {
+	render_item_list(items,gram) {
 		this.$items_container.html("");
 
 		items.forEach((item) => {
-			const item_html = this.get_item_html(item);
+			const item_html = this.get_item_html(item,gram);
 			this.$items_container.append(item_html);
 		});
 	}
 
-	get_item_html(item) {
+	get_item_html(item,gram) {
 		const me = this;
 		// eslint-disable-next-line no-unused-vars
 		const { item_image, serial_no, batch_no, barcode, actual_qty, uom, price_list_rate } = item;
@@ -118,7 +122,11 @@ erpnext.PointOfSale.ItemSelector = class {
 				data-item-code="${escape(item.item_code)}" data-serial-no="${escape(serial_no)}"
 				data-batch-no="${escape(batch_no)}" data-uom="${escape(uom)}"
 				data-rate="${escape(price_list_rate || 0)}"
+<<<<<<< Updated upstream
 				data-stock-uom="${escape(item.stock_uom)}"
+=======
+				data-item-gram="${escape(gram || 0)}"
+>>>>>>> Stashed changes
 				title="${item.item_name}">
 
 				${get_item_image_html()}
@@ -202,6 +210,8 @@ erpnext.PointOfSale.ItemSelector = class {
 		$(this.search_field.$input[0]).val(value).trigger("input");
 	}
 
+	
+
 	bind_events() {
 		const me = this;
 		window.onScan = onScan;
@@ -245,26 +255,84 @@ erpnext.PointOfSale.ItemSelector = class {
 			},
 		});
 
-		this.$component.on("click", ".item-wrapper", function () {
+		this.$component.on('click', '.item-wrapper',  function() {
 			const $item = $(this);
+<<<<<<< Updated upstream
 			const item_code = unescape($item.attr("data-item-code"));
 			let batch_no = unescape($item.attr("data-batch-no"));
 			let serial_no = unescape($item.attr("data-serial-no"));
 			let uom = unescape($item.attr("data-uom"));
 			let rate = unescape($item.attr("data-rate"));
 			let stock_uom = unescape($item.attr("data-stock-uom"));
+=======
+			const item_code = unescape($item.attr('data-item-code'));
+			let batch_no = unescape($item.attr('data-batch-no'));
+			let serial_no = unescape($item.attr('data-serial-no'));
+			let uom = unescape($item.attr('data-uom'));
+			let rate = unescape($item.attr('data-rate'));
+			let gram = unescape($item.attr('data-item-gram'));
+			
+			const doc = me.events.get_frm().doc;
+			if(doc.active_coupon)
+			{
 
+			var response =  validateCoupon(doc.grand_total ? (parseFloat(doc.grand_total) +parseFloat(rate)) : parseFloat(rate) ,doc.card_value,)
+				if(response.error)
+				{
+					frappe.msgprint(__(response.error));
+					return ;
+				}
+			}
+>>>>>>> Stashed changes
+
+			
+			console.log(gram)
+			var default_packed_item=[];
+		    var exists =false;
+			var custom_has_modifier=false;
+			frappe.db.exists('Product Bundle', item_code).then(ex => {
+				if (ex) {
+					exists=ex;
+					frappe.db.get_value('Item', { 'item_code': item_code }, "custom_has_modifier")
+					.then(res => {
+						custom_has_modifier=res.message.custom_has_modifier;
+						frappe.call({
+						method: "sultan_1975.api.api.get_bundle_items",
+						args: {
+							item_code: item_code
+						},
+			callback: function(response) {
+				if (response.message) {
+					default_packed_item = [...response.message];
+					me.events.item_selected({
+						field: 'qty',
+						value: (parseFloat(gram)>0?`+${parseFloat(gram)}`:"+1"),
+						item: { item_code, batch_no, serial_no, uom, rate },
+						exists,
+						default_packed_item,
+						custom_has_modifier,
+					});
+				}}});
+		});}
+		});
 			// escape(undefined) returns "undefined" then unescape returns "undefined"
 			batch_no = batch_no === "undefined" ? undefined : batch_no;
 			serial_no = serial_no === "undefined" ? undefined : serial_no;
 			uom = uom === "undefined" ? undefined : uom;
 			rate = rate === "undefined" ? undefined : rate;
+<<<<<<< Updated upstream
 			stock_uom = stock_uom === "undefined" ? undefined : stock_uom;
 
 			me.events.item_selected({
 				field: "qty",
 				value: "+1",
 				item: { item_code, batch_no, serial_no, uom, rate, stock_uom },
+=======
+			me.events.item_selected({
+				field: 'qty',
+				value: (parseFloat(gram)>0?`+${parseFloat(gram)}`:"+1"),
+				item: { item_code, batch_no, serial_no, uom, rate },
+>>>>>>> Stashed changes
 			});
 			me.search_field.set_focus();
 		});
@@ -282,6 +350,35 @@ erpnext.PointOfSale.ItemSelector = class {
 		this.search_field.$input.on("focus", () => {
 			this.$clear_search_btn.toggle(Boolean(this.search_field.$input.val()));
 		});
+
+
+
+		function validateCoupon(invoiceValue, cardValue) {
+		
+			const doc = me.events.get_frm().doc;
+			invoiceValue = ( invoiceValue - ((doc.discount_percentage / 100) * invoiceValue)); 
+			if(invoiceValue > cardValue || invoiceValue - cardValue >= 1)
+			{
+				doc.is_coupon_available=false;
+				me.is_coupon_available=false;
+				
+			}
+			else
+			{
+				doc.is_coupon_available=true;
+				me.is_coupon_available=true;
+			}
+			if (cardValue >= invoiceValue || me.is_coupon_available) {
+			  return {
+				success: true
+			  };
+			} else {
+			  return {
+				error: `The invoice value ${invoiceValue} is greater than the coupon balance ${cardValue}. Please complete the order before adding any new items.`
+			};
+			}
+		  }
+
 	}
 
 	attach_shortcuts() {
@@ -332,14 +429,19 @@ erpnext.PointOfSale.ItemSelector = class {
 
 		if (search_term) {
 			search_term = search_term.toLowerCase();
-
-			// memoize
 			this.search_index = this.search_index || {};
 			this.search_index[selling_price_list] = this.search_index[selling_price_list] || {};
 			if (this.search_index[selling_price_list][search_term]) {
 				const items = this.search_index[selling_price_list][search_term];
 				this.items = items;
-				this.render_item_list(items);
+				var code = search_term.substring(0, 3); 
+				var gram = 0;
+
+				if(code=='210')
+				{
+					gram = parseFloat(search_term.substring(8, 12)); 
+				}
+				this.render_item_list(items,gram/1000);
 				this.auto_add_item && this.items.length == 1 && this.add_filtered_item_to_cart();
 				return;
 			}
@@ -352,7 +454,7 @@ erpnext.PointOfSale.ItemSelector = class {
 				this.search_index[selling_price_list][search_term] = items;
 			}
 			this.items = items;
-			this.render_item_list(items);
+			this.render_item_list(items,message.gram);
 			this.auto_add_item && this.items.length == 1 && this.add_filtered_item_to_cart();
 		});
 	}
@@ -388,4 +490,6 @@ erpnext.PointOfSale.ItemSelector = class {
 		this.set_search_value("");
 		this.$component.css("display", show ? "flex" : "none");
 	}
+
+	
 };

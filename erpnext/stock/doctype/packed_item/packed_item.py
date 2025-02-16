@@ -26,6 +26,9 @@ class PackedItem(Document):
 		actual_qty: DF.Float
 		batch_no: DF.Link | None
 		conversion_factor: DF.Float
+		custom_child_modifiers_items: DF.Data | None
+		custom_child_packed_items: DF.Data | None
+		custom_modifier: DF.Data | None
 		description: DF.TextEditor | None
 		incoming_rate: DF.Currency
 		item_code: DF.Link | None

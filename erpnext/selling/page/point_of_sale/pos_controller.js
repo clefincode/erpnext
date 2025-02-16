@@ -288,12 +288,69 @@ erpnext.PointOfSale.Controller = class {
 	}
 
 	init_item_selector() {
+		const me = this;
 		this.item_selector = new erpnext.PointOfSale.ItemSelector({
 			wrapper: this.$components_wrapper,
 			pos_profile: this.pos_profile,
 			settings: this.settings,
 			events: {
-				item_selected: (args) => this.on_cart_update(args),
+				item_selected: function(args) {
+					let { field, values, item,exists=false,default_packed_item,custom_has_modifier} = args;
+					if(exists)
+					{	
+						var item_row = frappe.model.get_doc("POS Invoice Item", me.frm.doc.items[me.frm.doc.items.length-1].name);
+						var value =[...default_packed_item];
+						me.frm.doc.items[me.frm.doc.items.length-1].packed_items=value;
+							const arg = {
+								field,
+								value,
+								item: item_row
+							};
+							me.on_cart_update(arg);
+							if(!custom_has_modifier && exists)
+							{
+								if(!item_row.custom_parent_packed_item)
+								{
+									item_row.custom_parent_packed_item=me.generate_6_char_identifier();	
+								}
+								var get_packed_items_from_form = me.get_packed_items_from_form(me.frm.doc.items);
+
+								var last_packed=[...me.frm.doc.packed_items,...get_packed_items_from_form];
+
+								me.frm.doc.packed_items = last_packed;
+							}
+							else{
+								if(!item_row.custom_parent_packed_item)
+								{
+									item_row.custom_parent_packed_item=me.generate_6_char_identifier();
+									item_row.custom_parent_modifier_item=me.generate_6_char_identifier();	
+								}
+
+								if(me.frm.doc.modifiers_items)
+								{
+									var modifiers_items = [...value];
+									var all_modifiers_items=[...me.frm.doc.modifiers_items];
+									var last_modifiers_items=[...all_modifiers_items,...modifiers_items];
+									var packed_items_from_form_defuilt = me.get_modifiers_packed_items_from_form_defuilt(true,value,item_row.custom_parent_packed_item, item_row.custom_parent_modifier_item);
+									var last_packed=[...me.frm.doc.packed_items,...packed_items_from_form_defuilt];
+									me.frm.doc.packed_items = last_packed;
+									me.frm.doc.modifiers_items = last_modifiers_items;
+								}
+								else
+								{
+									var modifiers_items = [...value];
+									var packed_items_from_form_defuilt = me.get_modifiers_packed_items_from_form_defuilt(true,value,item_row.custom_parent_packed_item, item_row.custom_parent_modifier_item);
+									var last_packed=[...me.frm.doc.packed_items,...packed_items_from_form_defuilt];
+									me.frm.doc.packed_items = last_packed;
+									me.frm.doc.modifiers_items = modifiers_items;
+								}
+							
+							}
+					}
+					else{
+				
+						return  me.on_cart_update(args);
+					}},
 
 				get_frm: () => this.frm || {},
 			},
@@ -315,6 +372,8 @@ erpnext.PointOfSale.Controller = class {
 				numpad_event: (value, action) => this.update_item_field(value, action),
 
 				checkout: () => this.save_and_checkout(),
+
+				complete_order: () => this.save_and_submit_order_btn(),
 
 				edit_cart: () => this.payment.edit_cart(),
 
@@ -341,19 +400,70 @@ erpnext.PointOfSale.Controller = class {
 				},
 
 				form_updated: (item, field, value) => {
+				
 					const item_row = frappe.model.get_doc(item.doctype, item.name);
-					if (item_row && item_row[field] != value) {
+					if ((item_row && item_row[field] != value) || field === "packed_items" || field === "modifiers_items") {
 						const args = {
 							field,
 							value,
-							item: this.item_details.current_item,
+							item: this.item_details.current_item
 						};
-						return this.on_cart_update(args);
+						var update =this.on_cart_update(args);
+						
+						if(field === "packed_items")
+						{
+							if(!item_row.custom_parent_packed_item)
+							{
+								item_row.custom_parent_packed_item=this.generate_6_char_identifier();	
+								item_row.custom_parent_modifier_item=this.generate_6_char_identifier();	
+							}
+							this.frm.doc.packed_items = this.get_modifiers_packed_items_from_form(this.frm.doc.items,value,item_row.custom_parent_packed_item, item_row.custom_parent_modifier_item);
+							
+						}
+				
+						if(field === "modifiers_items")
+						{
+							if(!item_row.custom_parent_packed_item)
+							{
+								item_row.custom_parent_packed_item=this.generate_6_char_identifier();
+								item_row.custom_parent_modifier_item=this.generate_6_char_identifier();	
+							}
+							var modifiers_items = [...value];
+							this.frm.doc.packed_items = this.get_modifiers_packed_items_from_form(this.frm.doc.items);
+							this.frm.doc.modifier_item = modifiers_items;
+						}
+
+						return update;
 					}
 
 					return Promise.resolve();
 				},
 
+				form_updated_without_packed_items: (item, field, value) => {
+				
+					const item_row = frappe.model.get_doc(item.doctype, item.name);
+				
+					if ((item_row && item_row[field] != value) || field === "custom_without_packed_items" ) {
+						const args = {
+							field,
+							value,
+							item: this.item_details.current_item
+						};
+						var update =this.on_cart_update(args);
+						
+						if(field === "custom_without_packed_items")
+						{
+							
+							this.frm.doc.custom_without_packed_items = this.get_without_packaged_items_from_form(this.frm.doc.items);
+						}
+						
+
+						return update;
+					}
+
+					return Promise.resolve();
+				},
+				
 				highlight_cart_item: (item) => {
 					const cart_item = this.cart.get_cart_item(item);
 					this.cart.toggle_item_highlight(cart_item);
@@ -417,8 +527,10 @@ erpnext.PointOfSale.Controller = class {
 					}
 				},
 
-				submit_invoice: () => {
-					this.frm.savesubmit().then((r) => {
+				submit_invoice:  () => {
+					console.log('submit_invoice');
+					const active_coupon =this.frm.doc.active_coupon;
+					 this.frm.savesubmit().then((r) => {
 						this.toggle_components(false);
 						this.order_summary.toggle_component(true);
 						this.order_summary.load_summary_of(this.frm.doc, true);
@@ -426,6 +538,20 @@ erpnext.PointOfSale.Controller = class {
 							indicator: "green",
 							message: __("POS invoice {0} created succesfully", [r.doc.name]),
 						});
+						if(active_coupon)
+						{
+							frappe.call({
+							method: 'sultan_1975.api.api.update_coupon_discount_summary', 
+							args: {
+								coupon_code: active_coupon,
+								total_purchase_amount: r.doc.total,
+								grand_total: r.doc.grand_total,
+								name: r.doc.name,
+								
+							}
+						});
+						}
+						
 					});
 				},
 			},
@@ -533,6 +659,171 @@ erpnext.PointOfSale.Controller = class {
 		});
 	}
 
+	generate_6_char_identifier() {
+		const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+		let result = '';
+		const charactersLength = characters.length;
+		
+		for (let i = 0; i < 6; i++) {
+			result += characters.charAt(Math.floor(Math.random() * charactersLength));
+		}
+		
+		return result;
+	}
+	
+
+
+	get_modifiers_packed_items_from_form(parent_item){
+		
+		let modifiersItems = [];
+		parent_item.forEach(child_item => {
+			if (child_item.modifiers_items) {
+				child_item.modifiers_items.forEach(item => {
+			Object.entries(item).forEach(([key, value]) => {
+				// Access key and value
+				if (!Number.isInteger(value) && typeof value !== 'string') {
+					value.forEach(item => {
+						let packed =  {
+							item_code: item.item_code,
+							qty: item.qty,
+							uom: item.uom,
+							rate: item.added_price,
+							custom_modifier: item.modifier,
+							parent_item: child_item.item_code,
+							custom_child_packed_items:child_item.custom_parent_packed_item,
+							custom_child_modifiers_items:child_item.custom_parent_modifier_item,
+							
+						};
+						modifiersItems = modifiersItems.concat(packed); 
+					});
+					
+				}
+				});
+			});
+			}
+			if (child_item.packed_items) 
+			{
+				child_item.packed_items.forEach(bundle => {
+					
+						let packed = {
+								item_code: bundle.item_code,
+								qty: bundle.qty,
+								uom: bundle.uom,
+								rate: bundle.rate,
+								price: bundle.price,
+								parent_item: child_item.item_code,
+								is_checked:(bundle.is_checked? true : false),
+								custom_child_packed_items:child_item.custom_parent_packed_item
+							};
+							modifiersItems.push(packed);
+					
+				});
+			}
+
+		});
+		
+		return modifiersItems;
+	}
+
+
+	get_without_packaged_items_from_form(without_packaged_items){
+
+		let withoutPackedItems = [];
+		if (without_packaged_items) {
+			without_packaged_items.forEach(item => {
+				if (item.custom_without_packed_items) {
+					let without = item.custom_without_packed_items.map(bundle => {
+						return {
+							item_code: bundle.item_code,
+							qty: bundle.qty,
+							uom: bundle.uom,
+							rate: bundle.rate,
+							price: bundle.price,
+							parent_item: item.item_code,
+							is_checked:(bundle.is_checked? true : false),
+							custom_child_packed_items:item.custom_parent_packed_item
+						};
+					});
+					withoutPackedItems = withoutPackedItems.concat(without); 
+				}
+			});
+		}
+	
+		return withoutPackedItems;
+	}
+
+
+	get_modifiers_packed_items_from_form_defuilt(custom_has_modifier,packed_items,custom_parent_packed_item,custom_parent_modifier_item){
+		
+		let modifiersItems = [];
+		packed_items.forEach(child_item => {
+			
+			if (!custom_has_modifier) 
+			{
+				let packed = {
+					item_code: bundle.item_code,
+					qty: bundle.qty,
+					uom: bundle.uom,
+					rate: bundle.rate,
+					price: bundle.price,
+					parent_item: child_item.item_code,
+					is_checked:(bundle.is_checked? true : false),
+					custom_child_packed_items:child_item.custom_parent_packed_item
+				};
+				modifiersItems.push(packed);
+			}
+			else
+			{
+				let packed =  {
+					item_code: child_item.item_code,
+					qty: child_item.qty,
+					uom: child_item.uom,
+					rate: child_item.added_price,
+					parent_item: child_item.item_code,
+					custom_child_packed_items:custom_parent_packed_item,
+					custom_child_modifiers_items:custom_parent_modifier_item,
+					
+				};
+				modifiersItems.push(packed);
+			}
+			
+		});
+
+		return modifiersItems;
+	}
+
+	
+	get_modifiers_items_from_form(parent_item,modifiers_items,custom_parent_packed_item,custom_parent_modifier_item){
+		let modifiersItems = [];
+		if (modifiers_items) {
+			modifiers_items.forEach(item => {
+				Object.entries(item).forEach(([key, value]) => {
+					// Access key and value
+					if (!Number.isInteger(value) && typeof value !== 'string') {
+						value.forEach(item => {
+							let packed =  {
+								item_code: item.item_code,
+								qty: item.qty,
+								uom: item.uom,
+								rate: item.added_price,
+								modifier: item.modifier,
+								parent_item: parent_item.item_code,
+								custom_child_packed_items:custom_parent_packed_item,
+								custom_child_modifiers_items:custom_parent_modifier_item,
+								
+							};
+							modifiersItems = modifiersItems.concat(packed); 
+						});
+						
+					}
+					});
+				
+			});
+		}
+	
+		return modifiersItems;
+	}
+
 	get_new_frm(_frm) {
 		const doctype = "POS Invoice";
 		const page = $("<div>");
@@ -591,8 +882,13 @@ erpnext.PointOfSale.Controller = class {
 			item_row = this.get_item_from_frm(item);
 			const item_row_exists = !$.isEmptyObject(item_row);
 
+<<<<<<< Updated upstream
 			const from_selector = field === "qty" && value === "+1";
 			if (from_selector) value = flt(item_row.qty) + flt(value);
+=======
+			const from_selector = field === "qty" && (value === "+1" || value.includes("+") );
+			if (from_selector) value = flt(item_row.stock_qty) + flt(value);
+>>>>>>> Stashed changes
 
 			if (item_row_exists) {
 				if (field === "qty") value = flt(value);
@@ -833,5 +1129,22 @@ erpnext.PointOfSale.Controller = class {
 		} else {
 			this.payment.checkout();
 		}
+	}
+
+	 save_and_submit_order_btn() {
+		
+		const doc = this.frm.doc;
+		const paid_amount = doc.paid_amount;
+		const items = doc.items;
+
+		if (paid_amount == 0 || !items.length) {
+			const message = items.length ? __("You cannot submit the order without payment.") : __("You cannot submit empty order.");
+			frappe.show_alert({ message, indicator: "orange" });
+			frappe.utils.play_sound("error");
+			return;
+		}
+
+		this.payment.submit_invoice();
+	
 	}
 };

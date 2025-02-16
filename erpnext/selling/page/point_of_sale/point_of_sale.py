@@ -116,7 +116,7 @@ def filter_result_items(result, pos_profile):
 
 
 @frappe.whitelist()
-def get_items(start, page_length, price_list, item_group, pos_profile, search_term=""):
+def get_items(start, page_length, price_list, item_group, pos_profile , search_term=""):
 	warehouse, hide_unavailable_items = frappe.db.get_value(
 		"POS Profile", pos_profile, ["warehouse", "hide_unavailable_items"]
 	)
@@ -124,9 +124,16 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 	result = []
 
 	if search_term:
+		code = search_term[:3]
+		barcode = search_term[3:8]
+		gram = search_term[8:12]
+		if code == "210":
+			search_term=barcode
 		result = search_by_term(search_term, warehouse, price_list) or []
 		filter_result_items(result, pos_profile)
 		if result:
+			if code == "210":
+				result['gram']=int(gram)/1000
 			return result
 
 	if not frappe.db.exists("Item Group", item_group):
@@ -223,7 +230,7 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 					"batch_no": price.batch_no,
 				}
 			)
-	return {"items": result}
+	return {"items": result,"gram":0}
 
 
 @frappe.whitelist()

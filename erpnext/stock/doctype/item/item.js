@@ -258,6 +258,9 @@ frappe.ui.form.on("Item", {
 	has_variants: function (frm) {
 		erpnext.item.toggle_attributes(frm);
 	},
+	custom_has_modifier: function(frm) {
+		erpnext.item.toggle_attributes(frm);
+	}
 });
 
 frappe.ui.form.on("Item Reorder", {
