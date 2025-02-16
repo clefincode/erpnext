@@ -881,15 +881,8 @@ erpnext.PointOfSale.Controller = class {
 			let { field, value, item } = args;
 			item_row = this.get_item_from_frm(item);
 			const item_row_exists = !$.isEmptyObject(item_row);
-
-<<<<<<< Updated upstream
-			const from_selector = field === "qty" && value === "+1";
-			if (from_selector) value = flt(item_row.qty) + flt(value);
-=======
 			const from_selector = field === "qty" && (value === "+1" || value.includes("+") );
 			if (from_selector) value = flt(item_row.stock_qty) + flt(value);
->>>>>>> Stashed changes
-
 			if (item_row_exists) {
 				if (field === "qty") value = flt(value);
 

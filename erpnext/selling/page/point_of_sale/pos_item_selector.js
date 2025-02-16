@@ -122,11 +122,7 @@ erpnext.PointOfSale.ItemSelector = class {
 				data-item-code="${escape(item.item_code)}" data-serial-no="${escape(serial_no)}"
 				data-batch-no="${escape(batch_no)}" data-uom="${escape(uom)}"
 				data-rate="${escape(price_list_rate || 0)}"
-<<<<<<< Updated upstream
-				data-stock-uom="${escape(item.stock_uom)}"
-=======
 				data-item-gram="${escape(gram || 0)}"
->>>>>>> Stashed changes
 				title="${item.item_name}">
 
 				${get_item_image_html()}
@@ -257,14 +253,6 @@ erpnext.PointOfSale.ItemSelector = class {
 
 		this.$component.on('click', '.item-wrapper',  function() {
 			const $item = $(this);
-<<<<<<< Updated upstream
-			const item_code = unescape($item.attr("data-item-code"));
-			let batch_no = unescape($item.attr("data-batch-no"));
-			let serial_no = unescape($item.attr("data-serial-no"));
-			let uom = unescape($item.attr("data-uom"));
-			let rate = unescape($item.attr("data-rate"));
-			let stock_uom = unescape($item.attr("data-stock-uom"));
-=======
 			const item_code = unescape($item.attr('data-item-code'));
 			let batch_no = unescape($item.attr('data-batch-no'));
 			let serial_no = unescape($item.attr('data-serial-no'));
@@ -283,7 +271,6 @@ erpnext.PointOfSale.ItemSelector = class {
 					return ;
 				}
 			}
->>>>>>> Stashed changes
 
 			
 			console.log(gram)
@@ -320,19 +307,10 @@ erpnext.PointOfSale.ItemSelector = class {
 			serial_no = serial_no === "undefined" ? undefined : serial_no;
 			uom = uom === "undefined" ? undefined : uom;
 			rate = rate === "undefined" ? undefined : rate;
-<<<<<<< Updated upstream
-			stock_uom = stock_uom === "undefined" ? undefined : stock_uom;
-
-			me.events.item_selected({
-				field: "qty",
-				value: "+1",
-				item: { item_code, batch_no, serial_no, uom, rate, stock_uom },
-=======
 			me.events.item_selected({
 				field: 'qty',
 				value: (parseFloat(gram)>0?`+${parseFloat(gram)}`:"+1"),
 				item: { item_code, batch_no, serial_no, uom, rate },
->>>>>>> Stashed changes
 			});
 			me.search_field.set_focus();
 		});

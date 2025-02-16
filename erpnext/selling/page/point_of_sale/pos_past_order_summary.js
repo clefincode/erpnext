@@ -47,11 +47,7 @@ erpnext.PointOfSale.PastOrderSummary = class {
 
 	init_email_print_dialog() {
 		const email_dialog = new frappe.ui.Dialog({
-<<<<<<< Updated upstream
-			title: __("Email Receipt"),
-=======
 			title: 'Email Receipt',
->>>>>>> Stashed changes
 			fields: [
 				{fieldname: 'email_id', fieldtype: 'Data', options: 'Email', label: 'Email ID', reqd: 1},
 				{fieldname:'content', fieldtype:'Small Text', label:'Message (if any)'}
@@ -64,15 +60,10 @@ erpnext.PointOfSale.PastOrderSummary = class {
 		this.email_dialog = email_dialog;
 
 		const print_dialog = new frappe.ui.Dialog({
-<<<<<<< Updated upstream
-			title: __("Print Receipt"),
-			fields: [{ fieldname: "print", fieldtype: "Data", label: "Print Preview" }],
-=======
 			title: 'Print Receipt',
 			fields: [
 				{fieldname: 'print', fieldtype: 'Data', label: 'Print Preview'}
 			],
->>>>>>> Stashed changes
 			primary_action: () => {
 				this.print_receipt();
 			},
@@ -85,15 +76,9 @@ erpnext.PointOfSale.PastOrderSummary = class {
 		const { status } = doc;
 		let indicator_color = '';
 
-<<<<<<< Updated upstream
-		["Paid", "Consolidated"].includes(status) && (indicator_color = "green");
-		status === "Draft" && (indicator_color = "red");
-		status === "Return" && (indicator_color = "grey");
-=======
 		in_list(['Paid', 'Consolidated'], status) && (indicator_color = 'green');
 		status === 'Draft' && (indicator_color = 'red');
 		status === 'Return' && (indicator_color = 'grey');
->>>>>>> Stashed changes
 
 		return `<div class="left-section">
 					<div class="customer-name">${doc.customer}</div>

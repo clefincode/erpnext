@@ -1550,30 +1550,11 @@ erpnext.PointOfSale.ItemDetails = class {
 
 	make_auto_serial_selection_btn(item) {
 		if (item.has_serial_no || item.has_batch_no) {
-<<<<<<< Updated upstream
-			if (item.has_serial_no && item.has_batch_no) {
-				this.$form_container.append(
-					`<div class="btn btn-sm btn-secondary auto-fetch-btn" style="margin-top: 6px">${__(
-						"Select Serial No / Batch No"
-					)}</div>`
-				);
-			} else {
-				const classname = item.has_serial_no ? ".serial_no-control" : ".batch_no-control";
-				const label = item.has_serial_no ? __("Select Serial No") : __("Select Batch No");
-				this.$form_container
-					.find(classname)
-					.append(
-						`<div class="btn btn-sm btn-secondary auto-fetch-btn" style="margin-top: 6px">${label}</div>`
-					);
-			}
-			this.$form_container.find(".serial_no-control").find("textarea").css("height", "6rem");
-=======
 			const label = item.has_serial_no ? __('Select Serial No') : __('Select Batch No');
 			this.$form_container.append(
 				`<div class="btn btn-sm btn-secondary auto-fetch-btn">${label}</div>`
 			);
 			this.$form_container.find('.serial_no-control').find('textarea').css('height', '6rem');
->>>>>>> Stashed changes
 		}
 	}
 
@@ -1673,13 +1654,8 @@ erpnext.PointOfSale.ItemDetails = class {
 			}
 			this.warehouse_control.df.get_query = () => {
 				return {
-<<<<<<< Updated upstream
-					filters: { company: this.events.get_frm().doc.company, is_group: 0 },
-				};
-=======
 					filters: { company: this.events.get_frm().doc.company }
 				}
->>>>>>> Stashed changes
 			};
 			this.warehouse_control.refresh();
 		}
@@ -1800,21 +1776,6 @@ erpnext.PointOfSale.ItemDetails = class {
 	}
 
 	bind_auto_serial_fetch_event() {
-<<<<<<< Updated upstream
-		this.$form_container.on("click", ".auto-fetch-btn", () => {
-			let frm = this.events.get_frm();
-			let item_row = this.item_row;
-			item_row.type_of_transaction = "Outward";
-
-			new erpnext.SerialBatchPackageSelector(frm, item_row, (r) => {
-				if (r) {
-					frappe.model.set_value(item_row.doctype, item_row.name, {
-						serial_and_batch_bundle: r.name,
-						qty: Math.abs(r.total_qty),
-						use_serial_batch_fields: 0,
-					});
-				}
-=======
 		this.$form_container.on('click', '.auto-fetch-btn', () => {
 			frappe.require("assets/erpnext/js/utils/serial_no_batch_selector.js", () => {
 				let frm = this.events.get_frm();
@@ -1829,7 +1790,6 @@ erpnext.PointOfSale.ItemDetails = class {
 						});
 					}
 				});
->>>>>>> Stashed changes
 			});
 		})
 	}

@@ -327,31 +327,10 @@ erpnext.PointOfSale.ItemCart = class {
 			<div class="customer-field"></div>
 		`);
 		const me = this;
-<<<<<<< Updated upstream
-=======
 		const query = { query: 'erpnext.controllers.queries.customer_query' };
->>>>>>> Stashed changes
 		const allowed_customer_group = this.allowed_customer_groups || [];
 		let filters = {};
 		if (allowed_customer_group.length) {
-<<<<<<< Updated upstream
-			filters = {
-				customer_group: ["in", allowed_customer_group],
-			};
-		}
-		this.customer_field = frappe.ui.form.make_control({
-			df: {
-				label: __("Customer"),
-				fieldtype: "Link",
-				options: "Customer",
-				placeholder: __("Search by customer name, phone, email."),
-				get_query: function () {
-					return {
-						filters: filters,
-					};
-				},
-				onchange: function () {
-=======
 			query.filters = {
 				customer_group: ['in', allowed_customer_group]
 			}
@@ -365,7 +344,6 @@ erpnext.PointOfSale.ItemCart = class {
 				get_query: () => query,
 				onchange: function() {
 					
->>>>>>> Stashed changes
 					if (this.value) {
 						const frm = me.events.get_frm();
 						frappe.dom.freeze();
@@ -433,21 +411,6 @@ erpnext.PointOfSale.ItemCart = class {
 
 		this.discount_field = frappe.ui.form.make_control({
 			df: {
-<<<<<<< Updated upstream
-				label: __("Discount"),
-				fieldtype: "Data",
-				placeholder: discount ? discount + "%" : __("Enter discount percentage."),
-				input_class: "input-xs",
-				onchange: function () {
-					this.value = flt(this.value);
-					if (this.value > 100) {
-						frappe.msgprint({
-							title: __("Invalid Discount"),
-							indicator: "red",
-							message: __("Discount cannot be greater than 100%."),
-						});
-						this.value = 0;
-=======
 				label: __('Discount'),
 				fieldtype: 'Data',
 				placeholder: ( discount ? discount + '%' :  __('Enter discount percentage.') ),
@@ -464,7 +427,6 @@ erpnext.PointOfSale.ItemCart = class {
 						});
 						me.$add_discount_elem.html(`${me.get_discount_icon()} ${__('Add Discount')}`);
 						me.discount_field = undefined;
->>>>>>> Stashed changes
 					}
 					frappe.model.set_value(
 						frm.doc.doctype,
@@ -483,21 +445,11 @@ erpnext.PointOfSale.ItemCart = class {
 	}
 
 	hide_discount_control(discount) {
-<<<<<<< Updated upstream
-		if (!flt(discount)) {
-			this.$add_discount_elem.css({
-				border: "1px dashed var(--gray-500)",
-				padding: "var(--padding-sm) var(--padding-md)",
-			});
-			this.$add_discount_elem.html(`${this.get_discount_icon()} ${__("Add Discount")}`);
-			this.discount_field = undefined;
-=======
 		if (!discount) {
 			this.$add_discount_elem.css({ 'padding': '0px', 'border': 'none' });
 			this.$add_discount_elem.html(
 				`<div class="add-discount-field"></div>`
 			);
->>>>>>> Stashed changes
 		} else {
 			this.$add_discount_elem.css({
 				'border': '1px dashed var(--dark-green-500)',
@@ -1416,14 +1368,10 @@ erpnext.PointOfSale.ItemCart = class {
 	
 		dfs.forEach(df => {
 			this[`customer_${df.fieldname}_field`] = frappe.ui.form.make_control({
-<<<<<<< Updated upstream
-				df: df,
-=======
 				df: {
 					...df,
 					onchange: handle_customer_field_change,
 				},
->>>>>>> Stashed changes
 				parent: $customer_form.find(`.${df.fieldname}-field`),
 				render_input: true,
 			});
@@ -1464,23 +1412,6 @@ erpnext.PointOfSale.ItemCart = class {
 		}
 	}
 
-<<<<<<< Updated upstream
-	fetch_customer_transactions() {
-		frappe.db
-			.get_list("POS Invoice", {
-				filters: { customer: this.customer_info.customer, docstatus: 1 },
-				fields: ["name", "grand_total", "status", "posting_date", "posting_time", "currency"],
-				limit: 20,
-			})
-			.then((res) => {
-				const transaction_container = this.$customer_section.find(".customer-transactions");
-
-				if (!res.length) {
-					transaction_container.html(
-						`<div class="no-transactions-placeholder">${__("No recent transactions found")}</div>`
-					);
-					return;
-=======
 
 	fetch_active_coupon() {
 		const me = this;
@@ -1509,7 +1440,6 @@ erpnext.PointOfSale.ItemCart = class {
 					} else {
 						me.customer_active_coupon_field.set_value('');
 					}
->>>>>>> Stashed changes
 				}
 			});
 		}
@@ -1572,26 +1502,6 @@ erpnext.PointOfSale.ItemCart = class {
 						});
 
 
-<<<<<<< Updated upstream
-				const elapsed_time = moment(res[0].posting_date + " " + res[0].posting_time).fromNow();
-				this.$customer_section
-					.find(".customer-desc")
-					.html(`${__("Last transacted")} ${__(elapsed_time)}`);
-
-				res.forEach((invoice) => {
-					const posting_datetime = frappe.datetime.str_to_user(
-						invoice.posting_date + " " + invoice.posting_time
-					);
-					let indicator_color = {
-						Paid: "green",
-						Draft: "red",
-						Return: "gray",
-						Consolidated: "blue",
-					};
-
-					transaction_container.append(
-						`<div class="invoice-wrapper" data-invoice-name="${escape(invoice.name)}">
-=======
 						
 					}
 					else{
@@ -1791,7 +1701,6 @@ erpnext.PointOfSale.ItemCart = class {
 
 				transaction_container.append(
 					`<div class="invoice-wrapper" data-invoice-name="${escape(invoice.name)}">
->>>>>>> Stashed changes
 						<div class="invoice-name-date">
 							<div class="invoice-name">${invoice.name}</div>
 							<div class="invoice-date">${posting_datetime}</div>
@@ -1845,11 +1754,6 @@ erpnext.PointOfSale.ItemCart = class {
 			this.make_no_items_placeholder();
 			this.highlight_checkout_btn(false);
 		}
-<<<<<<< Updated upstream
-
-		this.hide_discount_control(frm.doc.additional_discount_percentage);
-=======
->>>>>>> Stashed changes
 		this.update_totals_section(frm);
 
 		if(frm.doc.docstatus === 1) {
