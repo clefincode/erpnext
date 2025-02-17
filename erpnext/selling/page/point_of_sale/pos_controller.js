@@ -30,7 +30,7 @@ erpnext.PointOfSale.Controller = class {
 				fieldname: "mode_of_payment",
 				fieldtype: "Link",
 				in_list_view: 1,
-				label: __("Mode of Payment"),
+				label: "Mode of Payment",
 				options: "Mode of Payment",
 				reqd: 1,
 			},
@@ -38,7 +38,7 @@ erpnext.PointOfSale.Controller = class {
 				fieldname: "opening_amount",
 				fieldtype: "Currency",
 				in_list_view: 1,
-				label: __("Opening Amount"),
+				label: "Opening Amount",
 				options: "company:company_currency",
 				change: function () {
 					dialog.fields_dict.balance_details.df.data.some((d) => {
@@ -87,7 +87,7 @@ erpnext.PointOfSale.Controller = class {
 				{
 					fieldname: "balance_details",
 					fieldtype: "Table",
-					label: __("Opening Balance Details"),
+					label: "Opening Balance Details",
 					cannot_add_rows: false,
 					in_place_edit: true,
 					reqd: 1,
@@ -155,7 +155,7 @@ erpnext.PointOfSale.Controller = class {
 		this.page.set_title_sub(
 			`<span class="indicator orange">
 				<a class="text-muted" href="#Form/POS%20Opening%20Entry/${this.pos_opening}">
-					Opened at ${frappe.datetime.str_to_user(this.pos_opening_time)}
+					Opened at ${moment(this.pos_opening_time).format("Do MMMM, h:mma")}
 				</a>
 			</span>`
 		);
@@ -165,7 +165,6 @@ erpnext.PointOfSale.Controller = class {
 		this.prepare_dom();
 		this.prepare_components();
 		this.prepare_menu();
-		this.prepare_fullscreen_btn();
 		this.make_new_invoice();
 	}
 
@@ -196,42 +195,11 @@ erpnext.PointOfSale.Controller = class {
 			"Ctrl+O"
 		);
 
+		this.page.add_menu_item(__("Sync POS Invoices"), this.sync_pos_invoices_to_prodaction.bind(this), false, "Shift+Ctrl+S");
+
 		this.page.add_menu_item(__("Save as Draft"), this.save_draft_invoice.bind(this), false, "Ctrl+S");
 
 		this.page.add_menu_item(__("Close the POS"), this.close_pos.bind(this), false, "Shift+Ctrl+C");
-	}
-
-	prepare_fullscreen_btn() {
-		this.page.page_actions.find(".custom-actions").empty();
-
-		this.page.add_button(__("Full Screen"), null, { btn_class: "btn-default fullscreen-btn" });
-
-		this.bind_fullscreen_events();
-	}
-
-	bind_fullscreen_events() {
-		this.$fullscreen_btn = this.page.page_actions.find(".fullscreen-btn");
-
-		this.$fullscreen_btn.on("click", function () {
-			if (!document.fullscreenElement) {
-				document.documentElement.requestFullscreen();
-			} else if (document.exitFullscreen) {
-				document.exitFullscreen();
-			}
-		});
-
-		$(document).on("fullscreenchange", this.handle_fullscreen_change_event.bind(this));
-	}
-
-	handle_fullscreen_change_event() {
-		let enable_fullscreen_label = __("Full Screen");
-		let exit_fullscreen_label = __("Exit Full Screen");
-
-		if (document.fullscreenElement) {
-			this.$fullscreen_btn[0].innerText = exit_fullscreen_label;
-		} else {
-			this.$fullscreen_btn[0].innerText = enable_fullscreen_label;
-		}
 	}
 
 	open_form_view() {
@@ -271,6 +239,274 @@ erpnext.PointOfSale.Controller = class {
 					() => frappe.dom.unfreeze(),
 				]);
 			});
+	}
+
+	sync_pos_invoices_to_prodaction() {
+
+		const me = this;
+
+
+
+		frappe.call({
+			method: "sultan_1975.api.api.get_unsynced_pos_invoices",
+			callback: function (response) {
+				if (response.message && response.message.total_unsynced > 0) {
+					frappe.call({
+						method: "sultan_1975.api.api.check_if_sync_auth_exiest",
+						callback: function (auth) {
+
+							console.log(auth.message)
+
+							if(auth.message){
+								me.show_confirm_dialog(response.message.total_unsynced , auth.message.auth);
+
+							
+							} 
+							else {
+								me.showLoginPopup(response.message.total_unsynced);
+							}
+						}
+					});
+
+				} else {
+					// Show a message if no unsynced invoices are found
+					frappe.msgprint(__('No unsynced POS invoices found.'));
+				}
+			}
+		});
+	}
+
+
+
+	 showLoginPopup (total_unsynced) {
+		var me = this;
+		const loginDialog = new frappe.ui.Dialog({
+			title: 'Login to synchronization',
+			fields: [
+				{
+					fieldname: 'username',
+					label: 'Username',
+					fieldtype: 'Data',
+					reqd: 1
+				},
+				{
+					fieldname: 'password',
+					label: 'Password',
+					fieldtype: 'Password',
+					reqd: 1
+				}
+			],
+			primary_action_label: 'Submit',
+			primary_action: function(values) {
+				loginDialog.hide();
+				frappe.call({
+					method: 'sultan_1975.api.api.get_auth_for_sync',
+					args: {
+						username: values.username,
+						password: values.password
+					},
+					freeze:true,
+					freeze_message: 'Fetching session details, please wait...',
+					callback: async function(response)  {
+						console.log(response.message)
+						if (response.message) {
+							loginDialog.hide();
+							await new Promise((resolve) => setTimeout(resolve, 300));
+							if(response.message.status != 'success'){
+								frappe.msgprint({
+									title: 'Error Fetching session',
+									message: response.message.message,
+									indicator: 'red'
+								});
+							}
+
+							else
+							{
+								me.show_confirm_dialog(total_unsynced,response.message.auth);
+
+
+								
+							}
+
+						}
+					},
+					error: function(err) {
+						frappe.msgprint({
+							title: 'Error',
+							message: 'An error occurred. Please try again.',
+							indicator: 'red'
+						});
+						console.error(err);
+					}
+				});
+			}
+		});
+
+		loginDialog.show();
+	}
+
+	show_confirm_dialog (totalUnsynced, auth){
+		var me = this;
+		frappe.call({
+			method: "sultan_1975.api.api.get_unsynced_invoices",
+			callback: function (response) {
+				if (response.message) {
+					let unsyncedInvoices = response.message;
+				
+					// Generate the invoice list HTML
+					let invoiceListHTML = `
+						<div style="max-height: 25vh; overflow-y: auto">
+							<table class="table table-bordered">
+								<thead>
+									<tr>
+										<th>${__('Customer')}</th>
+										<th>${__('Grand Total')}</th>
+									</tr>
+								</thead>
+								<tbody>
+									${unsyncedInvoices.map(invoice => `
+										<tr>
+											<td>${invoice.customer}</td>
+											<td>${invoice.grand_total}</td>
+										</tr>
+									`).join('')}
+								</tbody>
+							</table>
+						</div>
+					`;
+				
+					// Create a confirmation dialog
+					let dialog = new frappe.ui.Dialog({
+						title: __('Confirm Sync'),
+						fields: [
+							{
+								fieldtype: 'HTML',
+								fieldname: 'message',
+								options: `<p>${__('Are you sure you want to sync the following invoices?')}</p>`
+							},
+							{
+								fieldtype: 'HTML',
+								fieldname: 'invoice_list',
+								options: invoiceListHTML // Inject the invoice list HTML
+							},
+							{
+								fieldtype: 'Small Text',
+								fieldname: 'description',
+								placeholder: __('Enter a description for the sync (optional)')
+							}
+						],
+						primary_action_label: __('Sync'),
+						primary_action: async function () {
+							let description = dialog.get_value('description');
+							
+							dialog.hide();
+							await new Promise((resolve) => setTimeout(resolve, 300));
+							
+							me.show_sync_progress_popup(totalUnsynced, auth , description);
+						},
+						secondary_action_label: __('Cancel'),
+						secondary_action: async function () {
+							dialog.hide();
+						}
+					});
+				
+					// Show the dialog
+					dialog.show();
+				}
+			}
+		});
+	}
+
+
+	 show_sync_progress_popup(totalUnsynced, auth , description) {
+        var me = this;
+
+		let dialog = new frappe.ui.Dialog({
+			title: __('Syncing POS Invoices'),
+			fields: [
+				{
+					fieldtype: 'HTML',
+					fieldname: 'progress',
+					options: '', // Leave empty for now; we'll inject later
+				},
+			]
+		});
+		
+		// Show the dialog
+		dialog.show();
+		
+		// Inject the progress bar HTML after the dialog is rendered
+		let progressHTML = `
+			<div name="sync-progress-bar" = id="sync-progress-bar">
+				<div class="progress" style="height: 20px;">
+					<div class="progress-bar progress-bar-striped progress-bar-animated"
+						role="progressbar"
+						style="width: 0%;"
+						aria-valuenow="0"
+						aria-valuemin="0"
+						aria-valuemax="100">
+						Sync Progress: 0 of ${totalUnsynced}
+					</div>
+				</div>
+			</div>
+		`;
+		$(dialog.body).find('div[data-fieldname="progress"]').html(progressHTML);
+		
+		// Access the progress bar
+		let progressBar = document.querySelector("#sync-progress-bar .progress-bar");
+		
+		// Listen for real-time updates
+		frappe.realtime.on("sync_progress", function (data) {
+			let percentage = (data.current / data.total) * 100;
+
+			// Update progress bar
+			progressBar.style.width = percentage + "%";
+			progressBar.setAttribute("aria-valuenow", percentage);
+			progressBar.innerHTML = `Sync Progress: ${data.current} of ${data.total}`;
+		
+			// Close the dialog when syncing is complete
+			if (data.current === data.total) {
+				dialog.hide();
+			}
+		});
+		// Trigger sync process
+		frappe.call({
+			method: "sultan_1975.api.api.sync_pos_invoices_to_prodaction",
+			args:{
+				auth:auth,
+				description:description
+			},
+			callback: async function (response) {
+				dialog.hide();
+				await new Promise((resolve) => setTimeout(resolve, 300));
+				if(!response.message)
+				{
+					frappe.msgprint(__(`${totalUnsynced} of ${totalUnsynced} POS invoices synced successfully!`));
+				}
+				else{
+					if(response.message.autrazation)
+					{
+						dialog.hide();
+						me.showLoginPopup(totalUnsynced);
+
+					}
+					else{
+						frappe.msgprint(__(`Failed to sync POS Invoices!`));
+					}
+					
+				} 
+			}
+		});
+	
+		// Listen for real-time progress updates
+		
+
+
+
+
+
+		
+
 	}
 
 	close_pos() {
@@ -378,7 +614,6 @@ erpnext.PointOfSale.Controller = class {
 				edit_cart: () => this.payment.edit_cart(),
 
 				customer_details_updated: (details) => {
-					this.item_selector.load_items_data();
 					this.customer_details = details;
 					// will add/remove LP payment method
 					this.payment.render_loyalty_points_payment_mode();
@@ -611,7 +846,6 @@ erpnext.PointOfSale.Controller = class {
 					]);
 				},
 			},
-			pos_profile: this.pos_profile,
 		});
 	}
 
@@ -874,15 +1108,15 @@ erpnext.PointOfSale.Controller = class {
 
 	async on_cart_update(args) {
 		frappe.dom.freeze();
-		if (this.frm.doc.set_warehouse != this.settings.warehouse)
-			this.frm.doc.set_warehouse = this.settings.warehouse;
 		let item_row = undefined;
 		try {
 			let { field, value, item } = args;
 			item_row = this.get_item_from_frm(item);
 			const item_row_exists = !$.isEmptyObject(item_row);
+
 			const from_selector = field === "qty" && (value === "+1" || value.includes("+") );
 			if (from_selector) value = flt(item_row.stock_qty) + flt(value);
+
 			if (item_row_exists) {
 				if (field === "qty") value = flt(value);
 
@@ -899,26 +1133,17 @@ erpnext.PointOfSale.Controller = class {
 			} else {
 				if (!this.frm.doc.customer) return this.raise_customer_selection_alert();
 
-				const { item_code, batch_no, serial_no, rate, uom, stock_uom } = item;
+				const { item_code, batch_no, serial_no, rate, uom } = item;
 
 				if (!item_code) return;
 
-				if (rate == undefined || rate == 0) {
-					frappe.show_alert({
-						message: __("Price is not set for the item."),
-						indicator: "orange",
-					});
-					frappe.utils.play_sound("error");
-					return;
-				}
-				const new_item = { item_code, batch_no, rate, uom, [field]: value, stock_uom };
+				const new_item = { item_code, batch_no, rate, uom, [field]: value };
 
 				if (serial_no) {
 					await this.check_serial_no_availablilty(item_code, this.frm.doc.set_warehouse, serial_no);
 					new_item["serial_no"] = serial_no;
 				}
 
-				new_item["use_serial_batch_fields"] = 1;
 				if (field === "serial_no") new_item["qty"] = value.split(`\n`).length || 0;
 
 				item_row = this.frm.add_child("items", new_item);
@@ -971,7 +1196,7 @@ erpnext.PointOfSale.Controller = class {
 					i.item_code === item_code &&
 					(!has_batch_no || (has_batch_no && i.batch_no === batch_no)) &&
 					i.uom === uom &&
-					i.price_list_rate === flt(rate)
+					i.rate === flt(rate)
 			);
 		}
 
