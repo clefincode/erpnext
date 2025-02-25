@@ -255,29 +255,39 @@ erpnext.PointOfSale.PastOrderSummary = class {
 				</div>`;
 	}
 
-	get_taxes_html(doc) {
+	async get_taxes_html(doc)   {
 		if (!doc.taxes.length) return '';
-
+		let exchange_rate = await this.get_exchange_rate();
 		let taxes_html = doc.taxes.map(t => {
 			// if tax rate is 0, don't print it.
 			const description = /[0-9]+/.test(t.description) ? t.description : ((t.rate != 0) ? `${t.description} @ ${t.rate}%`: t.description);
+			let tax_amount_lbp = t.tax_amount_after_discount_amount * exchange_rate; // Convert tax to LBP
 			return `
 				<div class="tax-row">
 					<div class="tax-label">${description}</div>
 					<div class="tax-value">${format_currency(t.tax_amount_after_discount_amount, doc.currency)}</div>
-				</div>
+					
+			<div class="tax-value">${format_currency(tax_amount_lbp, "LBP")}
+					</div>
 			`;
 		}).join('');
 
 		return `<div class="taxes-wrapper">${taxes_html}</div>`;
 	}
 
-	get_grand_total_html(doc) {
-		return `<div class="summary-row-wrapper grand-total">
-					<div>${__('Grand Total')}</div>
-					<div>${format_currency(doc.grand_total, doc.currency)}</div>
-				</div>`;
-	}
+    async get_grand_total_html(doc) {
+        let exchange_rate = await this.get_exchange_rate();
+        let grand_total_lbp = doc.grand_total * exchange_rate;
+
+        return `<div class="summary-row-wrapper grand-total">
+                    <div>${__('Grand Total (USD)')}</div>
+                    <div>${format_currency(doc.grand_total, doc.currency)}</div>
+                </div>
+                <div class="summary-row-wrapper grand-total">
+                    <div>${__('Grand Total (LBP)')}</div>
+                    <div>${format_currency(grand_total_lbp, "LBP")}</div>
+                </div>`;
+    }
 
 	get_payment_html(doc, payment) {
 		return `<div class="summary-row-wrapper payments">
@@ -584,18 +594,48 @@ erpnext.PointOfSale.PastOrderSummary = class {
 		}
 	}
 
-	attach_totals_info(doc) {
+	async attach_totals_info(doc) {
 		this.$totals_container.html('');
 
 		const net_total_dom = this.get_net_total_html(doc);
-		const taxes_dom = this.get_taxes_html(doc);
+		const taxes_dom = await this.get_taxes_html(doc);
 		const discount_dom = this.get_discount_html(doc);
-		const grand_total_dom = this.get_grand_total_html(doc);
+		const grand_total_dom = await this.get_grand_total_html(doc);
 		this.$totals_container.append(net_total_dom);
 		this.$totals_container.append(taxes_dom);
 		this.$totals_container.append(discount_dom);
 		this.$totals_container.append(grand_total_dom);
 	}
+
+
+
+    async get_exchange_rate() {
+        let exchange_rate = 89000; // Default rate
+
+        try {
+            const res = await frappe.call({
+                method: "frappe.client.get_list",
+                args: {
+                    doctype: "Currency Exchange",
+                    filters: {
+                        from_currency: "USD",
+                        to_currency: "LBP"
+                    },
+                    fields: ["exchange_rate"],
+                    order_by: "modified desc", 
+                    limit_page_length: 1
+                }
+            });
+
+            if (res && res.message.length > 0) {
+                exchange_rate = res.message[0].exchange_rate;
+            }
+        } catch (error) {
+            console.error("Error fetching exchange rate:", error);
+        }
+
+        return exchange_rate;
+    }
 
 	toggle_component(show) {
 		show ? this.$component.css('display', 'flex') : this.$component.css('display', 'none');
