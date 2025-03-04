@@ -897,3 +897,43 @@ def get_filtered_child_rows(doctype, txt, searchfield, start, page_len, filters)
 		)
 
 	return query.run(as_dict=False)
+
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def customer_query(doctype, txt, searchfield, start, page_len, filters):
+	doctype = "Customer"
+	conditions = []
+	cust_master_name = frappe.defaults.get_user_default("cust_master_name")
+
+	if cust_master_name == "Customer Name":
+		fields = ["name", "customer_group", "territory"]
+	else:
+		fields = ["name", "customer_name", "customer_group", "territory"]
+
+	fields = get_fields(doctype, fields)
+
+	searchfields = frappe.get_meta(doctype).get_search_fields()
+	searchfields = " or ".join(field + " like %(txt)s" for field in searchfields)
+
+	return frappe.db.sql(
+		"""select {fields} from `tabCustomer`
+		where docstatus < 2
+			and ({scond}) and disabled=0
+			{fcond} {mcond}
+		order by
+			if(locate(%(_txt)s, name), locate(%(_txt)s, name), 99999),
+			if(locate(%(_txt)s, customer_name), locate(%(_txt)s, customer_name), 99999),
+			idx desc,
+			name, customer_name
+		limit %(start)s, %(page_len)s""".format(
+			**{
+				"fields": ", ".join(fields),
+				"scond": searchfields,
+				"mcond": get_match_cond(doctype),
+				"fcond": get_filters_cond(doctype, filters, conditions).replace("%", "%%"),
+			}
+		),
+		{"txt": "%%%s%%" % txt, "_txt": txt.replace("%", ""), "start": start, "page_len": page_len},
+	)
