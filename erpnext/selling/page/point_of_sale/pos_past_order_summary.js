@@ -217,15 +217,7 @@ erpnext.PointOfSale.PastOrderSummary = class {
 				}
 		}
 
-
-
-
-
-
-       
-	  
 		return htmlContent;
-
 		
 		function get_rate_discount_html() {
 			if (item_data.rate && item_data.price_list_rate && item_data.rate !== item_data.price_list_rate) {
@@ -255,24 +247,56 @@ erpnext.PointOfSale.PastOrderSummary = class {
 				</div>`;
 	}
 
-	async get_taxes_html(doc)   {
+	async get_taxes_html(doc) {
 		if (!doc.taxes.length) return '';
+	
 		let exchange_rate = await this.get_exchange_rate();
-		let taxes_html = doc.taxes.map(t => {
-			// if tax rate is 0, don't print it.
-			const description = /[0-9]+/.test(t.description) ? t.description : ((t.rate != 0) ? `${t.description} @ ${t.rate}%`: t.description);
-			let tax_amount_lbp = t.tax_amount_after_discount_amount * exchange_rate; // Convert tax to LBP
-			return `
-				<div class="tax-row">
-					<div class="tax-label">${description}</div>
-					<div class="tax-value">${format_currency(t.tax_amount_after_discount_amount, doc.currency)}</div>
-					
-			<div class="tax-value">${format_currency(tax_amount_lbp, "LBP")}
-					</div>
-			`;
-		}).join('');
-
+	
+		// Calculate total VAT and total LBP equivalent
+		let total_vat = doc.taxes.reduce((sum, t) => sum + t.tax_amount_after_discount_amount, 0);
+		let total_vat_lbp = total_vat * exchange_rate;
+	
+		// Generate a single tax row for the total
+		let taxes_html = `
+			<div class="tax-row">
+				<span class="tax-label" style="flex: 1; max-width: 40%; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
+					Total VAT:
+				</span> 
+				<span class="tax-value">${format_currency(total_vat, doc.currency)}</span>
+				<span class="tax-value">(${format_currency(total_vat_lbp, "LBP")})</span>
+			</div>
+		`;
+	
 		return `<div class="taxes-wrapper">${taxes_html}</div>`;
+	}
+
+
+	async get_tax_summary_html(doc) {
+		let non_taxes_items = 0;
+		let items_subject_to_vat = 0;
+	
+		// Loop through items to categorize them
+		for (let item of doc.items) {
+			if (!item.item_tax_template) {
+				non_taxes_items += item.amount; 
+			} else {
+				items_subject_to_vat += item.amount; 
+			}
+		}
+	
+		// Generate the HTML for Non Taxes Items
+		let non_taxes_html = `<div class="summary-row-wrapper">
+			<div>${__('Non Taxes Items')}</div>
+			<div>${format_currency(non_taxes_items, doc.currency)}</div>
+		</div>`;
+	
+		// Generate the HTML for Items Subject to VAT
+		let items_vat_html = `<div class="summary-row-wrapper">
+			<div>${__('Items subject to VAT')}</div>
+			<div>${format_currency(items_subject_to_vat, doc.currency)}</div>
+		</div>`;
+	
+		return non_taxes_html + items_vat_html;
 	}
 
     async get_grand_total_html(doc) {
@@ -494,39 +518,45 @@ erpnext.PointOfSale.PastOrderSummary = class {
 
 	attach_items_info(doc) {
 		this.$items_container.html('');
-		
+	
 		doc.items.forEach(item => {
 			var type = "";
-			var  packed_items_for_print=[];
-			if(doc.packed_items)
-			{
-				console.log('ssssss');
-				var packed_items_for_item=doc.packed_items.map(function(item_doc_packed_items) {
-					if ((item_doc_packed_items.parent_item === item.item_code &&  item_doc_packed_items.custom_child_packed_items===item.custom_parent_packed_item) || item_doc_packed_items.custom_child_packed_items===item.custom_parent_packed_item) {
+			var packed_items_for_print = [];
+	
+			// Check if item has a tax template, and prepend '*' to the name
+			let item_name = item.item_name;
+			if (item.item_tax_template) {
+				item_name = `* ${item_name}`;
+			}
+	
+			if (doc.packed_items) {
+				var packed_items_for_item = doc.packed_items.map(function (item_doc_packed_items) {
+					if ((item_doc_packed_items.parent_item === item.item_code &&
+						 item_doc_packed_items.custom_child_packed_items === item.custom_parent_packed_item) || 
+						item_doc_packed_items.custom_child_packed_items === item.custom_parent_packed_item) {
 						return item_doc_packed_items;
 					}
-				 });
-				 var is_packed_items_for_item =false;
-				 
-
-				 for (let i = 0; i < packed_items_for_item.length; i++) {
-					
+				});
+	
+				var is_packed_items_for_item = false;
+	
+				for (let i = 0; i < packed_items_for_item.length; i++) {
 					if (packed_items_for_item[i]?.custom_modifier) {
-						is_packed_items_for_item=true;
-						break; 
+						is_packed_items_for_item = true;
+						break;
 					}
 				}
-				 if(packed_items_for_item.length>0 && is_packed_items_for_item)
-				 {
-					type="Modifier";
-					packed_items_for_print =this.groupItemsByModifier(packed_items_for_item);
-				 }
-				 else
-				 {
-					type="Product bundle"; 
-				 }
+	
+				if (packed_items_for_item.length > 0 && is_packed_items_for_item) {
+					type = "Modifier";
+					packed_items_for_print = this.groupItemsByModifier(packed_items_for_item);
+				} else {
+					type = "Product bundle";
+				}
 			}
-			const item_dom = this.get_item_html(doc, item, packed_items_for_print,type);
+	
+			// Pass updated item name to get_item_html
+			const item_dom = this.get_item_html(doc, { ...item, item_name }, packed_items_for_print, type);
 			this.$items_container.append(item_dom);
 			this.set_dynamic_rate_header_width();
 		});
@@ -600,8 +630,10 @@ erpnext.PointOfSale.PastOrderSummary = class {
 		const net_total_dom = this.get_net_total_html(doc);
 		const taxes_dom = await this.get_taxes_html(doc);
 		const discount_dom = this.get_discount_html(doc);
+		const tax_summary_dom = await this.get_tax_summary_html(doc);
 		const grand_total_dom = await this.get_grand_total_html(doc);
 		this.$totals_container.append(net_total_dom);
+		this.$totals_container.append(tax_summary_dom);
 		this.$totals_container.append(taxes_dom);
 		this.$totals_container.append(discount_dom);
 		this.$totals_container.append(grand_total_dom);
