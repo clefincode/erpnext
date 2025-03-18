@@ -122,7 +122,7 @@ erpnext.PointOfSale.ItemSelector = class {
 				data-item-code="${escape(item.item_code)}" data-serial-no="${escape(serial_no)}"
 				data-batch-no="${escape(batch_no)}" data-uom="${escape(uom)}"
 				data-rate="${escape(price_list_rate || 0)}"
-				data-item-gram="${escape(gram || 0)}"
+				data-item-gram="${escape(gram || 0)}"  data-is_this_tax_included="${escape(item.custom_is_this_tax_in_basic_rate)}"
 				title="${item.item_name}">
 
 				${get_item_image_html()}
@@ -254,6 +254,7 @@ erpnext.PointOfSale.ItemSelector = class {
 		this.$component.on('click', '.item-wrapper',  function() {
 			const $item = $(this);
 			const item_code = unescape($item.attr('data-item-code'));
+			const custom_is_this_tax_included_in_basic_rate = parseInt(unescape($item.attr('data-is_this_tax_included')));
 			let batch_no = unescape($item.attr('data-batch-no'));
 			let serial_no = unescape($item.attr('data-serial-no'));
 			let uom = unescape($item.attr('data-uom'));
@@ -294,7 +295,7 @@ erpnext.PointOfSale.ItemSelector = class {
 					me.events.item_selected({
 						field: 'qty',
 						value: (parseFloat(gram)>0?`+${parseFloat(gram)}`:"+1"),
-						item: { item_code, batch_no, serial_no, uom, rate },
+						item: { item_code, batch_no, serial_no, uom, rate , custom_is_this_tax_included_in_basic_rate},
 						exists,
 						default_packed_item,
 						custom_has_modifier,
@@ -310,7 +311,7 @@ erpnext.PointOfSale.ItemSelector = class {
 			me.events.item_selected({
 				field: 'qty',
 				value: (parseFloat(gram)>0?`+${parseFloat(gram)}`:"+1"),
-				item: { item_code, batch_no, serial_no, uom, rate },
+				item: { item_code, batch_no, serial_no, uom, rate,custom_is_this_tax_included_in_basic_rate},
 			});
 			me.search_field.set_focus();
 		});

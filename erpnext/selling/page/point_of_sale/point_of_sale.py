@@ -28,10 +28,16 @@ def search_by_term(search_term, warehouse, price_list):
 
 	if not item_doc:
 		return
-
+	item_doc["custom_is_this_tax_included_in_basic_rate"] = frappe.db.get_value(
+        "Item Tax",
+        {"parent": item_code},
+        "custom_is_this_tax_included_in_basic_rate"
+    ) or 0
+	
 	item = {
 		"barcode": barcode,
 		"batch_no": batch_no,
+		"custom_is_this_tax_included_in_basic_rate":item.custom_is_this_tax_included_in_basic_rate,
 		"description": item_doc.description,
 		"is_stock_item": item_doc.is_stock_item,
 		"item_code": item_doc.name,
@@ -156,24 +162,29 @@ def get_items(start, page_length, price_list, item_group, pos_profile , search_t
 		SELECT
 			item.name AS item_code,
 			item.item_name,
+			COALESCE(tax.custom_is_this_tax_included_in_basic_rate, 0) AS custom_is_this_tax_in_basic_rate,
 			item.description,
 			item.stock_uom,
 			item.image AS item_image,
 			item.is_stock_item
 		FROM
-			`tabItem` item {bin_join_selection}
+			`tabItem` item
+		LEFT JOIN
+			`tabItem Tax` tax ON tax.parent = item.name
+		{bin_join_selection}
 		WHERE
 			item.disabled = 0
 			AND item.has_variants = 0
 			AND item.is_sales_item = 1
 			AND item.is_fixed_asset = 0
-			AND item.item_group in (SELECT name FROM `tabItem Group` WHERE lft >= {lft} AND rgt <= {rgt})
+			AND item.item_group IN (SELECT name FROM `tabItem Group` WHERE lft >= {lft} AND rgt <= {rgt})
 			AND {condition}
 			{bin_join_condition}
 		ORDER BY
-			item.name asc
+			item.name ASC
 		LIMIT
-			{page_length} offset {start}""".format(
+			{page_length} OFFSET {start}
+		""".format(
 			start=cint(start),
 			page_length=cint(page_length),
 			lft=cint(lft),
@@ -184,7 +195,7 @@ def get_items(start, page_length, price_list, item_group, pos_profile , search_t
 		),
 		{"warehouse": warehouse},
 		as_dict=1,
-	)
+)
 
 	# return (empty) list if there are no results
 	if not items_data:

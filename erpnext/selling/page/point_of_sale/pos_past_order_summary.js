@@ -260,7 +260,7 @@ erpnext.PointOfSale.PastOrderSummary = class {
 		let taxes_html = `
 			<div class="tax-row">
 				<span class="tax-label" style="flex: 1; max-width: 40%; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
-					Total VAT:
+					Total VAT (11%):
 				</span> 
 				<span class="tax-value">${format_currency(total_vat, doc.currency)}</span>
 				<span class="tax-value">(${format_currency(total_vat_lbp, "LBP")})</span>
@@ -272,6 +272,8 @@ erpnext.PointOfSale.PastOrderSummary = class {
 
 
 	async get_tax_summary_html(doc) {
+		let exchange_rate = await this.get_exchange_rate();	
+		// Calculate total VAT and total LBP equivalent
 		let non_taxes_items = 0;
 		let items_subject_to_vat = 0;
 	
@@ -283,6 +285,8 @@ erpnext.PointOfSale.PastOrderSummary = class {
 				items_subject_to_vat += item.amount; 
 			}
 		}
+
+		let total_vat_lbp = items_subject_to_vat * exchange_rate;
 	
 		// Generate the HTML for Non Taxes Items
 		let non_taxes_html = `<div class="summary-row-wrapper">
@@ -293,7 +297,7 @@ erpnext.PointOfSale.PastOrderSummary = class {
 		// Generate the HTML for Items Subject to VAT
 		let items_vat_html = `<div class="summary-row-wrapper">
 			<div>${__('Items subject to VAT')}</div>
-			<div>${format_currency(items_subject_to_vat, doc.currency)}</div>
+			<div>${format_currency(total_vat_lbp, "LBP")}</div>
 		</div>`;
 	
 		return non_taxes_html + items_vat_html;

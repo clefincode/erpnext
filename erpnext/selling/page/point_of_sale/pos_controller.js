@@ -765,6 +765,8 @@ erpnext.PointOfSale.Controller = class {
 				submit_invoice:  () => {
 					console.log('submit_invoice');
 					const active_coupon =this.frm.doc.active_coupon;
+					 this.check_if_tax_included_in_basic_rate(this.frm.doc)
+					 console.log('submit_invoice 2');
 					 this.frm.savesubmit().then((r) => {
 						this.toggle_components(false);
 						this.order_summary.toggle_component(true);
@@ -855,6 +857,34 @@ erpnext.PointOfSale.Controller = class {
 		this.order_summary.toggle_component(show);
 	}
 
+	check_if_tax_included_in_basic_rate(doc) {
+
+		console.log('ssssss1')
+
+
+		doc.items.forEach(item => {
+
+			const parsedTaxRate = JSON.parse(item.item_tax_rate);
+
+
+			const taxRateKey = Object.keys(parsedTaxRate)[0];
+
+
+			var taxEntry  = doc.taxes.find((i) => i.account_head == taxRateKey);
+
+
+			taxEntry.included_in_print_rate = parseInt(item.custom_is_this_tax_included_in_basic_rate); 
+
+			
+		});
+
+		this.frm.doc.items.find((i) => i.name == name);
+
+	 this.frm.doc.items.find((i) => i.name == name);
+
+	}
+
+
 	toggle_components(show) {
 		this.cart.toggle_component(show);
 		this.item_selector.toggle_component(show);
@@ -862,6 +892,7 @@ erpnext.PointOfSale.Controller = class {
 		// do not show item details or payment if recent order is toggled off
 		!show ? this.item_details.toggle_component(false) || this.payment.toggle_component(false) : "";
 	}
+
 
 	make_new_invoice() {
 		return frappe.run_serially([
@@ -1111,6 +1142,7 @@ erpnext.PointOfSale.Controller = class {
 		let item_row = undefined;
 		try {
 			let { field, value, item } = args;
+			console.log(args)
 			item_row = this.get_item_from_frm(item);
 			const item_row_exists = !$.isEmptyObject(item_row);
 
@@ -1133,11 +1165,11 @@ erpnext.PointOfSale.Controller = class {
 			} else {
 				if (!this.frm.doc.customer) return this.raise_customer_selection_alert();
 
-				const { item_code, batch_no, serial_no, rate, uom } = item;
+				const { item_code, batch_no, serial_no, rate, uom ,custom_is_this_tax_included_in_basic_rate} = item;
 
 				if (!item_code) return;
 
-				const new_item = { item_code, batch_no, rate, uom, [field]: value };
+				const new_item = { item_code, batch_no, rate, uom ,custom_is_this_tax_included_in_basic_rate, [field]: value };
 
 				if (serial_no) {
 					await this.check_serial_no_availablilty(item_code, this.frm.doc.set_warehouse, serial_no);
