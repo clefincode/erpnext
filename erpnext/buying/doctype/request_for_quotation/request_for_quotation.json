@@ -309,10 +309,11 @@
   }
  ],
  "icon": "fa fa-shopping-cart",
+ "in_create": 1,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-11-06 12:45:28.898706",
+ "modified": "2025-03-16 12:01:08.565696",
  "modified_by": "Administrator",
  "module": "Buying",
  "name": "Request for Quotation",

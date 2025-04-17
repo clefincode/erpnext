@@ -286,12 +286,12 @@
    "read_only": 1
   },
   {
+   "default": "SABA",
    "fieldname": "company",
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company",
-   "remember_last_selected_value": 1,
-   "reqd": 1
+   "remember_last_selected_value": 1
   },
   {
    "fieldname": "column_break_28",
@@ -454,7 +454,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "max_attachments": 4,
- "modified": "2024-04-24 10:56:16.001032",
+ "modified": "2024-10-27 10:19:16.780006",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
@@ -498,6 +498,18 @@
    "role": "Employee",
    "select": 1,
    "share": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PM's role for project",
+   "select": 1,
+   "share": 1,
+   "write": 1
   }
  ],
  "quick_entry": 1,

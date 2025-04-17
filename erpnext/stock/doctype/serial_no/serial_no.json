@@ -272,7 +272,7 @@
  "icon": "fa fa-barcode",
  "idx": 1,
  "links": [],
- "modified": "2023-12-17 10:52:55.767839",
+ "modified": "2024-10-27 11:19:14.327312",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Serial No",
@@ -308,6 +308,18 @@
    "read": 1,
    "report": 1,
    "role": "Stock User"
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "logistic role",
+   "select": 1,
+   "share": 1,
+   "write": 1
   }
  ],
  "search_fields": "item_code",

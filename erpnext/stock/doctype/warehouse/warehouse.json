@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_import": 1,
+ "allow_rename": 1,
  "creation": "2023-05-29 13:02:17.121296",
  "description": "A logical Warehouse against which stock entries are made.",
  "doctype": "DocType",
@@ -263,7 +264,7 @@
  "idx": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2024-08-14 16:08:15.733597",
+ "modified": "2025-02-25 13:31:37.700223",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Warehouse",

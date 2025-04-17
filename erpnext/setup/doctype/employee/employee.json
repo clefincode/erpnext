@@ -812,16 +812,16 @@
    "fieldtype": "Column Break"
   },
   {
-    "fieldname": "email",
-    "fieldtype": "Data",
-    "label": "Email"
-   },
-   {
-    "fieldname": "vaction_mail",
-    "fieldtype": "Table MultiSelect",
-    "label": "Vaction mail",
-    "options": "Vaction mail"
-   },
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "vaction_mail",
+   "fieldtype": "Table MultiSelect",
+   "label": "Vaction mail",
+   "options": "Vaction mail"
+  },
   {
    "fieldname": "column_break_heye",
    "fieldtype": "Column Break"
@@ -837,8 +837,13 @@
  "idx": 24,
  "image_field": "image",
  "is_tree": 1,
- "links": [],
- "modified": "2024-01-03 17:36:20.984421",
+ "links": [
+  {
+   "link_doctype": "Attendance And Leave Requests",
+   "link_fieldname": "employee"
+  }
+ ],
+ "modified": "2025-04-07 15:54:52.731001",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Employee",
