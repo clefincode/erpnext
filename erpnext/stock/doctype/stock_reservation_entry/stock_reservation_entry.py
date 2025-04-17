@@ -106,7 +106,7 @@ class StockReservationEntry(Document):
 			"warehouse",
 			"voucher_type",
 			"voucher_no",
-			"voucher_detail_no",
+			# "voucher_detail_no",
 			"available_qty",
 			"voucher_qty",
 			"stock_uom",
@@ -427,21 +427,34 @@ class StockReservationEntry(Document):
 
 	def validate_with_allowed_qty(self, qty_to_be_reserved: float) -> None:
 		"""Validates `Reserved Qty` with `Max Reserved Qty`."""
+		frappe.log_error(message=str(self.__dict__),title="self")
+		frappe.log_error(message=str(qty_to_be_reserved),title="qty_to_be_reserved")
 
 		self.db_set(
 			"available_qty",
 			get_available_qty_to_reserve(self.item_code, self.warehouse, ignore_sre=self.name),
 		)
-
-		total_reserved_qty = get_sre_reserved_qty_for_voucher_detail_no(
-			self.voucher_type, self.voucher_no, self.voucher_detail_no, ignore_sre=self.name
-		)
+		if self.voucher_detail_no:
+			total_reserved_qty = get_sre_reserved_qty_for_voucher_detail_no(
+				self.voucher_type, self.voucher_no, self.voucher_detail_no , ignore_sre=self.name
+			)
+		else:
+			total_reserved_qty = get_sre_reserved_qty_for_voucher_detail_no_for_packed(
+				self.voucher_type, self.voucher_no, self.custom_voucher_packed_detail_no, ignore_sre=self.name
+			)
+		
 
 		voucher_delivered_qty = 0
 		if self.voucher_type == "Sales Order":
-			delivered_qty, conversion_factor = frappe.db.get_value(
-				"Sales Order Item", self.voucher_detail_no, ["delivered_qty", "conversion_factor"]
-			)
+			frappe.log_error(message=str(self.voucher_detail_no), title="self.voucher_detail_no")
+			if self.voucher_detail_no and self.voucher_detail_no !='temp':
+				delivered_qty, conversion_factor = frappe.db.get_value(
+					"Sales Order Item", self.voucher_detail_no , ["delivered_qty", "conversion_factor"]
+				)
+			else:
+				delivered_qty, conversion_factor = frappe.db.get_value(
+					"Packed Item", self.custom_voucher_packed_detail_no, ["custom_delivered_qty", "conversion_factor"]
+				)				
 			voucher_delivered_qty = flt(delivered_qty) * flt(conversion_factor)
 
 		allowed_qty = min(self.available_qty, (self.voucher_qty - voucher_delivered_qty - total_reserved_qty))
@@ -523,7 +536,7 @@ def get_available_qty_to_reserve(
 		)
 
 	available_qty = get_stock_balance(item_code, warehouse)
-
+	frappe.log_error("get_stock_balance", str(available_qty))
 	if available_qty:
 		sre = frappe.qb.DocType("Stock Reservation Entry")
 		query = (
@@ -545,7 +558,8 @@ def get_available_qty_to_reserve(
 
 		if reserved_qty:
 			return available_qty - reserved_qty
-
+	
+	frappe.log_error("available_qty", str(available_qty))
 	return available_qty
 
 
@@ -680,6 +694,26 @@ def get_sre_reserved_qty_details_for_voucher(voucher_type: str, voucher_no: str)
 
 	return frappe._dict(data)
 
+def get_sre_reserved_qty_details_for_voucher_for_packed(voucher_type: str, voucher_no: str) -> dict:
+	"""Returns a dict like {"custom_voucher_packed_detail_no": "reserved_qty", ... }."""
+
+	sre = frappe.qb.DocType("Stock Reservation Entry")
+	data = (
+		frappe.qb.from_(sre)
+		.select(
+			sre.custom_voucher_packed_detail_no,
+			(Sum(sre.reserved_qty) - Sum(sre.delivered_qty)).as_("reserved_qty"),
+		)
+		.where(
+			(sre.docstatus == 1)
+			& (sre.voucher_type == voucher_type)
+			& (sre.voucher_no == voucher_no)
+			& (sre.status.notin(["Delivered", "Cancelled"]))
+		)
+		.groupby(sre.custom_voucher_packed_detail_no)
+	).run(as_list=True)
+
+	return frappe._dict(data)
 
 def get_sre_reserved_warehouses_for_voucher(
 	voucher_type: str, voucher_no: str, voucher_detail_no: str | None = None
@@ -735,6 +769,32 @@ def get_sre_reserved_qty_for_voucher_detail_no(
 
 	return flt(reserved_qty[0][0])
 
+def get_sre_reserved_qty_for_voucher_detail_no_for_packed(
+	voucher_type: str, voucher_no: str, voucher_detail_no: str, ignore_sre=None
+) -> float:
+	"""Returns `Reserved Qty` against the Voucher."""
+
+	sre = frappe.qb.DocType("Stock Reservation Entry")
+	query = (
+		frappe.qb.from_(sre)
+		.select(
+			(Sum(sre.reserved_qty) - Sum(sre.delivered_qty)),
+		)
+		.where(
+			(sre.docstatus == 1)
+			& (sre.voucher_type == voucher_type)
+			& (sre.voucher_no == voucher_no)
+			& (sre.custom_voucher_packed_detail_no == voucher_detail_no)
+			& (sre.status.notin(["Delivered", "Cancelled"]))
+		)
+	)
+
+	if ignore_sre:
+		query = query.where(sre.name != ignore_sre)
+
+	reserved_qty = query.run(as_list=True)
+
+	return flt(reserved_qty[0][0])
 
 def get_sre_reserved_serial_nos_details(
 	item_code: str, warehouse: str, serial_nos: list | None = None
@@ -879,6 +939,27 @@ def has_reserved_stock(voucher_type: str, voucher_no: str, voucher_detail_no: st
 
 	return False
 
+def get_sre_reserved_qty_custom_voucher_packed_detail(voucher_type: str, voucher_no: str) -> dict:
+	"""Returns a dict like {"voucher_detail_no": "reserved_qty", ... }."""
+
+	sre = frappe.qb.DocType("Stock Reservation Entry")
+	data = (
+		frappe.qb.from_(sre)
+		.select(
+			sre.custom_voucher_packed_detail_no,
+			(Sum(sre.reserved_qty) - Sum(sre.delivered_qty)).as_("reserved_qty"),
+		)
+		.where(
+			(sre.docstatus == 1)
+			& (sre.voucher_type == voucher_type)
+			& (sre.voucher_no == voucher_no)
+			& (sre.status.notin(["Delivered", "Cancelled"]))
+		)
+		.groupby(sre.custom_voucher_packed_detail_no)
+	).run(as_list=True)
+
+	return frappe._dict(data)
+
 
 def create_stock_reservation_entries_for_so_items(
 	sales_order: object,
@@ -970,7 +1051,19 @@ def create_stock_reservation_entries_for_so_items(
 			continue
 
 		unreserved_qty = get_unreserved_qty(item, reserved_qty_details)
+		import json
 
+		if hasattr(item, "as_dict"):
+			content = json.dumps(item.as_dict(), indent=2, default=str)
+		else:
+			# Fallback if it's not a Document-like object
+			content = str(vars(item))
+		
+		frappe.log_error(
+			title="Debugging get_unreserved_qty_for_packed",
+			message=f"Item Details:\n{content}\nReserved Qty Details:\n{reserved_qty_details}"
+		)
+		frappe.log_error("step9", str(unreserved_qty))
 		# Stock is already reserved for the item, notify the user and skip the item.
 		if unreserved_qty <= 0:
 			if not from_voucher_type:
@@ -1080,9 +1173,252 @@ def create_stock_reservation_entries_for_so_items(
 
 		sre.save()
 		sre.submit()
+		frappe.db.commit()
 
 		sre_count += 1
 
+	if sre_count and notify:
+		frappe.msgprint(_("Stock Reservation Entries Created"), alert=True, indicator="green")
+
+
+def create_stock_reservation_entries_for_so_packed_items(
+	sales_order: object,
+	items_details: list[dict] | None = None,
+	from_voucher_type: Literal["Pick List", "Purchase Receipt"] = None,
+	notify=True,
+) -> None:
+	"""Creates Stock Reservation Entries for Packed Item."""
+	
+	from erpnext.selling.doctype.sales_order.sales_order import get_unreserved_qty_for_packed
+
+	if not from_voucher_type and (
+		sales_order.get("_action") == "submit"
+		and sales_order.set_warehouse
+		and cint(frappe.get_cached_value("Warehouse", sales_order.set_warehouse, "is_group"))
+	):
+		return frappe.msgprint(
+			_("Stock cannot be reserved in the group warehouse {0}.").format(
+				frappe.bold(sales_order.set_warehouse)
+			)
+		)
+	frappe.log_error("step1", "")
+	validate_stock_reservation_settings(sales_order)
+
+	allow_partial_reservation = frappe.db.get_single_value("Stock Settings", "allow_partial_reservation")
+	frappe.log_error("step2", "")
+	items = []
+	frappe.log_error(message=str(items_details),title="packed item details")
+	if items_details:
+		frappe.log_error("step3", "")
+		for item in items_details:
+			frappe.log_error("step4", "")
+			if frappe.db.exists("Packed Item", item.get("custom_sales_order_packed_item")):
+				so_item = frappe.get_doc("Packed Item", item.get("custom_sales_order_packed_item"))
+			else:
+				so_item = frappe.get_doc("Packed Item", item.get("packed_item"))
+
+			so_item.warehouse = item.get("warehouse")
+			so_item.qty_to_reserve = (
+				flt(item.get("qty_to_reserve"))
+				if from_voucher_type in ["Pick List", "Purchase Receipt"]
+				else (
+					flt(item.get("qty_to_reserve"))
+					* (flt(item.get("conversion_factor")) or flt(so_item.conversion_factor) or 1)
+				)
+			)
+			so_item.from_voucher_no = item.get("from_voucher_no")
+			so_item.from_voucher_detail_no = item.get("from_voucher_detail_no")
+			so_item.serial_and_batch_bundle = item.get("serial_and_batch_bundle")
+
+			items.append(so_item)
+
+	sre_count = 0
+	reserved_qty_details = get_sre_reserved_qty_details_for_voucher_for_packed("Sales Order", sales_order.name)
+	frappe.log_error("step5", "")
+	print("iiiiiiiiiiiiiii",items)
+	for item in items if items_details else sales_order.get("packed_items"): 
+		print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+		frappe.log_error("step6", "")
+		# Skip if `Reserved Stock` is not checked for the item.###ahmad must avoid if row from packed
+		if not item.get("custom_reserve_stock"):
+			continue
+		print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+
+		##not implemented yet for Pick List
+		## Stock should be reserved from the Pick List if has Picked Qty.
+		#if not from_voucher_type == "Pick List" and flt(item.picked_qty) > 0:
+		#	frappe.throw(
+		#		_("Row #{0}: Item {1} has been picked, please reserve stock from the Pick List.").format(
+		#			item.idx, frappe.bold(item.item_code)
+		#		)
+		#	)
+
+		is_stock_item, has_serial_no, has_batch_no = frappe.get_cached_value(
+			"Item", item.item_code, ["is_stock_item", "has_serial_no", "has_batch_no"]
+		)
+
+		# Skip if Non-Stock Item.
+		print("ccccccccccccc",is_stock_item)
+		if not is_stock_item:
+			if not from_voucher_type:
+				frappe.msgprint(
+					_("Row #{0}: Stock cannot be reserved for a non-stock Item {1}").format(
+						item.idx, frappe.bold(item.item_code)
+					),
+					title=_("Stock Reservation"),
+					indicator="yellow",
+				)
+
+			item.db_set("custom_reserve_stock", 0)
+			continue
+		frappe.log_error("step7", "")
+		# Skip if Group Warehouse.
+		if frappe.get_cached_value("Warehouse", item.warehouse, "is_group"):
+			frappe.msgprint(
+				_("Row #{0}: Stock cannot be reserved in group warehouse {1}.").format(
+					item.idx, frappe.bold(item.warehouse)
+				),
+				title=_("Stock Reservation"),
+				indicator="yellow",
+			)
+			continue
+
+		frappe.log_error("step8", "")
+		unreserved_qty = get_unreserved_qty_for_packed(item, reserved_qty_details)
+		import json
+
+		if hasattr(item, "as_dict"):
+			content = json.dumps(item.as_dict(), indent=2, default=str)
+		else:
+			# Fallback if it's not a Document-like object
+			content = str(vars(item))
+		
+		frappe.log_error(
+			title="Debugging get_unreserved_qty_for_packed",
+			message=f"Item Details:\n{content}\nReserved Qty Details:\n{reserved_qty_details}"
+		)
+
+
+		# Stock is already reserved for the item, notify the user and skip the item.
+		if unreserved_qty <= 0:
+			frappe.log_error("step9", str(unreserved_qty))
+			if not from_voucher_type:
+				frappe.msgprint(
+					_("Row #{0}: Stock is already reserved for the Item {1}.").format(
+						item.idx, frappe.bold(item.item_code)
+					),
+					title=_("Stock Reservation"),
+					indicator="yellow",
+				)
+
+			continue
+
+		available_qty_to_reserve = get_available_qty_to_reserve(item.item_code, item.warehouse)
+		frappe.log_error("step10", "")
+		# No stock available to reserve, notify the user and skip the item.
+		if available_qty_to_reserve <= 0:
+			frappe.msgprint(
+				_("Row #{0}: Stock not available to reserve for the Item {1} in Warehouse {2}.").format(
+					item.idx, frappe.bold(item.item_code), frappe.bold(item.warehouse)
+				),
+				title=_("Stock Reservation"),
+				indicator="orange",
+			)
+			continue
+
+		# The quantity which can be reserved.
+		qty_to_be_reserved = min(unreserved_qty, available_qty_to_reserve)
+		frappe.log_error("step11", "")
+		if hasattr(item, "qty_to_reserve"):
+			frappe.log_error("step12", "")
+			if item.qty_to_reserve <= 0:
+				frappe.log_error("step13", "")
+				frappe.msgprint(
+					_("Row #{0}: Quantity to reserve for the Item {1} should be greater than 0.").format(
+						item.idx, frappe.bold(item.item_code)
+					),
+					title=_("Stock Reservation"),
+					indicator="orange",
+				)
+				continue
+			else:
+				frappe.log_error("step14", "")
+				qty_to_be_reserved = min(qty_to_be_reserved, item.qty_to_reserve)
+
+		# Partial Reservation
+		if qty_to_be_reserved < unreserved_qty:
+			frappe.log_error("step15", "")
+			if not from_voucher_type and (
+				not item.get("qty_to_reserve") or qty_to_be_reserved < flt(item.get("qty_to_reserve"))
+			):
+				msg = _("Row #{0}: Only {1} available to reserve for the Item {2}").format(
+					item.idx,
+					frappe.bold(str(qty_to_be_reserved / item.conversion_factor) + " " + item.uom),
+					frappe.bold(item.item_code),
+				)
+				frappe.msgprint(msg, title=_("Stock Reservation"), indicator="orange")
+
+			# Skip the item if `Partial Reservation` is disabled in the Stock Settings.
+			if not allow_partial_reservation:
+				if qty_to_be_reserved == flt(item.get("qty_to_reserve")):
+					msg = _(
+						"Enable Allow Partial Reservation in the Stock Settings to reserve partial stock."
+					)
+					frappe.msgprint(msg, title=_("Partial Stock Reservation"), indicator="yellow")
+
+				continue
+		frappe.log_error("step16", "")
+		sre = frappe.new_doc("Stock Reservation Entry")
+
+		sre.item_code = item.item_code
+		sre.warehouse = item.warehouse
+		sre.has_serial_no = has_serial_no
+		sre.has_batch_no = has_batch_no
+		sre.voucher_type = sales_order.doctype
+		sre.voucher_no = sales_order.name
+		sre.custom_voucher_packed_detail_no = item.name
+		sre.available_qty = available_qty_to_reserve
+		sre.voucher_qty = item.qty
+		sre.reserved_qty = qty_to_be_reserved
+		sre.company = sales_order.company
+		sre.stock_uom = item.uom
+		sre.project = sales_order.project
+
+		if from_voucher_type:
+			sre.from_voucher_type = from_voucher_type
+			sre.from_voucher_no = item.from_voucher_no
+			sre.from_voucher_detail_no = item.from_voucher_detail_no
+
+		if item.get("serial_and_batch_bundle"):
+			sbb = frappe.get_doc("Serial and Batch Bundle", item.serial_and_batch_bundle)
+			sre.reservation_based_on = "Serial and Batch"
+
+			index, picked_qty = 0, 0
+			while index < len(sbb.entries) and picked_qty < qty_to_be_reserved:
+				entry = sbb.entries[index]
+				qty = 1 if has_serial_no else min(abs(entry.qty), qty_to_be_reserved - picked_qty)
+
+				sre.append(
+					"sb_entries",
+					{
+						"serial_no": entry.serial_no,
+						"batch_no": entry.batch_no,
+						"qty": qty,
+						"warehouse": entry.warehouse,
+					},
+				)
+
+				index += 1
+				picked_qty += qty
+		frappe.log_error("step17", "")
+		sre.save()
+		sre.submit()
+		frappe.db.commit()
+
+		sre_count += 1
+
+	frappe.log_error("step18", str(sre_count))
+	frappe.log_error("step19", str(notify))
 	if sre_count and notify:
 		frappe.msgprint(_("Stock Reservation Entries Created"), alert=True, indicator="green")
 

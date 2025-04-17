@@ -917,6 +917,41 @@ class PurchaseReceipt(BuyingController):
 					notify=True,
 				)
 
+		so_items_details_map = {}
+		frappe.log_error("s1","")
+		for item in self.items:
+			frappe.log_error("s2","")
+			frappe.log_error("item.sales_order",str(item.sales_order))
+			frappe.log_error("item.custom_sales_order_packed_item",str(item.custom_sales_order_packed_item))
+			if item.sales_order and item.custom_sales_order_packed_item:
+				frappe.log_error("s3","")
+				item_details = {
+					"custom_sales_order_packed_item": item.custom_sales_order_packed_item,
+					"item_code": item.item_code,
+					"warehouse": item.warehouse,
+					"qty_to_reserve": item.stock_qty,
+					"from_voucher_no": item.parent,
+					"from_voucher_detail_no": item.name,
+					"serial_and_batch_bundle": item.serial_and_batch_bundle,
+				}
+				so_items_details_map.setdefault(item.sales_order, []).append(item_details)
+		frappe.log_error("s4","")
+		if so_items_details_map:
+			frappe.log_error("s5","")
+			if get_datetime(f"{self.posting_date} {self.posting_time}") > get_datetime():
+				return frappe.msgprint(
+					_("Cannot create Stock Reservation Entries for future dated Purchase Receipts.")
+				)
+
+			for so, items_details in so_items_details_map.items():
+				frappe.log_error("s6",str(items_details))
+				so_doc = frappe.get_doc("Sales Order", so)
+				so_doc.create_stock_reservation_entries_for_packed(
+					items_details=items_details,
+					from_voucher_type="Purchase Receipt",
+					notify=True,
+				)
+
 	def enable_recalculate_rate_in_sles(self):
 		sle_table = frappe.qb.DocType("Stock Ledger Entry")
 		(

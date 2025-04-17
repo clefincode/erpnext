@@ -50,7 +50,7 @@ frappe.ui.form.on("Sales Order", {
 		});
 
 		frm.set_df_property("packed_items", "cannot_add_rows", true);
-		frm.set_df_property("packed_items", "cannot_delete_rows", true);
+		frm.set_df_property("packed_items", "cannot_delete_rows", false);
 	},
 
 	refresh: function (frm) {
@@ -240,7 +240,7 @@ frappe.ui.form.on("Sales Order", {
 		refresh_field("items");
 	},
 
-	create_stock_reservation_entries(frm) {
+	create_stock_reservation_entries(frm) { //Mohamad
 		const dialog = new frappe.ui.Dialog({
 			title: __("Stock Reservation"),
 			size: "extra-large",
@@ -258,14 +258,21 @@ frappe.ui.form.on("Sales Order", {
 					},
 					onchange: () => {
 						if (dialog.get_value("set_warehouse")) {
+							// update warehouse in original Sales Order Items table
 							dialog.fields_dict.items.df.data.forEach((row) => {
 								row.warehouse = dialog.get_value("set_warehouse");
 							});
+							// update warehouse in new Packed Items table
+							dialog.fields_dict.packed_items_table.df.data.forEach((row) => {
+								row.warehouse = dialog.get_value("set_warehouse");
+							});
 							dialog.fields_dict.items.grid.refresh();
+							dialog.fields_dict.packed_items_table.grid.refresh();
 						}
 					},
 				},
 				{ fieldtype: "Column Break" },
+				// Original Add Item field (Sales Order Item)
 				{
 					fieldname: "add_item",
 					fieldtype: "Link",
@@ -283,46 +290,98 @@ frappe.ui.form.on("Sales Order", {
 					},
 					onchange: () => {
 						let sales_order_item = dialog.get_value("add_item");
-
 						if (sales_order_item) {
-							frm.doc.items.forEach((item) => {
-								if (item.name === sales_order_item) {
-									let unreserved_qty =
-										(flt(item.stock_qty) -
-											(item.stock_reserved_qty
-												? flt(item.stock_reserved_qty)
-												: flt(item.delivered_qty) * flt(item.conversion_factor))) /
-										flt(item.conversion_factor);
-
-									if (unreserved_qty > 0) {
-										dialog.fields_dict.items.df.data.forEach((row) => {
-											if (row.sales_order_item === sales_order_item) {
-												unreserved_qty -= row.qty_to_reserve;
-											}
-										});
+							let selectedItem = frm.doc.items.find(
+								(item) => item.name === sales_order_item
+							);
+							if (selectedItem) {
+								// Calculate unreserved quantity as in your original logic
+								let unreserved_qty =
+									(flt(selectedItem.stock_qty) -
+										(selectedItem.stock_reserved_qty
+											? flt(selectedItem.stock_reserved_qty)
+											: flt(selectedItem.delivered_qty) *
+											  flt(selectedItem.conversion_factor))) /
+									flt(selectedItem.conversion_factor);
+								// Adjust for already added items
+								dialog.fields_dict.items.df.data.forEach((row) => {
+									if (row.sales_order_item === sales_order_item) {
+										unreserved_qty -= row.qty_to_reserve;
 									}
-
-									dialog.fields_dict.items.df.data.push({
-										sales_order_item: item.name,
-										item_code: item.item_code,
-										warehouse: dialog.get_value("set_warehouse") || item.warehouse,
-										qty_to_reserve: Math.max(unreserved_qty, 0),
-									});
-									dialog.fields_dict.items.grid.refresh();
-									dialog.set_value("add_item", undefined);
-								}
-							});
+								});
+								dialog.fields_dict.items.df.data.push({
+									sales_order_item: selectedItem.name,
+									item_code: selectedItem.item_code,
+									warehouse:
+										dialog.get_value("set_warehouse") || selectedItem.warehouse,
+									qty_to_reserve: Math.max(unreserved_qty, 0),
+								});
+								dialog.fields_dict.items.grid.refresh();
+								dialog.set_value("add_item", undefined);
+							}
+						}
+					},
+				},
+				// New Add field for Packed Items
+				{
+					fieldname: "add_packed_item",
+					fieldtype: "Link",
+					label: __("Add Packed Item"),
+					options: "Packed Item",
+					get_query: () => {
+						return {
+							query: "erpnext.controllers.queries.get_filtered_child_rows_packed",
+							filters: {
+								parenttype: frm.doc.doctype,
+								parent: frm.doc.name,
+								reserve_stock: 1,
+							},
+						};
+					},
+					onchange: () => {
+						let packed_item = dialog.get_value("add_packed_item");
+						if (packed_item) {
+							let selectedPackedItem = frm.doc.packed_items.find(
+								(packed) => packed.name === packed_item
+							);
+							if (selectedPackedItem) {
+								frappe.call({
+									method: "sabaintegration.www.api.get_available_qty", 
+									args: {
+										item_code: selectedPackedItem.item_code,
+										warehouse: selectedPackedItem.warehouse,
+										batch_no: selectedPackedItem.batch_no || null,
+										ignore_sre: null
+									},
+									callback: function(r) {
+										let available_stock = flt(r.message || 0);
+										let unreserved_qty = available_stock;
+										// Add the packed item to the new table
+										dialog.fields_dict.packed_items_table.df.data.push({
+											packed_item: selectedPackedItem.name,
+											item_code: selectedPackedItem.item_code,
+											warehouse: dialog.get_value("set_warehouse") || selectedPackedItem.warehouse,
+											qty_to_reserve: Math.max(unreserved_qty, 0),
+										});
+										dialog.fields_dict.packed_items_table.grid.refresh();
+										dialog.set_value("add_packed_item", undefined);
+									}
+								});
+								// Stop further execution here (async handling)
+								return;
+							}
 						}
 					},
 				},
 				{ fieldtype: "Section Break" },
+				// Original table for Sales Order Items (kept as is)
 				{
 					fieldname: "items",
 					fieldtype: "Table",
 					label: __("Items to Reserve"),
 					allow_bulk_edit: false,
 					cannot_add_rows: true,
-					cannot_delete_rows: true,
+					cannot_delete_rows: false,
 					data: [],
 					fields: [
 						{
@@ -344,13 +403,13 @@ frappe.ui.form.on("Sales Order", {
 							},
 							onchange: (event) => {
 								if (event) {
-									let name = $(event.currentTarget).closest(".grid-row").attr("data-name");
-									let item_row =
-										dialog.fields_dict.items.grid.grid_rows_by_docname[name].doc;
-
+									let name = $(event.currentTarget)
+										.closest(".grid-row")
+										.attr("data-name");
+									let row = dialog.fields_dict.items.grid.grid_rows_by_docname[name].doc;
 									frm.doc.items.forEach((item) => {
-										if (item.name === item_row.sales_order_item) {
-											item_row.item_code = item.item_code;
+										if (item.name === row.sales_order_item) {
+											row.item_code = item.item_code;
 										}
 									});
 									dialog.fields_dict.items.grid.refresh();
@@ -388,34 +447,132 @@ frappe.ui.form.on("Sales Order", {
 						},
 					],
 				},
+				{
+					fieldname: "packed_items_table",
+					fieldtype: "Table",
+					label: __("Packed Items to Reserve"),
+					allow_bulk_edit: false,
+					cannot_add_rows: true,
+					cannot_delete_rows: false,
+					data: [],
+					fields: [
+						{
+							fieldname: "packed_item",
+							fieldtype: "Link",
+							label: __("Packed Item"),
+							options: "Packed Item",
+							reqd: 1,
+							in_list_view: 1,
+							get_query: () => {
+								return {
+									query: "erpnext.controllers.queries.get_filtered_child_rows_packed",
+									filters: {
+										parenttype: frm.doc.doctype,
+										parent: frm.doc.name,
+										reserve_stock: 1,
+									},
+								};
+							},
+							onchange: (event) => {
+								if (event) {
+									let name = $(event.currentTarget)
+										.closest(".grid-row")
+										.attr("data-name");
+									let row = dialog.fields_dict.packed_items_table.grid.grid_rows_by_docname[name].doc;
+									frm.doc.packed_items.forEach((packed) => {
+										if (packed.name === row.packed_item) {
+											row.item_code = packed.item_code;
+										}
+									});
+									dialog.fields_dict.packed_items_table.grid.refresh();
+								}
+							},
+						},
+						{
+							fieldname: "item_code",
+							fieldtype: "Link",
+							label: __("Item Code"),
+							options: "Item",
+							reqd: 1,
+							read_only: 1,
+							in_list_view: 1,
+						},
+						{
+							fieldname: "warehouse",
+							fieldtype: "Link",
+							label: __("Warehouse"),
+							options: "Warehouse",
+							reqd: 1,
+							in_list_view: 1,
+							get_query: () => {
+								return {
+									filters: [["Warehouse", "is_group", "!=", 1]],
+								};
+							},
+						},
+						{
+							fieldname: "qty_to_reserve",
+							fieldtype: "Float",
+							label: __("Qty"),
+							reqd: 1,
+							in_list_view: 1,
+						},
+					],
+				},
 			],
 			primary_action_label: __("Reserve Stock"),
 			primary_action: () => {
-				var data = { items: dialog.fields_dict.items.grid.get_selected_children() };
-
-				if (data.items && data.items.length > 0) {
+				// Get selected rows from both tables
+				var so_items = dialog.fields_dict.items.grid.get_selected_children();
+				var pk_items = dialog.fields_dict.packed_items_table.grid.get_selected_children();
+			
+				// Check if nothing is selected in either table
+				if ((!so_items || so_items.length === 0) && (!pk_items || pk_items.length === 0)) {
+					frappe.msgprint(__("Please select items to reserve."));
+					return;
+				}
+			
+				// For Sales Order Items, call the original method
+				if (so_items && so_items.length > 0) {
 					frappe.call({
 						doc: frm.doc,
 						method: "create_stock_reservation_entries",
 						args: {
-							items_details: data.items,
-							notify: true,
+							items_details: so_items,
+							notify: true
 						},
 						freeze: true,
 						freeze_message: __("Reserving Stock..."),
 						callback: (r) => {
 							frm.doc.__onload.has_unreserved_stock = false;
 							frm.reload_doc();
-						},
+						}
 					});
-
-					dialog.hide();
-				} else {
-					frappe.msgprint(__("Please select items to reserve."));
 				}
+			
+				// For Packed Items, call the dedicated method
+				if (pk_items && pk_items.length > 0) {
+					frappe.call({
+						doc: frm.doc,
+						method: "create_stock_reservation_entries_for_packed",
+						args: {
+							items_details: pk_items,
+							notify: true
+						},
+						freeze: true,
+						freeze_message: __("Reserving Packed Stock..."),
+						callback: (r) => {
+							frm.doc.__onload.has_unreserved_stock = false;
+							frm.reload_doc();
+						}
+					});
+				}
+			
+				dialog.hide();
 			},
 		});
-
+	
+		// Pre-populate the original Sales Order Items table as before
 		frm.doc.items.forEach((item) => {
 			if (item.reserve_stock) {
 				let unreserved_qty =
@@ -424,10 +581,8 @@ frappe.ui.form.on("Sales Order", {
 							? flt(item.stock_reserved_qty)
 							: flt(item.delivered_qty) * flt(item.conversion_factor))) /
 					flt(item.conversion_factor);
-
 				if (unreserved_qty > 0) {
 					dialog.fields_dict.items.df.data.push({
-						__checked: 1,
 						sales_order_item: item.name,
 						item_code: item.item_code,
 						warehouse: item.warehouse,
@@ -436,9 +591,28 @@ frappe.ui.form.on("Sales Order", {
 				}
 			}
 		});
-
+	
+		// Pre-populate the new Packed Items table if available in the document
+		if (frm.doc.packed_items) {
+			frm.doc.packed_items.forEach((packed) => {
+				console.log(packed)
+				// Adjust logic as needed; here we assume an "available_qty" field exists
+				let unreserved_qty = packed.qty || 0;
+				if (unreserved_qty > 0) {
+					dialog.fields_dict.packed_items_table.df.data.push({
+						packed_item: packed.name,
+						item_code: packed.item_code,
+						warehouse: packed.warehouse,
+						qty_to_reserve: unreserved_qty,
+					});
+				}
+			});
+		}
+	
 		dialog.fields_dict.items.grid.refresh();
+		dialog.fields_dict.packed_items_table.grid.refresh();
 		dialog.show();
+	
 	},
 
 	cancel_stock_reservation_entries(frm) {
@@ -452,7 +626,7 @@ frappe.ui.form.on("Sales Order", {
 					label: __("Reserved Stock"),
 					allow_bulk_edit: false,
 					cannot_add_rows: true,
-					cannot_delete_rows: true,
+					cannot_delete_rows: false,
 					in_place_edit: true,
 					data: [],
 					fields: [

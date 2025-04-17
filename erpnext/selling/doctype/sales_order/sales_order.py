@@ -719,6 +719,14 @@ class SalesOrder(SellingController):
 			unreserved_qty = get_unreserved_qty(item, reserved_qty_details)
 			if unreserved_qty > 0:
 				return True
+				# Check unreserved stock in Packed Items
+		for packed_item in self.get("packed_items", []): 
+			
+
+			unreserved_qty = get_unreserved_qty(packed_item, reserved_qty_details)
+			if unreserved_qty > 0:
+					return True
+
 
 		return False
 
@@ -742,6 +750,28 @@ class SalesOrder(SellingController):
 			notify=notify,
 		)
 
+
+	@frappe.whitelist()
+	def create_stock_reservation_entries_for_packed(
+		self,
+		items_details: list[dict] | None = None,
+		from_voucher_type: Literal["Pick List", "Purchase Receipt"] = None,
+		notify=True,
+	) -> None:
+		"""Creates Stock Reservation Entries for Sales Order Items."""
+
+		from erpnext.stock.doctype.stock_reservation_entry.stock_reservation_entry import (
+			create_stock_reservation_entries_for_so_packed_items as create_stock_reservation_entries_for_packed,
+		)
+
+		create_stock_reservation_entries_for_packed(
+			sales_order=self,
+			items_details=items_details,
+			from_voucher_type=from_voucher_type,
+			notify=notify,
+		)
+
+
 	@frappe.whitelist()
 	def cancel_stock_reservation_entries(self, sre_list=None, notify=True) -> None:
 		"""Cancel Stock Reservation Entries for Sales Order Items."""
@@ -755,11 +785,31 @@ class SalesOrder(SellingController):
 		)
 
 
-def get_unreserved_qty(item: object, reserved_qty_details: dict) -> float:
+
+def get_unreserved_qty_for_packed(item: object, reserved_qty_details: dict) -> float:
 	"""Returns the unreserved quantity for the Sales Order Item."""
 
 	existing_reserved_qty = reserved_qty_details.get(item.name, 0)
-	return item.stock_qty - flt(item.delivered_qty) * item.get("conversion_factor", 1) - existing_reserved_qty
+	frappe.log_error("zexisting_reserved_qty", str(existing_reserved_qty))
+	frappe.log_error("zitem.delivered_qty", str(item.custom_delivered_qty))
+	frappe.log_error("zexisting_reserved_qty", str(existing_reserved_qty))
+	frappe.log_error("zitem.stock_qty", str(item.qty))
+	return item.qty - flt(item.custom_delivered_qty) * item.get("conversion_factor", 1) - existing_reserved_qty
+
+
+
+def get_unreserved_qty(item: object, reserved_qty_details: dict) -> float:
+	"""Returns the unreserved quantity for the Sales Order Item."""
+	# print("stock qty : " , item.stock_qty)
+
+	existing_reserved_qty = reserved_qty_details.get(item.name, 0)
+	if not hasattr(item, "stock_qty") or item.stock_qty is None:
+		actual_qty = frappe.db.get_value("Bin", {"item_code": item.item_code, "warehouse": item.warehouse}, "actual_qty") or 0
+		return actual_qty - existing_reserved_qty
+	else:
+		actual_qty = item.stock_qty
+		
+		return item.stock_qty - flt(item.delivered_qty) * item.get("conversion_factor", 1) - existing_reserved_qty
 
 
 def get_list_context(context=None):
@@ -1016,12 +1066,14 @@ def make_delivery_note(source_name, target_doc=None, kwargs=None):
 			so_items = {d.name: d for d in so.items if d.stock_reserved_qty}
 
 			for sre in sre_list:
-				if not condition(so_items[sre.voucher_detail_no]):
+				## Malaz ##
+				voucher_no = sre.voucher_detail_no or sre.custom_voucher_packed_detail_no
+				if not voucher_no or voucher_no not in so_items:
 					continue
 
 				dn_item = get_mapped_doc(
-					"Sales Order Item",
-					sre.voucher_detail_no,
+					"Sales Order Item" if sre.voucher_detail_no else "Packed Item",
+					voucher_no,
 					{
 						"Sales Order Item": {
 							"doctype": "Delivery Note Item",
@@ -1031,11 +1083,20 @@ def make_delivery_note(source_name, target_doc=None, kwargs=None):
 								"parent": "against_sales_order",
 							},
 							"postprocess": update_dn_item,
-						}
+						},
+						"Packed Item": {
+							"doctype": "Delivery Note Item",
+							"field_map": {
+								"rate": "rate",
+								"name": "so_detail",
+								"parent": "against_sales_order",
+							},
+							"postprocess": update_dn_item,
+						},
 					},
 					ignore_permissions=True,
 				)
-
+				
 				dn_item.qty = flt(sre.reserved_qty) * flt(dn_item.get("conversion_factor", 1))
 
 				if sre.reservation_based_on == "Serial and Batch" and (sre.has_serial_no or sre.has_batch_no):
