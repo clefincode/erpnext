@@ -8,9 +8,9 @@ def execute():
 
 	if not frappe.db.table_exists("Website Item"):
 		return
-
+#Change Webshop Settings
 	doctypes = [
-		"E Commerce Settings",
+		"Webshop Settings",
 		"Website Item",
 		"Recommended Items",
 		"Item Review",

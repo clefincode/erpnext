@@ -2138,7 +2138,6 @@ def get_auto_batch_nos(kwargs):
 	picked_batches = frappe._dict()
 	if kwargs.get("is_pick_list"):
 		picked_batches = get_picked_batches(kwargs)
-
 	if stock_ledgers_batches or pos_invoice_batches or sre_reserved_batches or picked_batches:
 		update_available_batches(
 			available_batches,
@@ -2157,7 +2156,6 @@ def get_auto_batch_nos(kwargs):
 
 	if not qty:
 		return available_batches
-
 	return get_qty_based_available_batches(available_batches, qty)
 
 
@@ -2216,6 +2214,8 @@ def get_qty_based_available_batches(available_batches, qty):
 
 
 def update_available_batches(available_batches, *reserved_batches) -> None:
+	frappe.log_error(title='available_batches' , message=str(available_batches))
+	frappe.log_error(title='reserved_batches' , message=str(reserved_batches))
 	for batches in reserved_batches:
 		if batches:
 			for key, data in batches.items():
@@ -2223,7 +2223,8 @@ def update_available_batches(available_batches, *reserved_batches) -> None:
 				batch_not_exists = True
 				for batch in available_batches:
 					if batch.batch_no == batch_no and batch.warehouse == warehouse:
-						batch.qty += data.qty
+						# “Commented out this line due to an issue with summing batch quantity and stock ledger batch quantity.”
+						# batch.qty += data.qty
 						batch_not_exists = False
 
 				if batch_not_exists:
@@ -2292,7 +2293,6 @@ def get_available_batches(kwargs):
 		query = query.where(stock_ledger_entry.voucher_no.notin(kwargs.get("ignore_voucher_nos")))
 
 	data = query.run(as_dict=True)
-
 	return data
 
 

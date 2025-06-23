@@ -7,93 +7,92 @@ from frappe.utils import cint, flt, fmt_money
 from erpnext.accounts.doctype.pricing_rule.pricing_rule import get_pricing_rule_for_item
 
 
-def get_price(item_code, price_list, customer_group, company, qty=1, party=None):
+def get_price(item_code, price_list, customer_group, company, qty=1, batch_no = None, return_pr=False): ##Custom Update
+	frappe.log_error("=======1=======")
 	template_item_code = frappe.db.get_value("Item", item_code, "variant_of")
-
+	frappe.log_error("=======2=======")
 	if price_list:
-		price = frappe.get_all(
-			"Item Price",
-			fields=["price_list_rate", "currency"],
-			filters={"price_list": price_list, "item_code": item_code},
-		)
+		frappe.log_error("=======3=======")
+		# start custom update for fetch price based on batch_no
+		if batch_no:
+			frappe.log_error("=======4=======")			
+			price = frappe.get_all("Item Price", fields=["price_list_rate", "currency"],
+				filters={"price_list": price_list, "item_code": item_code , "batch_no" : batch_no})
+			frappe.log_error("=======5=======")
+		# end custom update	
+		else:
+			frappe.log_error("=======6=======")
+			price = frappe.get_all("Item Price", fields=["price_list_rate", "currency"],
+				filters={"price_list": price_list, "item_code": item_code})
+			frappe.log_error("=======7=======")
 
+		# custom update
+		frappe.log_error("=======8=======")
+		if not price and batch_no:
+			frappe.log_error("=======9=======" )	
+			price = frappe.get_all("Item Price", fields=["price_list_rate", "currency"],
+				filters={"price_list": price_list, "item_code": item_code , "batch_no" : ''})									
+			# for i in price:				
+			# 	i.batch_no = batch_no
+			frappe.log_error("=======10=======" )
+				
 		if template_item_code and not price:
-			price = frappe.get_all(
-				"Item Price",
-				fields=["price_list_rate", "currency"],
-				filters={"price_list": price_list, "item_code": template_item_code},
-			)
+			frappe.log_error("=======11=======" )
+			price = frappe.get_all("Item Price", fields=["price_list_rate", "currency"],
+				filters={"price_list": price_list, "item_code": template_item_code})
+			frappe.log_error("=======12=======" )
 
 		if price:
-			pricing_rule_dict = frappe._dict(
-				{
-					"item_code": item_code,
-					"qty": qty,
-					"stock_qty": qty,
-					"transaction_type": "selling",
-					"price_list": price_list,
-					"customer_group": customer_group,
-					"company": company,
-					"conversion_rate": 1,
-					"for_shopping_cart": True,
-					"currency": frappe.db.get_value("Price List", price_list, "currency"),
-					"doctype": "Quotation",
-				}
-			)
-
-			if party and party.doctype == "Customer":
-				pricing_rule_dict.update({"customer": party.name})
-
-			pricing_rule = get_pricing_rule_for_item(pricing_rule_dict)
+			frappe.log_error("=======13=======" , price )
+			frappe.log_error("=======133=======" , price[0] )
+			pricing_rule = get_pricing_rule_for_item(frappe._dict({
+				"item_code": item_code,
+				"batch_no": batch_no,
+				"qty": qty,
+				"stock_qty": qty,
+				"transaction_type": "selling",
+				"price_list": price_list,
+				"customer_group": customer_group,
+				"company": company,
+				"conversion_rate": 1,
+				"for_shopping_cart": True,
+				"currency": frappe.db.get_value("Price List", price_list, "currency")
+			}), return_pr) ##Custom Update
 			price_obj = price[0]
+			frappe.log_error("=======14=======" )
 
 			if pricing_rule:
+				frappe.log_error("=======15=======" )
 				# price without any rules applied
 				mrp = price_obj.price_list_rate or 0
 
 				if pricing_rule.pricing_rule_for == "Discount Percentage":
 					price_obj.discount_percent = pricing_rule.discount_percentage
 					price_obj.formatted_discount_percent = str(flt(pricing_rule.discount_percentage, 0)) + "%"
-					price_obj.price_list_rate = flt(
-						price_obj.price_list_rate * (1.0 - (flt(pricing_rule.discount_percentage) / 100.0))
-					)
+					price_obj.price_list_rate = flt(price_obj.price_list_rate * (1.0 - (flt(pricing_rule.discount_percentage) / 100.0)))
 
 				if pricing_rule.pricing_rule_for == "Rate":
 					rate_discount = flt(mrp) - flt(pricing_rule.price_list_rate)
 					if rate_discount > 0:
-						price_obj.formatted_discount_rate = fmt_money(
-							rate_discount, currency=price_obj["currency"]
-						)
+						price_obj.formatted_discount_rate = fmt_money(rate_discount, currency=price_obj["currency"])
 					price_obj.price_list_rate = pricing_rule.price_list_rate or 0
 
 			if price_obj:
-				price_obj["formatted_price"] = fmt_money(
-					price_obj["price_list_rate"], currency=price_obj["currency"]
-				)
+				price_obj["formatted_price"] = fmt_money(price_obj["price_list_rate"], currency=price_obj["currency"])
 				if mrp != price_obj["price_list_rate"]:
 					price_obj["formatted_mrp"] = fmt_money(mrp, currency=price_obj["currency"])
 
-				price_obj["currency_symbol"] = (
-					not cint(frappe.db.get_default("hide_currency_symbol"))
-					and (
-						frappe.db.get_value("Currency", price_obj.currency, "symbol", cache=True)
-						or price_obj.currency
-					)
+				price_obj["currency_symbol"] = not cint(frappe.db.get_default("hide_currency_symbol")) \
+					and (frappe.db.get_value("Currency", price_obj.currency, "symbol", cache=True) or price_obj.currency) \
 					or ""
-				)
 
-				uom_conversion_factor = frappe.db.sql(
-					"""select	C.conversion_factor
+				uom_conversion_factor = frappe.db.sql("""select	C.conversion_factor
 					from `tabUOM Conversion Detail` C
 					inner join `tabItem` I on C.parent = I.name and C.uom = I.sales_uom
-					where I.name = %s""",
-					item_code,
-				)
+					where I.name = %s""", item_code)
 
 				uom_conversion_factor = uom_conversion_factor[0][0] if uom_conversion_factor else 1
-				price_obj["formatted_price_sales_uom"] = fmt_money(
-					price_obj["price_list_rate"] * uom_conversion_factor, currency=price_obj["currency"]
-				)
+				price_obj["formatted_price_sales_uom"] = fmt_money(price_obj["price_list_rate"] * uom_conversion_factor, currency=price_obj["currency"])
 
 				if not price_obj["price_list_rate"]:
 					price_obj["price_list_rate"] = 0
@@ -104,7 +103,10 @@ def get_price(item_code, price_list, customer_group, company, qty=1, party=None)
 				if not price_obj["formatted_price"]:
 					price_obj["formatted_price"], price_obj["formatted_mrp"] = "", ""
 
+			if return_pr and pricing_rule.pricing_rules: price_obj['pricing_rule'] =  pricing_rule.pricing_rules ###Custom Update
+			
 			return price_obj
+
 
 
 def get_item_codes_by_attributes(attribute_filters, template_item_code=None):
@@ -164,3 +166,13 @@ def get_item_codes_by_attributes(attribute_filters, template_item_code=None):
 	res = list(set.intersection(*items))
 
 	return res
+
+
+def get_non_stock_item_status(item_code, item_warehouse_field):
+	# if item is a product bundle, check if its bundle items are in stock
+	if frappe.db.exists("Product Bundle", item_code):
+		items = frappe.get_doc("Product Bundle", item_code).get_all_children()
+		bundle_warehouse = frappe.db.get_value("Website Item", {"item_code": item_code}, item_warehouse_field)
+		return all(get_web_item_qty_in_stock(d.item_code, item_warehouse_field, bundle_warehouse).in_stock for d in items)
+	else:
+		return 1

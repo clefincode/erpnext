@@ -13,12 +13,17 @@ from erpnext.accounts.doctype.pos_profile.pos_profile import get_child_nodes, ge
 from erpnext.stock.utils import scan_barcode
 
 
+@frappe.whitelist()
+def get_batch_no(search_term):
+	result = search_for_serial_or_batch_or_barcode_number(search_term) or {}
+	return {'batch_no':result.get("batch_no", None)}
+
 def search_by_term(search_term, warehouse, price_list):
 	result = search_for_serial_or_batch_or_barcode_number(search_term) or {}
-
+	frappe.log_error(title='result search_by_term' , message=str(result))
 	item_code = result.get("item_code", search_term)
 	serial_no = result.get("serial_no", "")
-	batch_no = result.get("batch_no", "")
+	batch_no = result.get("batch_no", None)
 	barcode = result.get("barcode", "")
 
 	if not result:
@@ -26,9 +31,8 @@ def search_by_term(search_term, warehouse, price_list):
 
 	item_doc = frappe.get_doc("Item", item_code)
 
-	if not item_doc:
+	if  not item_doc or (not frappe.db.exists("Product Bundle", {"new_item_code": item_code}) and item_doc.is_stock_item == 0) :
 		return
-
 	item = {
 		"barcode": barcode,
 		"batch_no": batch_no,
@@ -53,8 +57,9 @@ def search_by_term(search_term, warehouse, price_list):
 					"conversion_factor": uom.get("conversion_factor", 1),
 				}
 			)
-
-	item_stock_qty, is_stock_item = get_stock_availability(item_code, warehouse)
+	if not batch_no:
+		batch_no = 'only_for_pos'
+	item_stock_qty, is_stock_item = get_stock_availability(item_code, warehouse , batch_no=batch_no)
 	item_stock_qty = item_stock_qty // item.get("conversion_factor", 1)
 	item.update({"actual_qty": item_stock_qty})
 
@@ -103,6 +108,13 @@ def search_by_term(search_term, warehouse, price_list):
 				"price_list_rate": p.get("price_list_rate"),
 			}
 		)
+		if item.get('batch_no') and not item['batch_no'] :
+			item.update(
+				{
+					"batch_no": p.get("batch_no"),
+				}
+			)
+			
 
 	return {"items": [item]}
 
@@ -165,6 +177,7 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 			item.disabled = 0
 			AND item.has_variants = 0
 			AND item.is_sales_item = 1
+			AND item.is_stock_item = 1
 			AND item.is_fixed_asset = 0
 			AND item.item_group in (SELECT name FROM `tabItem Group` WHERE lft >= {lft} AND rgt <= {rgt})
 			AND {condition}
@@ -188,6 +201,10 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 	# return (empty) list if there are no results
 	if not items_data:
 		return result
+	
+	index = 0
+
+	current_date = frappe.utils.today()
 
 	current_date = frappe.utils.today()
 
@@ -212,6 +229,18 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 		)
 
 		if not item_price:
+			if item.batch_no is None:
+				filters = {"item": item.item_code, "disabled": 0}
+    				# Fetch the first matching batch sorted by creation (default behavior)
+				batch = frappe.db.get_value(
+    			    "Batch",
+    			    filters=filters,
+    			    fieldname="name",
+    			    order_by="creation desc"
+    			)
+				item.batch_no=batch
+			if item.item_code =='Harrods Large Cotton Logo Tote Bag Pink' or item.item_name =='Harrods Large Cotton Logo Tote Bag Pink':
+				frappe.log_error(title='batchhhhhh' , message=str(batch))
 			result.append(item)
 
 		for price in item_price:
@@ -219,21 +248,50 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 
 			if price.uom != item.stock_uom and uom and uom.conversion_factor:
 				item.actual_qty = item.actual_qty // uom.conversion_factor
-
+			batch=price.batch_no
+			if batch is None:
+				filters = {"item": item.item_code, "disabled": 0}
+    			# Fetch the first matching batch sorted by creation (default behavior)
+				batch = frappe.db.get_value(
+    			    "Batch",
+    			    filters=filters,
+    			    fieldname="name",
+    			    order_by="creation desc"
+    			)
+			if item.item_code =='Harrods Large Cotton Logo Tote Bag Pink' or item.item_name =='Harrods Large Cotton Logo Tote Bag Pink':
+				frappe.log_error(title='batch' , message=str(batch))
 			result.append(
 				{
 					**item,
 					"price_list_rate": price.get("price_list_rate"),
 					"currency": price.get("currency"),
 					"uom": price.uom or item.uom,
-					"batch_no": price.batch_no,
+					
 				}
 			)
+	
+			if result[index].get('batch_no'):
+				batch_no = result[index]['batch_no']
+				if not batch_no:
+					result.append(
+						{
+							"batch_no": batch
+						}
+					)
+			else:
+				result.append(
+					{
+						"batch_no": batch
+					}
+				)
+		index=index+1
 	return {"items": result}
 
 
 @frappe.whitelist()
 def search_for_serial_or_batch_or_barcode_number(search_value: str) -> dict[str, str | None]:
+	frappe.log_error(title='scan_barcode' , message=str(scan_barcode(search_value)))
+
 	return scan_barcode(search_value)
 
 

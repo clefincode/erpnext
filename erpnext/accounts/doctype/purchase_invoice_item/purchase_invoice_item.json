@@ -451,6 +451,7 @@
    "fieldname": "batch_no",
    "fieldtype": "Link",
    "label": "Batch No",
+   "link_filters": null,
    "options": "Batch",
    "search_index": 1
   },

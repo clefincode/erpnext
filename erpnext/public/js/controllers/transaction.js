@@ -2292,16 +2292,34 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		}
 	}
 
-	make_payment_entry() {
-		let via_journal_entry = this.frm.doc.__onload && this.frm.doc.__onload.make_payment_via_journal_entry;
-		if(this.has_discount_in_schedule() && !via_journal_entry) {
-			// If early payment discount is applied, ask user for reference date
-			this.prompt_user_for_reference_date();
-		} else {
-			this.make_mapped_payment_entry();
-		}
+	make_payment_entry () {
+		 frappe.call({
+			method: cur_frm.cscript.get_method_for_payment(),
+			args: {
+				"dt": cur_frm.doc.doctype,
+				"dn": cur_frm.doc.name
+			},
+			callback: function(r) {
+				var doclist = frappe.model.sync(r.message);
+				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				// cur_frm.refresh_fields()
+			}
+		});
 	}
 
+	// make_payment_entry() {
+	// 	var me = this
+	// 	let via_journal_entry = me.frm.doc.__onload && me.frm.doc.__onload.make_payment_via_journal_entry;
+	// 	if(this.has_discount_in_schedule() && !via_journal_entry) {
+	// 		// If early payment discount is applied, ask user for reference date
+	// 		this.prompt_user_for_reference_date();
+	// 	} else {
+	// 		this.make_mapped_payment_entry();
+	// 	}
+	// }
+
+
+	
 	make_mapped_payment_entry(args) {
 		var me = this;
 		args = args || { "dt": this.frm.doc.doctype, "dn": this.frm.doc.name };

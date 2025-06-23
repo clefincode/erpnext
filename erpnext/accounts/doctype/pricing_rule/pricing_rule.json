@@ -401,7 +401,7 @@
    "fieldname": "rate_or_discount",
    "fieldtype": "Select",
    "label": "Rate or Discount",
-   "options": "\nRate\nDiscount Percentage\nDiscount Amount"
+   "options": "\nRate\nDiscount Percentage\nDiscount Amount\nPrice"
   },
   {
    "default": "Grand Total",

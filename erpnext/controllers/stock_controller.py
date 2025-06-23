@@ -671,6 +671,49 @@ class StockController(AccountsController):
 
 			return details
 
+	def make_batches(self, warehouse_field):
+		'''Create batches if required. Called before submit'''		
+		for d in self.items:
+			frappe.log_error('d',vars(d ) )
+			if d.get(warehouse_field) and not d.batch_no:
+				has_batch_no, create_new_batch , batch_number_series = frappe.db.get_value('Item', d.item_code, ['has_batch_no', 'create_new_batch' , 'batch_number_series'])
+				if has_batch_no and create_new_batch:
+					expiry_date = None
+					if d.get('custom_best_value_date'):
+						import datetime
+						custom_best_value_date = datetime.datetime.strptime(d.custom_best_value_date, '%Y-%m-%d')
+						expiry_date = custom_best_value_date + datetime.timedelta(days=14),
+						# Check if batch_no exist
+						best_value_day = str(custom_best_value_date.day)
+						best_value_month = str(custom_best_value_date.month)
+						best_value_year = str(custom_best_value_date.year)[2:]
+						if len(best_value_day) == 1:
+							best_value_day = '0' + best_value_day
+						if len(best_value_month) == 1:
+							best_value_month = '0' + best_value_month
+						if batch_number_series and batch_number_series[len(batch_number_series) - 1 ] == '-':
+							condition = ''
+						else:
+							condition = '-'
+						batch_id = batch_number_series.replace('#','').replace('.','') + condition +  best_value_day + '-' + best_value_month + '-' + best_value_year					
+						batch_list = frappe.get_all('Batch' , 'name')
+						match = 0
+						for batch in batch_list:
+							if batch_id == batch.name:							
+								match = 1
+								d.batch_no = batch.name
+						if match == 0:
+							#  Create Batch
+							d.batch_no = frappe.get_doc(dict(
+								doctype='Batch',
+								batch_id=batch_id,
+								item=d.item_code,
+								custom_best_value_date = d.custom_best_value_date,
+								expiry_date = expiry_date,
+								supplier=getattr(self, 'supplier', None),
+								reference_doctype=self.doctype,
+								reference_name=self.name)).insert().name
+
 	def get_items_and_warehouses(self) -> tuple[list[str], list[str]]:
 		"""Get list of items and warehouses affected by a transaction"""
 
@@ -776,6 +819,7 @@ class StockController(AccountsController):
 
 				if row.get("serial_and_batch_bundle"):
 					update_values["serial_and_batch_bundle"] = None
+					frappe.log_error('Serial and Batch Bundle Serial and Batch Bundle 1')
 					frappe.db.set_value(
 						"Serial and Batch Bundle", row.serial_and_batch_bundle, {"is_cancelled": 1}
 					)
@@ -784,6 +828,7 @@ class StockController(AccountsController):
 					row.db_set(update_values)
 
 				if table_name == "items" and row.get("rejected_serial_and_batch_bundle"):
+					frappe.log_error('Serial and Batch Bundle Serial and Batch Bundle 1')
 					frappe.db.set_value(
 						"Serial and Batch Bundle", row.rejected_serial_and_batch_bundle, {"is_cancelled": 1}
 					)
@@ -1818,6 +1863,8 @@ def create_item_wise_repost_entries(
 def make_bundle_for_material_transfer(**kwargs):
 	if isinstance(kwargs, dict):
 		kwargs = frappe._dict(kwargs)
+	
+	frappe.log_error('Serial and Batch Bundle Serial and Batch Bundle 2')
 
 	bundle_doc = frappe.get_doc("Serial and Batch Bundle", kwargs.serial_and_batch_bundle)
 

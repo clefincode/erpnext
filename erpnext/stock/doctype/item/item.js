@@ -352,6 +352,14 @@ $.extend(erpnext.item, {
 			};
 		};
 
+		frm.fields_dict["barcodes"].grid.get_field("custom_batch_no").get_query = function(doc, cdt, cdn) {
+            return {
+                filters: {
+                    "item": doc.item_code 
+                }
+            };
+        };
+
 		frm.fields_dict["item_defaults"].grid.get_field("default_discount_account").get_query = function (
 			doc,
 			cdt,

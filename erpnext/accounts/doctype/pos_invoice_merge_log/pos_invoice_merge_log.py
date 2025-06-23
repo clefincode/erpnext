@@ -156,7 +156,6 @@ class POSInvoiceMergeLog(Document):
 
 		sales_invoice.save()
 		sales_invoice.submit()
-
 		self.consolidated_invoice = sales_invoice.name
 
 		return sales_invoice

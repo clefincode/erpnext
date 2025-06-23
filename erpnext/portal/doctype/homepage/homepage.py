@@ -15,12 +15,15 @@ class Homepage(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
+		from webshop.webshop.doctype.homepage_featured_product.homepage_featured_product import HomepageFeaturedProduct
 
 		company: DF.Link
 		description: DF.Text
 		hero_image: DF.AttachImage | None
 		hero_section: DF.Link | None
 		hero_section_based_on: DF.Literal["Default", "Slideshow", "Homepage Section"]
+		products: DF.Table[HomepageFeaturedProduct]
+		products_url: DF.Data | None
 		slideshow: DF.Link | None
 		tag_line: DF.Data
 		title: DF.Data | None

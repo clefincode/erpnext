@@ -1,0 +1,38 @@
+{
+ "add_total_row": 1,
+ "columns": [],
+ "creation": "2024-10-24 19:57:00.090698",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": "MAJESTICA LETTER HEAD",
+ "letterhead": null,
+ "modified": "2024-10-24 19:57:00.090698",
+ "modified_by": "Administrator",
+ "module": "Accounts",
+ "name": "Sales A",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "# Import necessary libraries\nimport frappe\nfrom datetime import datetime, date\n\n# Define the function to generate the report\ndef generate_inactive_items_report():\n    # Define the filters for the report (e.g., inactive items and a specific time frame)\n    filters = {\n        \"item_group\": \"All Item Groups\",\n        \"is_sales_item\": 1,\n        \"disabled\": 1  # Filter for inactive items\n    }\n\n    # Get POS invoices for the specified time frame\n    pos_invoices = frappe.get_list(\"Sales Invoice\",\n                                   filters=filters,\n                                   fields=[\"name\", \"posting_date\", \"items\"])\n\n    # Initialize dictionaries to store last sale date and days since last sale for each item\n    last_sale_dates = {}\n    days_since_last_sale = {}\n\n    # Process each POS invoice to find the last sale date for each item\n    for invoice in pos_invoices:\n        posting_date = datetime.strptime(invoice[\"posting_date\"], \"%Y-%m-%d\").date()\n        for item in invoice[\"items\"]:\n            item_code = item[\"item_code\"]\n            if item_code not in last_sale_dates or posting_date > last_sale_dates[item_code]:\n                last_sale_dates[item_code] = posting_date\n\n    # Calculate the days since last sale for each item\n    today = date.today()\n    for item_code, last_sale_date in last_sale_dates.items():\n        days_since_last_sale[item_code] = (today - last_sale_date).days\n\n    # Print the report header\n    print(\"Inactive Items Report - Days Since Last Sale\\n\")\n    print(\"{:<20} {:<20}\".format(\"Item Code\", \"Days Since Last Sale\"))\n    print(\"=\"*45)\n\n    # Print the report data\n    for item_code, days in days_since_last_sale.items():\n        print(\"{:<20} {:<20}\".format(item_code, days))\n\n# Call the function to generate the report\ngenerate_inactive_items_report()\n",
+ "ref_doctype": "POS Invoice",
+ "report_name": "Sales A",
+ "report_type": "Query Report",
+ "roles": [
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "POS cashier"
+  },
+  {
+   "role": "Accounts User POS"
+  }
+ ],
+ "timeout": 0
+}

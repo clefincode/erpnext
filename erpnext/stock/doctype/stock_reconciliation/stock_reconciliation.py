@@ -83,6 +83,7 @@ class StockReconciliation(StockController):
 		self.validate_inventory_dimension()
 
 		if self._action == "submit":
+			self.make_batches('warehouse')
 			self.validate_reserved_stock()
 
 	def on_update(self):
@@ -254,7 +255,7 @@ class StockReconciliation(StockController):
 
 				serial_and_batch_bundle.set("entries", [])
 
-			if item_details.has_serial_no:
+			if item_details and item_details.has_serial_no:
 				serial_nos_details = get_available_serial_nos(
 					frappe._dict(
 						{
@@ -278,7 +279,7 @@ class StockReconciliation(StockController):
 						},
 					)
 
-			elif item_details.has_batch_no:
+			elif item_details and item_details.has_batch_no:
 				batch_nos_details = get_available_batches(
 					frappe._dict(
 						{
@@ -481,6 +482,61 @@ class StockReconciliation(StockController):
 		"""Remove items if qty or rate is not changed"""
 		self.difference_amount = 0.0
 
+		# def _changed(item):
+		# 	if item.current_serial_and_batch_bundle:
+		# 		bundle_data = frappe.get_all(
+		# 			"Serial and Batch Bundle",
+		# 			filters={"name": item.current_serial_and_batch_bundle},
+		# 			fields=["total_qty as qty", "avg_rate as rate"],
+		# 		)[0]
+
+		# 		bundle_data.qty = abs(bundle_data.qty)
+		# 		self.calculate_difference_amount(item, bundle_data)
+
+		# 		return True
+
+		# 	inventory_dimensions_dict = {}
+		# 	if not item.batch_no and not item.serial_no:
+		# 		for dimension in get_inventory_dimensions():
+		# 			if item.get(dimension.get("fieldname")):
+		# 				inventory_dimensions_dict[dimension.get("fieldname")] = item.get(
+		# 					dimension.get("fieldname")
+		# 				)
+
+		# 	item_dict = get_stock_balance_for(
+		# 		item.item_code,
+		# 		item.warehouse,
+		# 		self.posting_date,
+		# 		self.posting_time,
+		# 		batch_no=item.batch_no,
+		# 		inventory_dimensions_dict=inventory_dimensions_dict,
+		# 		row=item,
+		# 	)
+
+		# 	if (
+		# 		(item.qty is None or item.qty == item_dict.get("qty"))
+		# 		and (item.valuation_rate is None or item.valuation_rate == item_dict.get("rate"))
+		# 		and (not item.serial_no or (item.serial_no == item_dict.get("serial_nos")))
+		# 	):
+		# 		return False
+		# 	else:
+		# 		# set default as current rates
+		# 		if item.qty is None:
+		# 			item.qty = item_dict.get("qty")
+
+		# 		if item.valuation_rate is None:
+		# 			item.valuation_rate = item_dict.get("rate")
+
+		# 		if item_dict.get("serial_nos"):
+		# 			item.current_serial_no = item_dict.get("serial_nos")
+		# 			if self.purpose == "Stock Reconciliation" and not item.serial_no and item.qty:
+		# 				item.serial_no = item.current_serial_no
+
+		# 		item.current_qty = item_dict.get("qty")
+		# 		item.current_valuation_rate = item_dict.get("rate")
+		# 		self.calculate_difference_amount(item, item_dict)
+		# 		return True
+
 		def _changed(item):
 			if item.current_serial_and_batch_bundle:
 				bundle_data = frappe.get_all(
@@ -550,6 +606,7 @@ class StockReconciliation(StockController):
 			for i, item in enumerate(self.items):
 				item.idx = i + 1
 			frappe.msgprint(_("Removed items with no change in quantity or value."))
+
 
 	def calculate_difference_amount(self, item, item_dict):
 		qty_precision = item.precision("qty")

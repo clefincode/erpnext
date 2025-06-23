@@ -443,7 +443,6 @@ class Item(Document):
 
 	def validate_barcode(self):
 		import barcodenumber
-
 		if len(self.barcodes) > 0:
 			for item_barcode in self.barcodes:
 				options = frappe.get_meta("Item Barcode").get_options("barcode_type").split("\n")

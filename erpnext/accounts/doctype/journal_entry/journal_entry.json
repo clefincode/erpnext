@@ -91,7 +91,8 @@
    "oldfieldtype": "Select",
    "options": "Journal Entry\nInter Company Journal Entry\nBank Entry\nCash Entry\nCredit Card Entry\nDebit Note\nCredit Note\nContra Entry\nExcise Entry\nWrite Off Entry\nOpening Entry\nDepreciation Entry\nExchange Rate Revaluation\nExchange Gain Or Loss\nDeferred Revenue\nDeferred Expense",
    "reqd": 1,
-   "search_index": 1
+   "search_index": 1,
+   "width": "134"
   },
   {
    "fieldname": "naming_series",
@@ -100,7 +101,7 @@
    "no_copy": 1,
    "oldfieldname": "naming_series",
    "oldfieldtype": "Select",
-   "options": "ACC-JV-.YYYY.-",
+   "options": "JV-M-MM-YYYY-",
    "print_hide": 1,
    "reqd": 1,
    "set_only_once": 1
@@ -114,6 +115,7 @@
   {
    "fieldname": "posting_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Posting Date",
    "no_copy": 1,
    "oldfieldname": "posting_date",
@@ -148,6 +150,7 @@
    "options": "fa fa-table"
   },
   {
+   "allow_bulk_edit": 1,
    "fieldname": "accounts",
    "fieldtype": "Table",
    "label": "Accounting Entries",
@@ -170,7 +173,8 @@
    "no_copy": 1,
    "oldfieldname": "cheque_no",
    "oldfieldtype": "Data",
-   "search_index": 1
+   "search_index": 1,
+   "width": "195"
   },
   {
    "fieldname": "cheque_date",
@@ -557,7 +561,7 @@
    "table_fieldname": "payment_entries"
   }
  ],
- "modified": "2024-07-18 15:32:29.413598",
+ "modified": "2024-12-24 17:17:14.017428",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Journal Entry",

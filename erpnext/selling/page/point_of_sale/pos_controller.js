@@ -344,6 +344,7 @@ erpnext.PointOfSale.Controller = class {
 					// will add/remove LP payment method
 					this.payment.render_loyalty_points_payment_mode();
 				},
+				apply_pricing_rule_on_transaction:() => this.apply_pricing_rule_on_transaction()
 			},
 		});
 	}
@@ -413,7 +414,7 @@ erpnext.PointOfSale.Controller = class {
 					this.cart.prev_action = null;
 					this.cart.toggle_item_highlight();
 				},
-				get_available_stock: (item_code, warehouse) => this.get_available_stock(item_code, warehouse),
+				get_available_stock: (item_code, warehouse , batch_no) => this.get_available_stock(item_code, warehouse , batch_no),
 			},
 		});
 	}
@@ -608,22 +609,49 @@ erpnext.PointOfSale.Controller = class {
 		try {
 			let { field, value, item } = args;
 			item_row = this.get_item_from_frm(item);
+			let { name, item_code, batch_no, uom, rate } = item
 			const item_row_exists = !$.isEmptyObject(item_row);
 
 			const from_selector = field === "qty" && value === "+1";
 			if (from_selector) value = flt(item_row.qty) + flt(value);
 
 			if (item_row_exists) {
+				
+
 				if (field === "qty") value = flt(value);
 
 				if (["qty", "conversion_factor"].includes(field) && value > 0 && !this.allow_negative_stock) {
 					const qty_needed =
 						field === "qty" ? value * item_row.conversion_factor : item_row.qty * value;
-					await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse);
+					await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse , batch_no);
 				}
 
 				if (this.is_current_item_being_edited(item_row) || from_selector) {
+					var actual_qty = 0;
+					if(item_row.batch_no)
+					{
+						await frappe.call({
+							method:'erpnext.stock.doctype.batch.batch.get_batch_qty',
+							args: {
+								"batch_no":item_row.batch_no,
+								"warehouse":item_row.warehouse,
+								"consider_negative_batches":true
+							
+							},
+							callback: function (r) {
+							  if(r.message)
+							  {
+								actual_qty=r.message;
+							  }
+							  
+							},
+						})
+						await frappe.model.set_value(item_row.doctype, item_row.name, 'actual_qty', actual_qty);
+
+					}
+			
 					await frappe.model.set_value(item_row.doctype, item_row.name, field, value);
+					item_row.actual_qty=actual_qty;
 					if (item.serial_no && from_selector) {
 						await frappe.model.set_value(
 							item_row.doctype,
@@ -634,7 +662,9 @@ erpnext.PointOfSale.Controller = class {
 					}
 					this.update_cart_html(item_row);
 				}
-			} else {
+			}
+			else {
+				
 				if (!this.frm.doc.customer) return this.raise_customer_selection_alert();
 
 				const { item_code, batch_no, serial_no, rate, uom, stock_uom } = item;
@@ -664,20 +694,17 @@ erpnext.PointOfSale.Controller = class {
 
 				if (field === "qty" && value !== 0 && !this.allow_negative_stock) {
 					const qty_needed = value * item_row.conversion_factor;
-					await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse);
+					await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse , batch_no);
 				}
 
 				await this.trigger_new_item_events(item_row);
 
-				this.update_cart_html(item_row);
+				await this.validate_batch_no(item_row);
 
-				if (this.item_details.$component.is(":visible")) this.edit_item_details_of(item_row);
-
-				if (
-					this.check_serial_batch_selection_needed(item_row) &&
-					!this.item_details.$component.is(":visible")
-				)
-					this.edit_item_details_of(item_row);
+	
+				if(item_row.price_list_rate == 0 || item_row.rate == 0 ){					
+					// this.validate_price(item_row);
+				}
 			}
 		} catch (error) {
 			console.log(error);
@@ -686,7 +713,36 @@ erpnext.PointOfSale.Controller = class {
 			return item_row; // eslint-disable-line no-unsafe-finally
 		}
 	}
-
+	// custom update
+	validate_price(item) {
+		let msg = frappe.msgprint({
+			title: __('Notification'),
+			message: __('Item will be removed since no price available.<br />'+ item.item_name + ' (' + item.item_code + ')'),
+			primary_action: {
+				'label': 'Ok',
+				action() {
+					// enable bind input event for scan barcode
+					$('.search-field input').removeAttr('data-scan');
+					this.hide();	
+				}
+			}
+		});
+		frappe.show_alert({
+			message: __("Item will be removed since no price available."),
+			indicator: 'orange'
+		});
+		// Disable scan barcode
+		$('.search-field input.input-with-feedback').attr('data-scan','false');			
+		// Disable click outside the message
+		msg.$wrapper.unbind('click');
+		// hide close button from the message
+		msg.get_close_btn().hide();
+		frappe.utils.play_sound("cancel");
+		//to delete item we should first edit its details then we use  this.remove_item_from_cart();
+		this.edit_item_details_of(item);
+		this.remove_item_from_cart();
+		
+	}	
 	raise_customer_selection_alert() {
 		frappe.dom.unfreeze();
 		frappe.show_alert({
@@ -752,9 +808,40 @@ erpnext.PointOfSale.Controller = class {
 		await this.frm.script_manager.trigger("item_code", item_row.doctype, item_row.name);
 		await this.frm.script_manager.trigger("qty", item_row.doctype, item_row.name);
 	}
+	
+	async validate_batch_no(item_row) {
+		if(!item_row.batch_no)
+		{
+			frappe.db.get_list('Batch', {
+				filters: {
+					item: item_row.item_code
+				},
+				fields: ['name']
+			}).then(r => {
+				if (r.length > 0) {
+					item_row.batch_no = r[0].name;
+				} else {
+					let dialog = frappe.throw(`Wrong <b>Batch</b> for <b>Item ${item_row.item_code}</b>`);
+					dialog.$wrapper.unbind('click');
+					dialog.get_close_btn().hide();
+				}
+			});
+		}
+		else
+		{
+			frappe.db.get_value("Batch", {"name": item_row.batch_no}, "item", (r) => {
+				if(item_row.item_code != r.item){
+					let dialog = frappe.throw(`Wrong <b>Batch</b> for <b>Item ${item_row.item_code}</b>`);
+					dialog.$wrapper.unbind('click');
+					dialog.get_close_btn().hide();
+				}
+			});
+		}
+		
+	}
+	async check_stock_availability(item_row, qty_needed, warehouse,batch_no) {
 
-	async check_stock_availability(item_row, qty_needed, warehouse) {
-		const resp = (await this.get_available_stock(item_row.item_code, warehouse)).message;
+		const resp = (await this.get_available_stock(item_row.item_code, warehouse,batch_no=batch_no)).message;
 		const available_qty = resp[0];
 		const is_stock_item = resp[1];
 
@@ -804,13 +891,14 @@ erpnext.PointOfSale.Controller = class {
 		}
 	}
 
-	get_available_stock(item_code, warehouse) {
+	get_available_stock(item_code, warehouse,batch_no='only_for_pos') {
 		const me = this;
 		return frappe.call({
 			method: "erpnext.accounts.doctype.pos_invoice.pos_invoice.get_stock_availability",
 			args: {
 				item_code: item_code,
 				warehouse: warehouse,
+				batch_no:batch_no
 			},
 			callback(res) {
 				if (!me.item_stock_map[item_code]) me.item_stock_map[item_code] = {};
@@ -843,6 +931,11 @@ erpnext.PointOfSale.Controller = class {
 				this.update_cart_html(current_item, true);
 				this.item_details.toggle_item_details_section(null);
 				frappe.dom.unfreeze();
+				frappe.show_alert({
+					message: __("Item is removed from cart."),
+					indicator: "green",
+				});
+				frappe.utils.play_sound("cancel");
 			})
 			.catch((e) => console.log(e));
 	}
@@ -851,15 +944,43 @@ erpnext.PointOfSale.Controller = class {
 		if (this.frm.is_dirty()) {
 			let save_error = false;
 			await this.frm.save(null, null, null, () => (save_error = true));
-			// only move to payment section if save is successful
 			!save_error && this.payment.checkout();
-			// show checkout button on error
 			save_error &&
 				setTimeout(() => {
 					this.cart.toggle_checkout_btn(true);
-				}, 300); // wait for save to finish
+				}, 300);
 		} else {
 			this.payment.checkout();
 		}
+	}
+
+apply_pricing_rule_on_transaction(){		
+		var me = this;			
+		return this.frm.call({
+			method: "erpnext.accounts.doctype.pos_invoice.pos_invoice.apply_pricing_rule_on_transaction",
+			args: {doc: me.frm.doc },
+			callback: function(r) {
+				if (!r.exc && r.message) {								
+					let discount_amount = r.message.discount_amount ;
+					let additional_discount = r.message.additional_discount ;
+					let apply_discount_on = r.message.apply_discount_on ;										
+					if( discount_amount != 0 && discount_amount != undefined ){												
+						me.frm.doc.discount_amount = discount_amount ;
+						me.frm.doc.apply_discount_on = apply_discount_on ;
+						
+					}else if(additional_discount != 0 && additional_discount != undefined){											
+						me.frm.doc.additional_discount_percentage = additional_discount ;						
+						me.frm.doc.apply_discount_on = apply_discount_on ;
+					}
+					else{						
+						me.frm.doc.discount_amount = 0 ;											
+						me.frm.doc.additional_discount_percentage =0 ;
+						me.frm.doc.apply_discount_on = 'Grand Total' ;
+					}
+					me.frm.trigger("apply_discount_on");
+					
+				}
+			}
+		});
 	}
 };

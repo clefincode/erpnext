@@ -188,11 +188,12 @@ function add_to_pos_transaction(d, frm) {
 
 function refresh_payments(d, frm, is_new) {
 	d.payments.forEach((p) => {
+		console.log(p.amount);
 		const payment = frm.doc.payment_reconciliation.find(
 			(pay) => pay.mode_of_payment === p.mode_of_payment
 		);
 		if (p.account == d.account_for_change_amount) {
-			p.amount -= flt(d.change_amount);
+			p.amount -= d.change_amount;
 		}
 		if (payment) {
 			payment.expected_amount += flt(p.amount);

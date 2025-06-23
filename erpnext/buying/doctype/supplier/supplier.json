@@ -83,7 +83,7 @@
    "no_copy": 1,
    "oldfieldname": "naming_series",
    "oldfieldtype": "Select",
-   "options": "SUP-.YYYY.-",
+   "options": "SUPP-",
    "set_only_once": 1
   },
   {
@@ -174,7 +174,7 @@
    "fieldname": "supplier_type",
    "fieldtype": "Select",
    "label": "Supplier Type",
-   "options": "Company\nIndividual\nPartnership",
+   "options": "Company\nIndividual\nPartnership\nLocal\nDistributor\nother\nChocolate",
    "reqd": 1
   },
   {
@@ -485,7 +485,7 @@
    "link_fieldname": "party"
   }
  ],
- "modified": "2024-05-08 18:02:57.342931",
+ "modified": "2025-02-06 15:40:50.212868",
  "modified_by": "Administrator",
  "module": "Buying",
  "name": "Supplier",

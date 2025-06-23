@@ -218,7 +218,15 @@ frappe.ui.form.on("POS Invoice", {
 	redeem_loyalty_points: function (frm) {
 		frm.events.get_loyalty_details(frm);
 	},
-
+	/////// Customized Code //////////
+	additional_discount_percentage:function(frm){		
+		if(frm.doc.additional_discount_percentage > 20){
+			frm.doc.additional_discount_percentage=20;
+			frm.refresh_field("additional_discount_percentage");
+			frappe.throw('You excceded the discount amount threshold which it is 20% ');
+		}
+	},
+	/////// End Customized ////////
 	loyalty_points: function (frm) {
 		if (frm.redemption_conversion_factor) {
 			frm.events.set_loyalty_points(frm);

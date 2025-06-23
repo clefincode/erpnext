@@ -19,11 +19,8 @@ class StockReservationEntry(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
+		from erpnext.stock.doctype.serial_and_batch_entry.serial_and_batch_entry import SerialandBatchEntry
 		from frappe.types import DF
-
-		from erpnext.stock.doctype.serial_and_batch_entry.serial_and_batch_entry import (
-			SerialandBatchEntry,
-		)
 
 		amended_from: DF.Link | None
 		available_qty: DF.Float
@@ -39,14 +36,12 @@ class StockReservationEntry(Document):
 		reservation_based_on: DF.Literal["Qty", "Serial and Batch"]
 		reserved_qty: DF.Float
 		sb_entries: DF.Table[SerialandBatchEntry]
-		status: DF.Literal[
-			"Draft", "Partially Reserved", "Reserved", "Partially Delivered", "Delivered", "Cancelled"
-		]
+		status: DF.Literal["Draft", "Partially Reserved", "Reserved", "Partially Delivered", "Delivered", "Cancelled"]
 		stock_uom: DF.Link | None
 		voucher_detail_no: DF.Data | None
 		voucher_no: DF.DynamicLink | None
 		voucher_qty: DF.Float
-		voucher_type: DF.Literal["", "Sales Order"]
+		voucher_type: DF.Literal["Sales Order", "POS Invoice"]
 		warehouse: DF.Link | None
 	# end: auto-generated types
 

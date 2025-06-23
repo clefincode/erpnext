@@ -61,6 +61,7 @@ erpnext.PointOfSale.ItemDetails = class {
 	}
 
 	async toggle_item_details_section(item) {
+		
 		const current_item_changed = !this.compare_with_current_item(item);
 
 		// if item is null or highlighted cart item is clicked twice
@@ -97,13 +98,12 @@ erpnext.PointOfSale.ItemDetails = class {
 		const doc = this.events.get_frm().doc;
 		const item_row = doc.items.find((item) => item.name === this.name);
 
-		if (!item_row) return;
+		if (!item_row || item_row) return;
 
 		const serialized = item_row.has_serial_no;
 		const batched = item_row.has_batch_no;
-		const no_bundle_selected =
+		const no_bundle_selected  =
 			!item_row.serial_and_batch_bundle && !item_row.serial_no && !item_row.batch_no;
-
 		if ((serialized && no_bundle_selected) || (batched && no_bundle_selected)) {
 			frappe.show_alert({
 				message: __("Item is removed since no serial / batch no selected."),
@@ -184,7 +184,9 @@ erpnext.PointOfSale.ItemDetails = class {
 				parent: this.$form_container.find(`.${fieldname}-control`),
 				render_input: true,
 			});
+			
 			this[`${fieldname}_control`].set_value(item[fieldname]);
+			
 		});
 
 		this.resize_serial_control(item);

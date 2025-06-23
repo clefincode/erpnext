@@ -76,7 +76,7 @@ class Account(NestedSet):
 		is_group: DF.Check
 		lft: DF.Int
 		old_parent: DF.Data | None
-		parent_account: DF.Link
+		parent_account: DF.Link | None
 		report_type: DF.Literal["", "Balance Sheet", "Profit and Loss"]
 		rgt: DF.Int
 		root_type: DF.Literal["", "Asset", "Liability", "Income", "Expense", "Equity"]

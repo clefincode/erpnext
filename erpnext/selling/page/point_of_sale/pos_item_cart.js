@@ -101,6 +101,7 @@ erpnext.PointOfSale.ItemCart = class {
 				<div class="net-total-value">0.00</div>
 			</div>
 			<div class="taxes-container"></div>
+			<div class="transaction_discount-container text-success"></div>	
 			<div class="grand-total-container">
 				<div>${__("Grand Total")}</div>
 				<div>0.00</div>
@@ -153,6 +154,8 @@ erpnext.PointOfSale.ItemCart = class {
 		const me = this;
 		this.$customer_section.on("click", ".reset-customer-btn", function () {
 			me.reset_customer_selector();
+			me.events.apply_pricing_rule_on_transaction();
+			me.hide_discount_control(0);
 		});
 
 		this.$customer_section.on("click", ".close-details-btn", function () {
@@ -208,7 +211,14 @@ erpnext.PointOfSale.ItemCart = class {
 		frappe.ui.form.on("POS Invoice", "paid_amount", (frm) => {
 			// called when discount is applied
 			this.update_totals_section(frm);
+			this.render_transaction_discount(frm.doc.additional_discount_percentage ,frm.doc.discount_amount);
 		});
+	}
+
+	remove_pricing_rule_on_transaction(frm){
+		frappe.model.set_value('additional_discount_percentage' , 0);
+		frappe.model.set_value('discount_amount' , 0);
+		this.update_totals_section(frm);
 	}
 
 	attach_shortcuts() {
@@ -318,11 +328,12 @@ erpnext.PointOfSale.ItemCart = class {
 				onchange: function () {
 					if (this.value) {
 						const frm = me.events.get_frm();
+						
 						frappe.dom.freeze();
 						frappe.model.set_value(frm.doc.doctype, frm.doc.name, "customer", this.value);
 						frm.script_manager.trigger("customer", frm.doc.doctype, frm.doc.name).then(() => {
 							frappe.run_serially([
-								() => me.fetch_customer_details(this.value),
+								() => me.fetch_customer_details(this.value).then(()=>me.events.apply_pricing_rule_on_transaction()),
 								() => me.events.customer_details_updated(me.customer_info),
 								() => me.update_customer_section(),
 								() => me.update_totals_section(),
@@ -390,23 +401,27 @@ erpnext.PointOfSale.ItemCart = class {
 				fieldtype: "Data",
 				placeholder: discount ? discount + "%" : __("Enter discount percentage."),
 				input_class: "input-xs",
-				onchange: function () {
-					this.value = flt(this.value);
-					if (this.value > 100) {
-						frappe.msgprint({
-							title: __("Invalid Discount"),
-							indicator: "red",
-							message: __("Discount cannot be greater than 100%."),
+				onchange: function() {
+					if (flt(this.value) != 0) {
+						////// custom script ////////
+						if (this.value > 20) {
+							this.value = 20
+							frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'additional_discount_percentage', flt(this.value));
+							me.hide_discount_control(this.value);
+							frappe.throw('You excceded the discount amount threshold which is 20% ');
+						}
+						/////// end custom script ////////////
+						frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'additional_discount_percentage', flt(this.value));
+						me.hide_discount_control(this.value);
+					} else {
+						frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'additional_discount_percentage', 0);
+						me.$add_discount_elem.css({
+							'border': '1px dashed var(--gray-500)',
+							'padding': 'var(--padding-sm) var(--padding-md)'
 						});
-						this.value = 0;
+						me.$add_discount_elem.html(`${me.get_discount_icon()} ${__('Add Discount')}`);
+						me.discount_field = undefined;
 					}
-					frappe.model.set_value(
-						frm.doc.doctype,
-						frm.doc.name,
-						"additional_discount_percentage",
-						flt(this.value)
-					);
-					me.hide_discount_control(this.value);
 				},
 			},
 			parent: this.$add_discount_elem.find(".add-discount-field"),
@@ -487,14 +502,16 @@ erpnext.PointOfSale.ItemCart = class {
 
 	update_totals_section(frm) {
 		if (!frm) frm = this.events.get_frm();
-
-		this.render_net_total(frm.doc.net_total);
+		const me = this;
+		this.render_net_total(frm.doc.base_total);
 		this.render_total_item_qty(frm.doc.items);
-		const grand_total = cint(frappe.sys_defaults.disable_rounded_total)
-			? frm.doc.grand_total
-			: frm.doc.rounded_total;
-		this.render_grand_total(grand_total);
-
+		const grand_total = cint(frappe.sys_defaults.disable_rounded_total)? frm.doc.grand_total : frm.doc.rounded_total;
+		const transaction_discount_percentage = frm.doc.additional_discount_percentage
+		const transaction_discount_amount = frm.doc.discount_amount
+		frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'additional_discount_percentage', flt(transaction_discount_percentage));
+		me.hide_discount_control(flt(transaction_discount_percentage));
+		this.render_grand_total(grand_total);		
+		this.render_transaction_discount(transaction_discount_percentage ,transaction_discount_amount);
 		this.render_taxes(frm.doc.taxes);
 	}
 
@@ -522,6 +539,19 @@ erpnext.PointOfSale.ItemCart = class {
 		this.$numpad_section
 			.find(".numpad-item-qty-total")
 			.html(`<div>${__("Total Quantity")}: <span>${total_item_qty}</span></div>`);
+	}
+
+	render_transaction_discount(transaction_discount_percentage,transaction_discount_amount) {
+		if(transaction_discount_percentage == 0 && transaction_discount_amount ==0 ){			
+			this.$totals_section.find('.transaction_discount-container').html('');
+			frappe.model.set_value('additional_discount_percentage' , 0);
+		}else{
+			const currency = this.events.get_frm().doc.currency;
+			this.$totals_section.find('.transaction_discount-container').html(
+				`<div style="color:var(--text-on-green);">${__('Discount')}(${transaction_discount_percentage}%)</div><div style="color:var(--text-on-green);">${format_currency(transaction_discount_amount, currency)}</div>`);
+				frappe.model.set_value('additional_discount_percentage' , transaction_discount_percentage);
+			}
+		
 	}
 
 	render_grand_total(value) {
@@ -1063,6 +1093,10 @@ erpnext.PointOfSale.ItemCart = class {
 		this.fetch_customer_details(frm.doc.customer).then(() => {
 			this.events.customer_details_updated(this.customer_info);
 			this.update_customer_section();
+	
+			if(frm.doc.customer){
+				this.events.apply_pricing_rule_on_transaction()
+			}			
 		});
 
 		this.$cart_items_wrapper.html("");
@@ -1075,7 +1109,7 @@ erpnext.PointOfSale.ItemCart = class {
 			this.highlight_checkout_btn(false);
 		}
 
-		this.hide_discount_control(frm.doc.additional_discount_percentage);
+		// this.hide_discount_control(frm.doc.additional_discount_percentage);
 		this.update_totals_section(frm);
 
 		if (frm.doc.docstatus === 1) {
