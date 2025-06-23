@@ -142,10 +142,10 @@ class POSInvoiceMergeLog(Document):
 		sales_invoice.posting_date = getdate(self.posting_date)
 		sales_invoice.posting_time = get_time(self.posting_time)
 		sales_invoice.save()
+		print('=======1=======')
 		sales_invoice.submit()
-
+		print('=======2=======')
 		self.consolidated_invoice = sales_invoice.name
-
 		return sales_invoice.name
 
 	def process_merging_into_credit_note(self, data):

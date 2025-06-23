@@ -101,7 +101,7 @@ class Batch(Document):
 		disabled: DF.Check
 		expiry_date: DF.Date | None
 		image: DF.AttachImage | None
-		item: DF.Link
+		item: DF.Link | None
 		item_name: DF.Data | None
 		manufacturing_date: DF.Date | None
 		parent_batch: DF.Link | None
@@ -168,10 +168,18 @@ class Batch(Document):
 		self.set_expiry_date()
 
 	def set_expiry_date(self):
-		has_expiry_date, shelf_life_in_days = frappe.db.get_value(
+		# Safely get has_expiry_date and shelf_life_in_days
+		result = frappe.db.get_value(
 			"Item", self.item, ["has_expiry_date", "shelf_life_in_days"]
 		)
+		
+		# Handle the case where no result is found
+		if result:
+			has_expiry_date, shelf_life_in_days = result
+		else:
+			has_expiry_date, shelf_life_in_days = None, None
 
+		# Only proceed if expiry_date needs to be set
 		if not self.expiry_date and has_expiry_date and shelf_life_in_days:
 			if (
 				not self.manufacturing_date
@@ -185,6 +193,7 @@ class Batch(Document):
 			if self.manufacturing_date:
 				self.expiry_date = add_days(self.manufacturing_date, shelf_life_in_days)
 
+		# Raise an error if expiry_date is mandatory but missing
 		if has_expiry_date and not self.expiry_date:
 			frappe.throw(
 				msg=_("Please set {0} for Batched Item {1}, which is used to set {2} on Submit.").format(
@@ -194,6 +203,7 @@ class Batch(Document):
 				),
 				title=_("Expiry Date Mandatory"),
 			)
+
 
 	def get_name_from_naming_series(self):
 		"""
@@ -217,7 +227,9 @@ def get_batch_qty(
 	posting_date=None,
 	posting_time=None,
 	ignore_voucher_nos=None,
+	consider_negative_batches=None,
 	for_stock_levels=False,
+	
 ):
 	"""Returns batch actual qty if warehouse is passed,
 	        or returns dict of qty by warehouse if warehouse is None
@@ -243,6 +255,7 @@ def get_batch_qty(
 			"batch_no": batch_no,
 			"ignore_voucher_nos": ignore_voucher_nos,
 			"for_stock_levels": for_stock_levels,
+			"consider_negative_batches":consider_negative_batches if consider_negative_batches else False
 		}
 	)
 
@@ -253,7 +266,7 @@ def get_batch_qty(
 
 	for batch in batches:
 		batchwise_qty[batch.get("batch_no")] += batch.get("qty")
-
+	
 	return batchwise_qty[batch_no]
 
 

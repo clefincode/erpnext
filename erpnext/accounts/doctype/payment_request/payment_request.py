@@ -5,6 +5,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, nowdate
 from frappe.utils.background_jobs import enqueue
+from webshop.webshop.shopping_cart.cart import _get_cart_quotation, _set_price_list
 
 from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
@@ -214,6 +215,12 @@ class PaymentRequest(Document):
 			from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 
 			si = make_sales_invoice(self.reference_name, ignore_permissions=True)
+			# start custom update			
+			if not ref_doc.taxes_and_charges:
+				si.set('tax_category', '')
+				si.set('taxes_and_charges', '')
+				si.set('taxes', [])
+			# end custom update	
 			si.allocate_advances_automatically = True
 			si = si.insert(ignore_permissions=True)
 			si.submit()
@@ -521,6 +528,16 @@ def make_payment_request(**args):
 			pr.submit()
 
 	if args.order_type == "Shopping Cart":
+		# custom update for submit sales order and quotation when customer click pay
+		if args.dt == 'Sales Order':
+			sales_order = frappe.get_doc('Sales Order' , args.dn)			
+			if sales_order.docstatus == 0:
+				sales_order.flags.ignore_permissions = True
+				sales_order.submit()
+				quotation = _get_cart_quotation()							
+				quotation.flags.ignore_permissions = True
+				quotation.submit()
+		# end custom update
 		frappe.db.commit()
 		frappe.local.response["type"] = "redirect"
 		frappe.local.response["location"] = pr.get_payment_url()

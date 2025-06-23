@@ -450,6 +450,7 @@
    "fieldname": "batch_no",
    "fieldtype": "Link",
    "label": "Batch No",
+   "link_filters": null,
    "options": "Batch",
    "search_index": 1
   },
@@ -974,7 +975,7 @@
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-07-19 12:12:42.449298",
+ "modified": "2025-01-30 19:22:39.325000",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Purchase Invoice Item",

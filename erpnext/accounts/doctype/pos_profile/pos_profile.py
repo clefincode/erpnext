@@ -245,17 +245,29 @@ def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
 		"txt": "%%%s%%" % txt,
 	}
 
+	# pos_profile = frappe.db.sql(
+	# 	"""select pf.name
+	# 	from
+	# 		`tabPOS Profile` pf, `tabPOS Profile User` pfu
+	# 	where
+	# 		pfu.parent = pf.name and pfu.user = %(user)s and pf.company = %(company)s
+	# 		and (pf.name like %(txt)s)
+	# 		and pf.disabled = 0 limit %(page_len)s offset %(start)s""",
+	# 	args,
+	# )
+
+	#custom_update
 	pos_profile = frappe.db.sql(
 		"""select pf.name
 		from
 			`tabPOS Profile` pf, `tabPOS Profile User` pfu
 		where
-			pfu.parent = pf.name and pfu.user = %(user)s and pf.company = %(company)s
+			pfu.parent = pf.name and pf.company = %(company)s
 			and (pf.name like %(txt)s)
 			and pf.disabled = 0 limit %(page_len)s offset %(start)s""",
 		args,
 	)
-
+	#custom_update
 	if not pos_profile:
 		del args["user"]
 

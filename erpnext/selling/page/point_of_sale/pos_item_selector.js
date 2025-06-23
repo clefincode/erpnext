@@ -5,10 +5,10 @@ erpnext.PointOfSale.ItemSelector = class {
 	constructor({ frm, wrapper, events, pos_profile, settings }) {
 		this.wrapper = wrapper;
 		this.events = events;
+		this.price_list_rate_missed=0.0;
 		this.pos_profile = pos_profile;
 		this.hide_images = settings.hide_images;
 		this.auto_add_item = settings.auto_add_item_to_cart;
-
 		this.inti_component();
 	}
 
@@ -235,7 +235,7 @@ erpnext.PointOfSale.ItemSelector = class {
 		};
 
 		onScan.attachTo(document, {
-			onScan: (sScancode) => {
+			onScan:  (sScancode) => {
 				if (this.search_field && this.$component.is(":visible")) {
 					this.search_field.set_focus();
 					this.set_search_value(sScancode);
@@ -244,7 +244,7 @@ erpnext.PointOfSale.ItemSelector = class {
 			},
 		});
 
-		this.$component.on("click", ".item-wrapper", function () {
+		this.$component.on("click", ".item-wrapper", async function  () {
 			const $item = $(this);
 			const item_code = unescape($item.attr("data-item-code"));
 			let batch_no = unescape($item.attr("data-batch-no"));
@@ -257,6 +257,7 @@ erpnext.PointOfSale.ItemSelector = class {
 			serial_no = serial_no === "undefined" ? undefined : serial_no;
 			uom = uom === "undefined" ? undefined : uom;
 			rate = rate === "undefined" ? undefined : rate;
+			// parseFloat(me.price_list_rate_missed>0 ? me.price_list_rate_missed : rate);
 
 			me.events.item_selected({
 				field: "qty",
@@ -265,6 +266,7 @@ erpnext.PointOfSale.ItemSelector = class {
 			});
 			me.search_field.set_focus();
 		});
+	
 
 		this.search_field.$input.on("input", (e) => {
 			clearTimeout(this.last_search);
@@ -280,7 +282,17 @@ erpnext.PointOfSale.ItemSelector = class {
 			this.$clear_search_btn.toggle(Boolean(this.search_field.$input.val()));
 		});
 	}
-
+	async flasScreen() {
+		var flashDiv = $('<div></div>').addClass('flash-red');
+        $('body').append(flashDiv);
+		await new Promise(resolve => {
+			setTimeout(() => {
+				flashDiv.remove(); 
+				resolve(); 
+			}, 1000);
+		});
+    }
+	
 	attach_shortcuts() {
 		const ctrl_label = frappe.utils.is_mac() ? "⌘" : "Ctrl";
 		this.search_field.parent.attr("title", `${ctrl_label}+I`);
@@ -325,33 +337,47 @@ erpnext.PointOfSale.ItemSelector = class {
 	}
 
 	filter_items({ search_term = "" } = {}) {
+		const me = this;
 		if (search_term) {
 			search_term = search_term.toLowerCase();
-
-			// memoize
 			this.search_index = this.search_index || {};
 			if (this.search_index[search_term]) {
-				const items = this.search_index[search_term];
-				this.items = items;
+				var items = this.search_index[search_term];
+				this.items.forEach((item_prise) => {
+					items.forEach((item) => {
+						if (item_prise['item_code'] === item['item_code']) {
+							Object.entries(item_prise).forEach(([key, value]) => {
+								items[0][key]=value;
+							});
+						}
+					});
+				});
+				this.items = [...items];
 				this.render_item_list(items);
 				this.auto_add_item && this.items.length == 1 && this.add_filtered_item_to_cart();
 				return;
 			}
 		}
 
-		this.get_items({ search_term }).then(({ message }) => {
-			// eslint-disable-next-line no-unused-vars
+		this.get_items({ search_term }).then(({ message }) => {			
+			const me = this;
 			const { items, serial_no, batch_no, barcode } = message;
-			if (search_term && !barcode) {
+			if (search_term) {
 				this.search_index[search_term] = items;
 			}
 			this.items = items;
 			this.render_item_list(items);
+			
 			this.auto_add_item && this.items.length == 1 && this.add_filtered_item_to_cart();
 		});
 	}
 
-	add_filtered_item_to_cart() {
+	async add_filtered_item_to_cart () {
+		const me =this;
+		if(me.barcode_scanned)
+		{
+			await me.flasScreen();
+		}
 		this.$items_container.find(".item-wrapper").click();
 		this.set_search_value("");
 	}

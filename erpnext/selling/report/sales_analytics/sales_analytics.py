@@ -41,8 +41,6 @@ class Analytics:
 		self.get_columns()
 		self.get_data()
 		self.get_chart_data()
-
-		# Skipping total row for tree-view reports
 		skip_total_row = 0
 
 		if self.filters.tree_type in ["Supplier Group", "Item Group", "Customer Group", "Territory"]:
@@ -60,6 +58,7 @@ class Analytics:
 				"width": 140 if self.filters.tree_type != "Order Type" else 200,
 			}
 		]
+
 		if self.filters.tree_type in ["Customer", "Supplier", "Item"]:
 			self.columns.append(
 				{
@@ -81,13 +80,33 @@ class Analytics:
 				}
 			)
 
-		for end_date in self.periodic_daterange:
-			period = self.get_period(end_date)
+		for start_date in self.periodic_start_dates:
+			period = self.get_period(start_date) 
 			self.columns.append(
 				{"label": _(period), "fieldname": scrub(period), "fieldtype": "Float", "width": 120}
 			)
 
-		self.columns.append({"label": _("Total"), "fieldname": "total", "fieldtype": "Float", "width": 120})
+
+		self.columns.append(
+			{"label": _("Total"), "fieldname": "total", "fieldtype": "Float", "width": 120}
+		)
+
+	def get_period_label(self, posting_date):
+		if self.filters.range == "Weekly":
+			for idx, end_date in enumerate(self.periodic_daterange):
+				start_date = self.periodic_start_dates[idx]
+				if start_date <= posting_date <= end_date:
+					return f"{start_date.strftime('%a %d-%b')}" 
+			return posting_date.strftime('%a %d-%b')
+		elif self.filters.range == "Monthly":
+			return posting_date.strftime('%b %Y')
+		elif self.filters.range == "Quarterly":
+			quarter = ((posting_date.month - 1) // 3) + 1
+			return f"Q{quarter} {posting_date.year}"
+		else:
+			year = get_fiscal_year(posting_date, company=self.filters.company)
+		return str(year[0])
+
 
 	def get_data(self):
 		if self.filters.tree_type in ["Customer", "Supplier"]:
@@ -245,6 +264,8 @@ class Analytics:
 			},
 		)
 
+
+
 	def get_rows(self):
 		self.data = []
 		self.get_periodic_data()
@@ -256,9 +277,9 @@ class Analytics:
 			}
 			total = 0
 			for end_date in self.periodic_daterange:
-				period = self.get_period(end_date)
-				amount = flt(period_data.get(period, 0.0))
-				row[scrub(period)] = amount
+				period_label = self.get_period_label(end_date)
+				amount = flt(period_data.get(period_label, 0.0))
+				row[scrub(period_label)] = amount
 				total += amount
 
 			row["total"] = total
@@ -267,6 +288,7 @@ class Analytics:
 				row["stock_uom"] = period_data.get("stock_uom")
 
 			self.data.append(row)
+
 
 	def get_rows_by_group(self):
 		self.get_periodic_data()
@@ -289,57 +311,67 @@ class Analytics:
 
 		self.data = out
 
+
 	def get_periodic_data(self):
 		self.entity_periodic_data = frappe._dict()
 
 		for d in self.entries:
 			if self.filters.tree_type == "Supplier Group":
 				d.entity = self.parent_child_map.get(d.entity)
-			period = self.get_period(d.get(self.date_field))
-			self.entity_periodic_data.setdefault(d.entity, frappe._dict()).setdefault(period, 0.0)
-			self.entity_periodic_data[d.entity][period] += flt(d.value_field)
+
+			period_label = self.get_period_label(d.get(self.date_field))
+
+			self.entity_periodic_data.setdefault(d.entity, frappe._dict()).setdefault(period_label, 0.0)
+			self.entity_periodic_data[d.entity][period_label] += flt(d.value_field)
 
 			if self.filters.tree_type == "Item":
 				self.entity_periodic_data[d.entity]["stock_uom"] = d.stock_uom
 
 	def get_period(self, posting_date):
-		if self.filters.range == "Weekly":
-			period = _("Week {0} {1}").format(str(posting_date.isocalendar()[1]), str(posting_date.year))
+		if self.filters.range == "Daily":
+			period = posting_date.strftime('%d-%b-%Y')  
+		elif self.filters.range == "Weekly":
+			period = posting_date.strftime('%a %d-%b') 
 		elif self.filters.range == "Monthly":
-			period = _(str(self.months[posting_date.month - 1])) + " " + str(posting_date.year)
+			period = posting_date.strftime('%b %Y')  
 		elif self.filters.range == "Quarterly":
-			period = _("Quarter {0} {1}").format(
-				str(((posting_date.month - 1) // 3) + 1), str(posting_date.year)
-			)
+			quarter = ((posting_date.month - 1) // 3) + 1
+			period = f"Q{quarter} {posting_date.year}"
 		else:
 			year = get_fiscal_year(posting_date, company=self.filters.company)
 			period = str(year[0])
 		return period
 
 	def get_period_date_ranges(self):
-		from dateutil.relativedelta import MO, relativedelta
+		from dateutil.relativedelta import relativedelta, MO
 
 		from_date, to_date = getdate(self.filters.from_date), getdate(self.filters.to_date)
 
-		increment = {"Monthly": 1, "Quarterly": 3, "Half-Yearly": 6, "Yearly": 12}.get(self.filters.range, 1)
-
-		if self.filters.range in ["Monthly", "Quarterly"]:
+		if self.filters.range == "Weekly":
+			if from_date.weekday() != 0: 
+				from_date = from_date + relativedelta(weekday=MO(+1))
+		elif self.filters.range in ["Monthly", "Quarterly"]:
 			from_date = from_date.replace(day=1)
 		elif self.filters.range == "Yearly":
 			from_date = get_fiscal_year(from_date)[1]
-		else:
-			from_date = from_date + relativedelta(from_date, weekday=MO(-1))
 
 		self.periodic_daterange = []
-		for _dummy in range(1, 53):
+		self.periodic_start_dates = []
+
+		increment = {"Monthly": 1, "Quarterly": 3, "Half-Yearly": 6, "Yearly": 12}.get(self.filters.range, 1)
+
+		for _ in range(1, 366):
 			if self.filters.range == "Weekly":
-				period_end_date = add_days(from_date, 6)
+				period_end_date = add_days(from_date, 6) 
+			elif self.filters.range == "Daily":
+				period_end_date = from_date
 			else:
 				period_end_date = add_to_date(from_date, months=increment, days=-1)
 
 			if period_end_date > to_date:
 				period_end_date = to_date
 
+			self.periodic_start_dates.append(from_date)
 			self.periodic_daterange.append(period_end_date)
 
 			from_date = add_days(period_end_date, 1)

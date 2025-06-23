@@ -6,7 +6,7 @@
 import copy
 import json
 import re
-
+from six import string_types
 import frappe
 from frappe import _, throw
 from frappe.model.document import Document
@@ -24,24 +24,12 @@ class PricingRule(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
-
 		from erpnext.accounts.doctype.pricing_rule_brand.pricing_rule_brand import PricingRuleBrand
 		from erpnext.accounts.doctype.pricing_rule_item_code.pricing_rule_item_code import PricingRuleItemCode
-		from erpnext.accounts.doctype.pricing_rule_item_group.pricing_rule_item_group import (
-			PricingRuleItemGroup,
-		)
+		from erpnext.accounts.doctype.pricing_rule_item_group.pricing_rule_item_group import PricingRuleItemGroup
+		from frappe.types import DF
 
-		applicable_for: DF.Literal[
-			"",
-			"Customer",
-			"Customer Group",
-			"Territory",
-			"Sales Partner",
-			"Campaign",
-			"Supplier",
-			"Supplier Group",
-		]
+		applicable_for: DF.Literal["", "Customer", "Customer Group", "Territory", "Sales Partner", "Campaign", "Supplier", "Supplier Group"]
 		apply_discount_on: DF.Literal["Grand Total", "Net Total"]
 		apply_discount_on_rate: DF.Check
 		apply_multiple_pricing_rules: DF.Check
@@ -82,33 +70,11 @@ class PricingRule(Document):
 		other_item_code: DF.Link | None
 		other_item_group: DF.Link | None
 		price_or_product_discount: DF.Literal["Price", "Product"]
-		priority: DF.Literal[
-			"",
-			"1",
-			"2",
-			"3",
-			"4",
-			"5",
-			"6",
-			"7",
-			"8",
-			"9",
-			"10",
-			"11",
-			"12",
-			"13",
-			"14",
-			"15",
-			"16",
-			"17",
-			"18",
-			"19",
-			"20",
-		]
+		priority: DF.Literal["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"]
 		promotional_scheme: DF.Link | None
 		promotional_scheme_id: DF.Data | None
 		rate: DF.Currency
-		rate_or_discount: DF.Literal["", "Rate", "Discount Percentage", "Discount Amount"]
+		rate_or_discount: DF.Literal["", "Rate", "Discount Percentage", "Discount Amount", "Price"]
 		recurse_for: DF.Float
 		round_free_qty: DF.Check
 		rule_description: DF.SmallText | None
@@ -389,7 +355,121 @@ def update_pricing_rule_uom(pricing_rule, args):
 			pricing_rule.uom = row.uom
 
 
-def get_pricing_rule_for_item(args, doc=None, for_validate=False):
+# def get_pricing_rule_for_item(args, doc=None, for_validate=False):
+# 	from erpnext.accounts.doctype.pricing_rule.utils import (
+# 		get_applied_pricing_rules,
+# 		get_pricing_rule_items,
+# 		get_pricing_rules,
+# 		get_product_discount_rule,
+# 	)
+
+# 	if isinstance(doc, str):
+# 		doc = json.loads(doc)
+
+# 	if doc:
+# 		doc = frappe.get_doc(doc)
+
+# 	if args.get("is_free_item") or args.get("parenttype") == "Material Request":
+# 		return {}
+
+# 	item_details = frappe._dict(
+# 		{
+# 			"doctype": args.doctype,
+# 			"has_margin": False,
+# 			"name": args.name,
+# 			"free_item_data": [],
+# 			"parent": args.parent,
+# 			"parenttype": args.parenttype,
+# 			"child_docname": args.get("child_docname"),
+# 		}
+# 	)
+
+# 	if args.ignore_pricing_rule or not args.item_code:
+# 		if frappe.db.exists(args.doctype, args.name) and args.get("pricing_rules"):
+# 			item_details = remove_pricing_rule_for_item(
+# 				args.get("pricing_rules"),
+# 				item_details,
+# 				item_code=args.get("item_code"),
+# 				rate=args.get("price_list_rate"),
+# 			)
+# 		return item_details
+
+# 	update_args_for_pricing_rule(args)
+
+# 	pricing_rules = (
+# 		get_applied_pricing_rules(args.get("pricing_rules"))
+# 		if for_validate and args.get("pricing_rules")
+# 		else get_pricing_rules(args, doc)
+# 	)
+
+# 	if pricing_rules:
+# 		rules = []
+
+# 		for pricing_rule in pricing_rules:
+# 			if not pricing_rule:
+# 				continue
+
+# 			if isinstance(pricing_rule, str):
+# 				pricing_rule = frappe.get_cached_doc("Pricing Rule", pricing_rule)
+# 				update_pricing_rule_uom(pricing_rule, args)
+# 				pricing_rule.apply_rule_on_other_items = get_pricing_rule_items(pricing_rule) or []
+
+# 			if pricing_rule.get("suggestion"):
+# 				continue
+
+# 			item_details.validate_applied_rule = pricing_rule.get("validate_applied_rule", 0)
+# 			item_details.price_or_product_discount = pricing_rule.get("price_or_product_discount")
+
+# 			rules.append(get_pricing_rule_details(args, pricing_rule))
+
+# 			if pricing_rule.mixed_conditions or pricing_rule.apply_rule_on_other:
+# 				item_details.update(
+# 					{
+# 						"price_or_product_discount": pricing_rule.price_or_product_discount,
+# 						"apply_rule_on": (
+# 							frappe.scrub(pricing_rule.apply_rule_on_other)
+# 							if pricing_rule.apply_rule_on_other
+# 							else frappe.scrub(pricing_rule.get("apply_on"))
+# 						),
+# 					}
+# 				)
+
+# 				if pricing_rule.apply_rule_on_other_items:
+# 					item_details["apply_rule_on_other_items"] = json.dumps(
+# 						pricing_rule.apply_rule_on_other_items
+# 					)
+
+# 			if pricing_rule.coupon_code_based == 1 and args.coupon_code is None:
+# 				return item_details
+
+# 			if not pricing_rule.validate_applied_rule:
+# 				if pricing_rule.price_or_product_discount == "Price":
+# 					apply_price_discount_rule(pricing_rule, item_details, args)
+# 				else:
+# 					get_product_discount_rule(pricing_rule, item_details, args, doc)
+
+# 		if not item_details.get("has_margin"):
+# 			item_details.margin_type = None
+# 			item_details.margin_rate_or_amount = 0.0
+
+# 		item_details.has_pricing_rule = 1
+
+# 		item_details.pricing_rules = frappe.as_json([d.pricing_rule for d in rules])
+
+# 		if not doc:
+# 			return item_details
+
+# 	elif args.get("pricing_rules"):
+# 		item_details = remove_pricing_rule_for_item(
+# 			args.get("pricing_rules"),
+# 			item_details,
+# 			item_code=args.get("item_code"),
+# 			rate=args.get("price_list_rate"),
+# 		)
+
+# 	return item_details
+
+def get_pricing_rule_for_item(args, price_list_rate=0, doc=None, for_validate=False, return_pr= False): ###Custom Update
 	from erpnext.accounts.doctype.pricing_rule.utils import (
 		get_applied_pricing_rules,
 		get_pricing_rule_items,
@@ -397,59 +477,47 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 		get_product_discount_rule,
 	)
 
-	if isinstance(doc, str):
+	if isinstance(doc, string_types):
 		doc = json.loads(doc)
 
 	if doc:
 		doc = frappe.get_doc(doc)
 
-	if args.get("is_free_item") or args.get("parenttype") == "Material Request":
-		return {}
+	if (args.get('is_free_item') or
+		args.get("parenttype") == "Material Request"): return {}
 
-	item_details = frappe._dict(
-		{
-			"doctype": args.doctype,
-			"has_margin": False,
-			"name": args.name,
-			"free_item_data": [],
-			"parent": args.parent,
-			"parenttype": args.parenttype,
-			"child_docname": args.get("child_docname"),
-		}
-	)
+	item_details = frappe._dict({
+		"doctype": args.doctype,
+		"has_margin": False,
+		"name": args.name,
+		"free_item_data": [],
+		"parent": args.parent,
+		"parenttype": args.parenttype,
+		"child_docname": args.get('child_docname')
+	})
 
 	if args.ignore_pricing_rule or not args.item_code:
 		if frappe.db.exists(args.doctype, args.name) and args.get("pricing_rules"):
-			item_details = remove_pricing_rule_for_item(
-				args.get("pricing_rules"),
-				item_details,
-				item_code=args.get("item_code"),
-				rate=args.get("price_list_rate"),
-			)
+			item_details = remove_pricing_rule_for_item(args.get("pricing_rules"),
+				item_details, args.get('item_code'))
 		return item_details
 
 	update_args_for_pricing_rule(args)
 
-	pricing_rules = (
-		get_applied_pricing_rules(args.get("pricing_rules"))
-		if for_validate and args.get("pricing_rules")
-		else get_pricing_rules(args, doc)
-	)
+	pricing_rules = (get_applied_pricing_rules(args.get('pricing_rules'))
+		if for_validate and args.get("pricing_rules") else get_pricing_rules(args, doc))
 
 	if pricing_rules:
 		rules = []
 
 		for pricing_rule in pricing_rules:
-			if not pricing_rule:
-				continue
+			if not pricing_rule: continue
 
-			if isinstance(pricing_rule, str):
+			if isinstance(pricing_rule, string_types):
 				pricing_rule = frappe.get_cached_doc("Pricing Rule", pricing_rule)
-				update_pricing_rule_uom(pricing_rule, args)
-				pricing_rule.apply_rule_on_other_items = get_pricing_rule_items(pricing_rule) or []
+				pricing_rule.apply_rule_on_other_items = get_pricing_rule_items(pricing_rule)
 
-			if pricing_rule.get("suggestion"):
-				continue
+			if pricing_rule.get('suggestion'): continue
 
 			item_details.validate_applied_rule = pricing_rule.get("validate_applied_rule", 0)
 			item_details.price_or_product_discount = pricing_rule.get("price_or_product_discount")
@@ -457,23 +525,14 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 			rules.append(get_pricing_rule_details(args, pricing_rule))
 
 			if pricing_rule.mixed_conditions or pricing_rule.apply_rule_on_other:
-				item_details.update(
-					{
-						"price_or_product_discount": pricing_rule.price_or_product_discount,
-						"apply_rule_on": (
-							frappe.scrub(pricing_rule.apply_rule_on_other)
-							if pricing_rule.apply_rule_on_other
-							else frappe.scrub(pricing_rule.get("apply_on"))
-						),
-					}
-				)
+				item_details.update({
+					'apply_rule_on_other_items': json.dumps(pricing_rule.apply_rule_on_other_items),
+					'price_or_product_discount': pricing_rule.price_or_product_discount,
+					'apply_rule_on': (frappe.scrub(pricing_rule.apply_rule_on_other)
+						if pricing_rule.apply_rule_on_other else frappe.scrub(pricing_rule.get('apply_on')))
+				})
 
-				if pricing_rule.apply_rule_on_other_items:
-					item_details["apply_rule_on_other_items"] = json.dumps(
-						pricing_rule.apply_rule_on_other_items
-					)
-
-			if pricing_rule.coupon_code_based == 1 and args.coupon_code is None:
+			if pricing_rule.coupon_code_based==1 and args.coupon_code==None:
 				return item_details
 
 			if not pricing_rule.validate_applied_rule:
@@ -490,19 +549,14 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 
 		item_details.pricing_rules = frappe.as_json([d.pricing_rule for d in rules])
 
-		if not doc:
-			return item_details
+		if not doc and return_pr: return item_details, pricing_rules[0]['name'] ###Custom Update
+		if not doc: return item_details
 
 	elif args.get("pricing_rules"):
-		item_details = remove_pricing_rule_for_item(
-			args.get("pricing_rules"),
-			item_details,
-			item_code=args.get("item_code"),
-			rate=args.get("price_list_rate"),
-		)
-
+		item_details = remove_pricing_rule_for_item(args.get("pricing_rules"),
+			item_details, args.get('item_code'))
+	if return_pr: return item_details, pricing_rules[0]['name'] ###Custom Update
 	return item_details
-
 
 def update_args_for_pricing_rule(args):
 	if not (args.item_group and args.brand):

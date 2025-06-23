@@ -286,6 +286,19 @@ frappe.ui.form.on("Stock Reconciliation Item", {
 		}
 
 		frm.events.set_valuation_rate_and_qty(frm, cdt, cdn);
+
+		if(child.item_code){
+			frappe.call({
+					method: "kensingtonbn.whitelisted.get_proojected_qty",
+					args: {"item_code": child.item_code, "company": cur_frm.doc.company, "warehouse": child.warehouse},
+					freeze: 1,
+					callback: function(r){
+							frappe.model.set_value(cdt, cdn, "custom_reserved_for_pos_transactions", r.message);
+					}
+				});
+		}	else {
+			frappe.model.set_value(cdt, cdn, "custom_reserved_for_pos_transactions", 0);
+		}
 	},
 
 	batch_no: function (frm, cdt, cdn) {

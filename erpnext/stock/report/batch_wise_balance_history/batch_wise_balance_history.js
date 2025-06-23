@@ -78,7 +78,9 @@ frappe.query_reports["Batch-Wise Balance History"] = {
 			},
 		},
 	],
+
 	formatter: function (value, row, column, data, default_formatter) {
+		
 		if (column.fieldname == "Batch" && data && !!data["Batch"]) {
 			value = data["Batch"];
 			column.link_onclick =
@@ -87,14 +89,62 @@ frappe.query_reports["Batch-Wise Balance History"] = {
 				")";
 		}
 
+		if (column.fieldname == "valuation_rate" && data) {
+				if (data.item && data.warehouse && data.batch && !data.valuation_rate_fetching) {
+					data.valuation_rate_fetching = true;
+
+					frappe.call({
+						method: "kensingtonbn.www.api.api.fetch_valuation_rate",
+						args: {
+							item_code: data.item,
+							warehouse: data.warehouse,
+							batch_no: data.batch,
+						},
+						callback: function (r) {
+							if (r.message !== undefined && data.valuation_rate!=r.message) {
+								data.valuation_rate = r.message;
+								data.valuation_rate_fetched = true;
+								frappe.query_report.datatable.refresh();
+							}
+						
+						},
+					});
+				}
+			if (data.valuation_rate != null) {
+				value = format_currency(data.valuation_rate, frappe.defaults.get_default("currency"));
+			}
+		}
+		if (column.fieldname == "last_purchase_rate" && data) {
+			if (data.item && !data.last_purchase_rate_fetching) {
+				data.last_purchase_rate_fetching = true;
+	
+				frappe.call({
+					method: "kensingtonbn.www.api.api.fetch_last_purchase_rate",
+					args: {
+						item_code: data.item,
+					},
+					callback: function (r) {
+						if (r.message !== undefined && data.last_purchase_rate != r.message) {
+							data.last_purchase_rate = r.message;
+							data.last_purchase_rate_fetched = true;
+							frappe.query_report.datatable.refresh();
+						}
+					},
+				});
+			}
+			if (data.last_purchase_rate != null) {
+				value = format_currency(data.last_purchase_rate, 'BND');
+			}
+		}
+
 		value = default_formatter(value, row, column, data);
 		return value;
 	},
+
 	set_batch_route_to_stock_ledger: function (data) {
 		frappe.route_options = {
 			batch_no: data["Batch"],
 		};
-
 		frappe.set_route("query-report", "Stock Ledger");
 	},
 };

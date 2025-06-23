@@ -99,18 +99,99 @@ def filter_pricing_rule_based_on_condition(pricing_rules, doc=None):
 	return filtered_pricing_rules
 
 
+# def _get_pricing_rules(apply_on, args, values):
+# 	apply_on_field = frappe.scrub(apply_on)
+
+# 	if not args.get(apply_on_field):
+# 		return []
+
+# 	child_doc = f"`tabPricing Rule {apply_on}`"
+
+# 	conditions = item_variant_condition = item_conditions = ""
+# 	values[apply_on_field] = args.get(apply_on_field)
+# 	if apply_on_field in ["item_code", "brand"]:
+# 		item_conditions = f"{child_doc}.{apply_on_field}= %({apply_on_field})s"
+
+# 		if apply_on_field == "item_code":
+# 			if args.get("uom", None):
+# 				item_conditions += (
+# 					" and ({child_doc}.uom='{item_uom}' or IFNULL({child_doc}.uom, '')='')".format(
+# 						child_doc=child_doc, item_uom=args.get("uom")
+# 					)
+# 				)
+# 			if "variant_of" not in args:
+# 				args.variant_of = frappe.get_cached_value("Item", args.item_code, "variant_of")
+
+# 			if args.variant_of:
+# 				item_variant_condition = f" or {child_doc}.item_code=%(variant_of)s "
+# 				values["variant_of"] = args.variant_of
+# 	elif apply_on_field == "item_group":
+# 		item_conditions = _get_tree_conditions(args, "Item Group", child_doc, False)
+# 		if args.get("uom", None):
+# 			item_conditions += " and ({child_doc}.uom='{item_uom}' or IFNULL({child_doc}.uom, '')='')".format(
+# 				child_doc=child_doc, item_uom=args.get("uom")
+# 			)
+
+# 	conditions += get_other_conditions(conditions, values, args)
+# 	warehouse_conditions = _get_tree_conditions(args, "Warehouse", "`tabPricing Rule`")
+# 	if warehouse_conditions:
+# 		warehouse_conditions = f" and {warehouse_conditions}"
+
+# 	if not args.price_list:
+# 		args.price_list = None
+
+# 	conditions += " and ifnull(`tabPricing Rule`.for_price_list, '') in (%(price_list)s, '')"
+# 	values["price_list"] = args.get("price_list")
+
+# 	pricing_rules = (
+# 		frappe.db.sql(
+# 			"""select `tabPricing Rule`.*,
+# 			{child_doc}.{apply_on_field}, {child_doc}.uom
+# 		from `tabPricing Rule`, {child_doc}
+# 		where ({item_conditions} or (`tabPricing Rule`.apply_rule_on_other is not null
+# 			and `tabPricing Rule`.{apply_on_other_field}=%({apply_on_field})s) {item_variant_condition})
+# 			and {child_doc}.parent = `tabPricing Rule`.name
+# 			and `tabPricing Rule`.disable = 0 and
+# 			`tabPricing Rule`.{transaction_type} = 1 {warehouse_cond} {conditions}
+# 		order by `tabPricing Rule`.priority desc,
+# 			`tabPricing Rule`.name desc""".format(
+# 				child_doc=child_doc,
+# 				apply_on_field=apply_on_field,
+# 				item_conditions=item_conditions,
+# 				item_variant_condition=item_variant_condition,
+# 				transaction_type=args.transaction_type,
+# 				warehouse_cond=warehouse_conditions,
+# 				apply_on_other_field=f"other_{apply_on_field}",
+# 				conditions=conditions,
+# 			),
+# 			values,
+# 			as_dict=1,
+# 		)
+# 		or []
+# 	)
+
+# 	return pricing_rules
+
+
 def _get_pricing_rules(apply_on, args, values):
 	apply_on_field = frappe.scrub(apply_on)
 
 	if not args.get(apply_on_field):
 		return []
-
 	child_doc = f"`tabPricing Rule {apply_on}`"
 
 	conditions = item_variant_condition = item_conditions = ""
+
 	values[apply_on_field] = args.get(apply_on_field)
+	
 	if apply_on_field in ["item_code", "brand"]:
 		item_conditions = f"{child_doc}.{apply_on_field}= %({apply_on_field})s"
+
+		#  Start custom update: add batch no to pricing rules conditions
+		if apply_on_field == "item_code" and args.get("batch_no"):
+			item_conditions += f" AND {child_doc}.custom_batch_no = %(batch_no)s"
+			values["batch_no"] = args.get("batch_no")
+		#  End custom update
 
 		if apply_on_field == "item_code":
 			if args.get("uom", None):
@@ -125,6 +206,7 @@ def _get_pricing_rules(apply_on, args, values):
 			if args.variant_of:
 				item_variant_condition = f" or {child_doc}.item_code=%(variant_of)s "
 				values["variant_of"] = args.variant_of
+
 	elif apply_on_field == "item_group":
 		item_conditions = _get_tree_conditions(args, "Item Group", child_doc, False)
 		if args.get("uom", None):
@@ -133,6 +215,7 @@ def _get_pricing_rules(apply_on, args, values):
 			)
 
 	conditions += get_other_conditions(conditions, values, args)
+
 	warehouse_conditions = _get_tree_conditions(args, "Warehouse", "`tabPricing Rule`")
 	if warehouse_conditions:
 		warehouse_conditions = f" and {warehouse_conditions}"
@@ -142,6 +225,35 @@ def _get_pricing_rules(apply_on, args, values):
 
 	conditions += " and ifnull(`tabPricing Rule`.for_price_list, '') in (%(price_list)s, '')"
 	values["price_list"] = args.get("price_list")
+	
+
+
+	query = """SELECT `tabPricing Rule`.*,
+        {child_doc}.{apply_on_field}, {child_doc}.uom
+    FROM `tabPricing Rule`, {child_doc}
+    WHERE ({item_conditions} OR (`tabPricing Rule`.apply_rule_on_other IS NOT NULL
+        AND `tabPricing Rule`.{apply_on_other_field}=%({apply_on_field})s) {item_variant_condition})
+        AND {child_doc}.parent = `tabPricing Rule`.name
+        AND `tabPricing Rule`.disable = 0
+        AND `tabPricing Rule`.{transaction_type} = 1 {warehouse_cond} {conditions}
+    ORDER BY `tabPricing Rule`.priority DESC,
+        `tabPricing Rule`.name DESC""".format(
+            child_doc=child_doc,
+            apply_on_field=apply_on_field,
+            item_conditions=item_conditions,
+            item_variant_condition=item_variant_condition,
+            transaction_type=args.transaction_type,
+            warehouse_cond=warehouse_conditions,
+            apply_on_other_field=f"other_{apply_on_field}",
+            conditions=conditions,
+        )
+
+	frappe.log_error(
+	    title="Executing Pricing Rule Query",
+	    message=f"Query:\n{query}\n\nValues:\n{frappe.as_json(values)}"
+	)
+	
+
 
 	pricing_rules = (
 		frappe.db.sql(
@@ -169,6 +281,8 @@ def _get_pricing_rules(apply_on, args, values):
 		)
 		or []
 	)
+
+	frappe.log_error('pricing_rules',pricing_rules)
 
 	return pricing_rules
 
@@ -226,42 +340,64 @@ def _get_tree_conditions(args, parenttype, table, allow_blank=True):
 	return condition
 
 
+# def get_other_conditions(conditions, values, args):
+# 	for field in ["company", "customer", "supplier", "campaign", "sales_partner"]:
+# 		if args.get(field):
+# 			conditions += f" and ifnull(`tabPricing Rule`.{field}, '') in (%({field})s, '')"
+# 			values[field] = args.get(field)
+# 		else:
+# 			conditions += f" and ifnull(`tabPricing Rule`.{field}, '') = ''"
+
+# 	for parenttype in ["Customer Group", "Territory", "Supplier Group"]:
+# 		group_condition = _get_tree_conditions(args, parenttype, "`tabPricing Rule`")
+# 		if group_condition:
+# 			conditions += " and " + group_condition
+
+# 	if args.get("transaction_date"):
+# 		conditions += """ and %(transaction_date)s between ifnull(`tabPricing Rule`.valid_from, '2000-01-01')
+# 			and ifnull(`tabPricing Rule`.valid_upto, '2500-12-31')"""
+# 		values["transaction_date"] = args.get("transaction_date")
+
+# 	if args.get("doctype") in [
+# 		"Quotation",
+# 		"Quotation Item",
+# 		"Sales Order",
+# 		"Sales Order Item",
+# 		"Delivery Note",
+# 		"Delivery Note Item",
+# 		"Sales Invoice",
+# 		"Sales Invoice Item",
+# 		"POS Invoice",
+# 		"POS Invoice Item",
+# 	]:
+# 		conditions += """ and ifnull(`tabPricing Rule`.selling, 0) = 1"""
+# 	else:
+# 		conditions += """ and ifnull(`tabPricing Rule`.buying, 0) = 1"""
+
+# 	return conditions
+
+
+# Start custom update:
 def get_other_conditions(conditions, values, args):
 	for field in ["company", "customer", "supplier", "campaign", "sales_partner"]:
 		if args.get(field):
-			conditions += f" and ifnull(`tabPricing Rule`.{field}, '') in (%({field})s, '')"
+			conditions += " and ifnull(`tabPricing Rule`.{0}, '') in (%({1})s, '')".format(field, field)
 			values[field] = args.get(field)
 		else:
-			conditions += f" and ifnull(`tabPricing Rule`.{field}, '') = ''"
+			conditions += " and ifnull(`tabPricing Rule`.{0}, '') = ''".format(field)
 
 	for parenttype in ["Customer Group", "Territory", "Supplier Group"]:
-		group_condition = _get_tree_conditions(args, parenttype, "`tabPricing Rule`")
+		group_condition = _get_tree_conditions(args, parenttype, '`tabPricing Rule`')
 		if group_condition:
 			conditions += " and " + group_condition
 
 	if args.get("transaction_date"):
 		conditions += """ and %(transaction_date)s between ifnull(`tabPricing Rule`.valid_from, '2000-01-01')
 			and ifnull(`tabPricing Rule`.valid_upto, '2500-12-31')"""
-		values["transaction_date"] = args.get("transaction_date")
-
-	if args.get("doctype") in [
-		"Quotation",
-		"Quotation Item",
-		"Sales Order",
-		"Sales Order Item",
-		"Delivery Note",
-		"Delivery Note Item",
-		"Sales Invoice",
-		"Sales Invoice Item",
-		"POS Invoice",
-		"POS Invoice Item",
-	]:
-		conditions += """ and ifnull(`tabPricing Rule`.selling, 0) = 1"""
-	else:
-		conditions += """ and ifnull(`tabPricing Rule`.buying, 0) = 1"""
+		values['transaction_date'] = args.get('transaction_date')
 
 	return conditions
-
+# end custom update:
 
 def filter_pricing_rules(args, pricing_rules, doc=None):
 	if not isinstance(pricing_rules, list):
@@ -546,6 +682,8 @@ def get_qty_amount_data_for_cumulative(pr_doc, doc, items=None):
 
 
 def apply_pricing_rule_on_transaction(doc):
+	frappe.log_error("yyyyyyyyyyyyyyy", frappe.as_json(doc))
+
 	conditions = "apply_on = 'Transaction'"
 
 	values = {}

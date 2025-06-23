@@ -60,9 +60,7 @@
    "label": "Item",
    "oldfieldname": "item",
    "oldfieldtype": "Link",
-   "options": "Item",
-   "read_only_depends_on": "eval:!doc.__islocal",
-   "reqd": 1
+   "options": "Item"
   },
   {
    "fieldname": "image",
@@ -115,15 +113,13 @@
    "fieldname": "reference_doctype",
    "fieldtype": "Link",
    "label": "Source Document Type",
-   "options": "DocType",
-   "read_only": 1
+   "options": "DocType"
   },
   {
    "fieldname": "reference_name",
    "fieldtype": "Dynamic Link",
    "label": "Source Document Name",
-   "options": "reference_doctype",
-   "read_only": 1
+   "options": "reference_doctype"
   },
   {
    "fieldname": "section_break_7",
@@ -208,7 +204,7 @@
  "image_field": "image",
  "links": [],
  "max_attachments": 5,
- "modified": "2023-11-09 12:17:28.339975",
+ "modified": "2025-03-12 19:00:02.290969",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Batch",
@@ -225,7 +221,6 @@
    "read": 1,
    "report": 1,
    "role": "Item Manager",
-   "set_user_permissions": 1,
    "share": 1,
    "write": 1
   }

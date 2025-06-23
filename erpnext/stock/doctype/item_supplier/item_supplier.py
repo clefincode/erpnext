@@ -17,7 +17,7 @@ class ItemSupplier(Document):
 		parent: DF.Data
 		parentfield: DF.Data
 		parenttype: DF.Data
-		supplier: DF.Link
+		supplier: DF.Link | None
 		supplier_part_no: DF.Data | None
 	# end: auto-generated types
 

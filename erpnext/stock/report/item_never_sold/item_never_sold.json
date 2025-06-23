@@ -1,0 +1,44 @@
+{
+ "add_total_row": 0,
+ "columns": [],
+ "creation": "2024-10-21 20:08:02.603236",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "json": "{}",
+ "letter_head": "MAJESTICA LETTER HEAD",
+ "letterhead": null,
+ "modified": "2024-10-21 20:11:06.228743",
+ "modified_by": "Administrator",
+ "module": "Stock",
+ "name": "Item Never Sold",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Sales Invoice",
+ "report_name": "Item Never Sold",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "All"
+  },
+  {
+   "role": "POS cashier"
+  },
+  {
+   "role": "Accounts User POS"
+  }
+ ],
+ "timeout": 0
+}

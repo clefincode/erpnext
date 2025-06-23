@@ -3,6 +3,7 @@
 
 
 import json
+from collections import namedtuple
 
 import frappe
 from frappe import _, throw
@@ -934,19 +935,40 @@ def get_item_price(args, item_code, ignore_party=False, force_batch_no=False) ->
 	return query.run()
 
 
+# @frappe.whitelist()
+# def get_batch_based_item_price(params, item_code) -> float:
+# 	if isinstance(params, str):
+# 		params = parse_json(params)
+
+# 	item_price = get_item_price(params, item_code, force_batch_no=True)
+# 	if not item_price:
+# 		item_price = get_item_price(params, item_code, ignore_party=True, force_batch_no=True)
+
+# 	if item_price and item_price[0].uom == params.get("uom"):
+# 		print(item_price)
+# 		print(item_price[0])
+# 		return item_price[0].price_list_rate
+
+# 	return 0.0
+
+
+
 @frappe.whitelist()
 def get_batch_based_item_price(params, item_code) -> float:
-	if isinstance(params, str):
-		params = parse_json(params)
+    ItemPrice = namedtuple('ItemPrice', ['code', 'price_list_rate', 'uom'])
+    if isinstance(params, str):
+        params = parse_json(params)
+    item_price_data = get_item_price(params, item_code, force_batch_no=True)
+    
+    if not item_price_data:
+        item_price_data = get_item_price(params, item_code, ignore_party=True, force_batch_no=True)
 
-	item_price = get_item_price(params, item_code, force_batch_no=True)
-	if not item_price:
-		item_price = get_item_price(params, item_code, ignore_party=True, force_batch_no=True)
+    if item_price_data:
+        item_price = ItemPrice(*item_price_data[0])
 
-	if item_price and item_price[0].uom == params.get("uom"):
-		return item_price[0].price_list_rate
-
-	return 0.0
+        if item_price.uom == params.get("uom"):
+            return item_price.price_list_rate
+    return 0.0
 
 
 def get_price_list_rate_for(args, item_code):
