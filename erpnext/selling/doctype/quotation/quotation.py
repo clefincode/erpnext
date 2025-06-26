@@ -387,6 +387,8 @@ def _make_sales_order(source_name, target_doc=None, ignore_permissions=False):
 					},
 				)
 
+		target.custom_packed_already = 1
+
 		target.flags.ignore_permissions = ignore_permissions
 		target.run_method("set_missing_values")
 		target.run_method("calculate_taxes_and_totals")
