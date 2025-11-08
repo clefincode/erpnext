@@ -331,7 +331,6 @@ class PaymentRequest(Document):
 	def create_payment_entry(self, submit=True):
 		"""create entry"""
 		frappe.flags.ignore_account_permission = True
-		frappe.log_error(message="AA", title="AA")
 
 		ref_doc = frappe.get_doc(self.reference_doctype, self.reference_name)
 
