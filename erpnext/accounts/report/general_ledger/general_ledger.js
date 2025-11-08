@@ -195,6 +195,11 @@ frappe.query_reports["General Ledger"] = {
 			fieldtype: "Check",
 		},
 		{
+			"fieldname": "show_items",
+			"label": __("Show Items"),
+			"fieldtype": "Check"
+		},
+		{
 			fieldname: "add_values_in_transaction_currency",
 			label: __("Add Columns in Transaction Currency"),
 			fieldtype: "Check",

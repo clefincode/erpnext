@@ -278,6 +278,9 @@ class PaymentEntry(AccountsController):
 
 		for ref in self.references:
 			if ref.payment_request and ref.allocated_amount > pr_outstanding_amounts[ref.payment_request]:
+				frappe.log_error(message=str(ref.allocated_amount),title="ref.allocated_amount")
+				frappe.log_error(message=str(pr_outstanding_amounts[ref.payment_request]),title="pr_outstanding_amounts[ref.payment_request]")
+
 				frappe.throw(
 					msg=_(
 						"Row #{0}: Allocated Amount cannot be greater than Outstanding Amount of Payment Request {1}"
@@ -429,11 +432,17 @@ class PaymentEntry(AccountsController):
 				self.party_account = party_account
 
 		if self.paid_from and not (self.paid_from_account_currency or self.paid_from_account_balance):
+			frappe.log_error(message=str(self.paid_from),title="paid from")
+			frappe.log_error(message=str(self.paid_from_account_currency),title="paid_from_account_currency")
+			frappe.log_error(message=str(self.paid_from_account_balance),title="paid_from_account_balance")
 			acc = get_account_details(self.paid_from, self.posting_date, self.cost_center)
 			self.paid_from_account_currency = acc.account_currency
 			self.paid_from_account_balance = acc.account_balance
 
 		if self.paid_to and not (self.paid_to_account_currency or self.paid_to_account_balance):
+			frappe.log_error(message=str(self.paid_to),title="paid_to")
+			frappe.log_error(message=str(self.paid_to_account_currency),title="paid_to_account_currency")
+			frappe.log_error(message=str(self.paid_to_account_balance),title="paid_to_account_balance")
 			acc = get_account_details(self.paid_to, self.posting_date, self.cost_center)
 			self.paid_to_account_currency = acc.account_currency
 			self.paid_to_account_balance = acc.account_balance
@@ -942,6 +951,13 @@ class PaymentEntry(AccountsController):
 
 	def set_amounts_in_company_currency(self):
 		self.base_paid_amount, self.base_received_amount, self.difference_amount = 0, 0, 0
+		#update from old version to be check if we need it in v14
+		#if self.paid_amount:
+		#	self.base_paid_amount = flt(flt(self.paid_amount) * flt(self.source_exchange_rate))
+
+		#if self.received_amount:
+		#	self.base_received_amount = flt(flt(self.received_amount) * flt(self.target_exchange_rate))
+
 		if self.paid_amount:
 			self.base_paid_amount = flt(
 				flt(self.paid_amount) * flt(self.source_exchange_rate), self.precision("base_paid_amount")

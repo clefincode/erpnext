@@ -441,10 +441,13 @@ class StockController(AccountsController):
 			}
 		)
 
-	def create_serial_batch_bundle(self, bundle_details, row):
+	def create_serial_batch_bundle(self, bundle_details, row,ignore_permissions=False):
 		from erpnext.stock.serial_batch_bundle import SerialBatchCreation
+		if self.flags.ignore_permissions==True :
+			sn_doc = SerialBatchCreation(bundle_details).make_serial_and_batch_bundle(ignore_permissions=True)
+		else:
 
-		sn_doc = SerialBatchCreation(bundle_details).make_serial_and_batch_bundle()
+			sn_doc = SerialBatchCreation(bundle_details).make_serial_and_batch_bundle()
 
 		field = "serial_and_batch_bundle"
 		if bundle_details.get("is_rejected"):

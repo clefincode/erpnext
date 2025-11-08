@@ -129,6 +129,9 @@ class PaymentRequest(Document):
 			ref_amount = get_amount(ref_doc, self.payment_account)
 
 			if existing_payment_request_amount + flt(self.grand_total) > ref_amount:
+				frappe.log_error(message=str(existing_payment_request_amount + flt(self.grand_total)), title="exiting")
+				frappe.log_error(message=str(ref_amount), title="ref_amount")
+
 				frappe.throw(
 					_("Total Payment Request amount cannot be greater than {0} amount").format(
 						self.reference_doctype
@@ -328,6 +331,7 @@ class PaymentRequest(Document):
 	def create_payment_entry(self, submit=True):
 		"""create entry"""
 		frappe.flags.ignore_account_permission = True
+		frappe.log_error(message="AA", title="AA")
 
 		ref_doc = frappe.get_doc(self.reference_doctype, self.reference_name)
 

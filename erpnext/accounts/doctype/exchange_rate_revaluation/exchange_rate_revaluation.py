@@ -263,26 +263,32 @@ class ExchangeRateRevaluation(Document):
 				new_exchange_rate = get_exchange_rate(d.account_currency, company_currency, posting_date)
 				new_balance_in_base_currency = flt(d.balance_in_account_currency * new_exchange_rate)
 				gain_loss = flt(new_balance_in_base_currency, precision) - flt(d.balance, precision)
-
-				accounts.append(
-					{
-						"account": d.account,
-						"party_type": d.party_type,
-						"party": d.party,
-						"account_currency": d.account_currency,
-						"balance_in_base_currency": d.balance,
-						"balance_in_account_currency": d.balance_in_account_currency,
-						"zero_balance": d.zero_balance,
-						"current_exchange_rate": current_exchange_rate,
-						"new_exchange_rate": new_exchange_rate,
-						"new_balance_in_base_currency": new_balance_in_base_currency,
-						"new_balance_in_account_currency": d.balance_in_account_currency,
-						"gain_loss": gain_loss,
-					}
-				)
+				# custom update
+				if flt(new_balance_in_base_currency, precision) == 0 :
+					d.zero_balance = 1
+					continue
+				# end custom update
+				if gain_loss and abs(gain_loss) >= 0.01: ###Custom update to ignore abs values less than 1%
+					accounts.append(
+						{
+							"account": d.account,
+							"party_type": d.party_type,
+							"party": d.party,
+							"account_currency": d.account_currency,
+							"balance_in_base_currency": d.balance,
+							"balance_in_account_currency": d.balance_in_account_currency,
+							"zero_balance": d.zero_balance,
+							"current_exchange_rate": current_exchange_rate,
+							"new_exchange_rate": new_exchange_rate,
+							"new_balance_in_base_currency": new_balance_in_base_currency,
+							"new_balance_in_account_currency": d.balance_in_account_currency,
+							"gain_loss": gain_loss,
+						}
+					)
 
 			# Handle Accounts with '0' balance in Account/Base Currency
 			for d in [x for x in account_details if x.zero_balance]:
+				# TODO: Set new balance in Base/Account currency ###Custom update i Issue:#ISS-2023-00022 Incorrect values in general ledger Report after Exchange Rate Revaluation
 				if d.balance != 0:
 					current_exchange_rate = new_exchange_rate = 0
 
@@ -303,22 +309,23 @@ class ExchangeRateRevaluation(Document):
 						current_exchange_rate * d.balance_in_account_currency
 					)
 
-				accounts.append(
-					{
-						"account": d.account,
-						"party_type": d.party_type,
-						"party": d.party,
-						"account_currency": d.account_currency,
-						"balance_in_base_currency": d.balance,
-						"balance_in_account_currency": d.balance_in_account_currency,
-						"zero_balance": d.zero_balance,
-						"current_exchange_rate": current_exchange_rate,
-						"new_exchange_rate": new_exchange_rate,
-						"new_balance_in_base_currency": new_balance_in_base_currency,
-						"new_balance_in_account_currency": new_balance_in_account_currency,
-						"gain_loss": gain_loss,
-					}
-				)
+				if gain_loss and abs(gain_loss) >= 0.01: ###Custom update to ignore abs values less than 1%
+					accounts.append(
+						{
+							"account": d.account,
+							"party_type": d.party_type,
+							"party": d.party,
+							"account_currency": d.account_currency,
+							"balance_in_base_currency": d.balance,
+							"balance_in_account_currency": d.balance_in_account_currency,
+							"zero_balance": d.zero_balance,
+							"current_exchange_rate": current_exchange_rate,
+							"new_exchange_rate": new_exchange_rate,
+							"new_balance_in_base_currency": new_balance_in_base_currency,
+							"new_balance_in_account_currency": new_balance_in_account_currency,
+							"gain_loss": gain_loss,
+						}
+					)
 
 		return accounts
 
@@ -391,7 +398,7 @@ class ExchangeRateRevaluation(Document):
 				}
 			)
 
-			# Account Currency has balance
+			# Account Currency has balance#Custom Update because of cases where there is a balance less than 0.01 which consider being a zero balance but in reality, the final JE will be zero as credit and debit for both account and base currency which means no revaluation happened
 			if d.get("balance_in_account_currency") and not d.get("new_balance_in_account_currency"):
 				dr_or_cr = (
 					"credit_in_account_currency"
@@ -410,8 +417,6 @@ class ExchangeRateRevaluation(Document):
 							d.precision("balance_in_account_currency"),
 						),
 						reverse_dr_or_cr: 0,
-						"debit": 0,
-						"credit": 0,
 					}
 				)
 
@@ -432,7 +437,7 @@ class ExchangeRateRevaluation(Document):
 					}
 				)
 
-			elif d.get("balance_in_base_currency") and not d.get("new_balance_in_base_currency"):
+			if d.get("balance_in_base_currency") and not d.get("new_balance_in_base_currency"):
 				# Base currency has balance
 				dr_or_cr = "credit" if d.get("balance_in_base_currency") > 0 else "debit"
 				reverse_dr_or_cr = "debit" if dr_or_cr == "credit" else "credit"
@@ -442,10 +447,8 @@ class ExchangeRateRevaluation(Document):
 							abs(d.get("balance_in_base_currency")), d.precision("balance_in_base_currency")
 						),
 						reverse_dr_or_cr: 0,
-						"debit_in_account_currency": 0,
-						"credit_in_account_currency": 0,
 					}
-				)
+				)#End Custom Update
 
 				journal_entry_accounts.append(journal_account)
 
@@ -466,6 +469,39 @@ class ExchangeRateRevaluation(Document):
 
 		journal_entry.set("accounts", journal_entry_accounts)
 		journal_entry.set_total_debit_credit()
+		# custom update : fix the simple difference between Debit & Credit 
+		if journal_entry.difference:
+			del journal_entry_accounts[len(journal_entry_accounts) - 1 ]
+			debit_in_account_currency = 0
+			credit_in_account_currency = 0
+			if self.gain_loss_booked < 0:
+				if journal_entry.difference > 0:
+					debit_in_account_currency = abs(self.gain_loss_booked) - journal_entry.difference
+				else:
+					debit_in_account_currency = abs(self.gain_loss_booked) + abs(journal_entry.difference)
+
+			if self.gain_loss_booked > 0:
+				if journal_entry.difference > 0:
+					credit_in_account_currency = self.gain_loss_booked + journal_entry.difference
+				else:
+					credit_in_account_currency = self.gain_loss_booked - abs(journal_entry.difference)
+
+			journal_entry_accounts.append(
+			{
+				"account": unrealized_exchange_gain_loss_account,
+				"balance": get_balance_on(unrealized_exchange_gain_loss_account),
+				"debit": debit_in_account_currency,
+				"credit": credit_in_account_currency,
+				"debit_in_account_currency": debit_in_account_currency ,
+				"credit_in_account_currency": credit_in_account_currency,
+				"cost_center": erpnext.get_default_cost_center(self.company),
+				"exchange_rate": 1,
+				"reference_type": "Exchange Rate Revaluation",
+				"reference_name": self.name,
+			}
+			)
+			journal_entry.set("accounts", journal_entry_accounts)
+		#  end custom update
 		journal_entry.save()
 		return journal_entry
 
@@ -564,6 +600,37 @@ class ExchangeRateRevaluation(Document):
 
 		journal_entry.set_amounts_in_company_currency()
 		journal_entry.set_total_debit_credit()
+		# custom update : fix the simple difference between Debit & Credit 
+		if journal_entry.difference:
+			del journal_entry_accounts[len(journal_entry_accounts) - 1 ]
+			debit_in_account_currency = 0
+			credit_in_account_currency = 0
+			if self.gain_loss_unbooked < 0:
+				if journal_entry.difference > 0:
+					debit_in_account_currency = abs(self.gain_loss_unbooked) - journal_entry.difference
+				else:
+					debit_in_account_currency = abs(self.gain_loss_unbooked) + abs(journal_entry.difference)
+
+			if self.gain_loss_unbooked > 0:
+				if journal_entry.difference > 0:
+					credit_in_account_currency = self.gain_loss_unbooked + journal_entry.difference
+				else:
+					credit_in_account_currency = self.gain_loss_unbooked - abs(journal_entry.difference)
+
+			journal_entry_accounts.append(
+			{
+				"account": unrealized_exchange_gain_loss_account,
+				"balance": get_balance_on(unrealized_exchange_gain_loss_account),
+				"debit_in_account_currency": debit_in_account_currency ,
+				"credit_in_account_currency": credit_in_account_currency,
+				"cost_center": erpnext.get_default_cost_center(self.company),
+				"exchange_rate": 1,
+				"reference_type": "Exchange Rate Revaluation",
+				"reference_name": self.name,
+			}
+			)
+			journal_entry.set("accounts", journal_entry_accounts)
+		#  end custom update
 		journal_entry.save()
 		return journal_entry
 
@@ -608,7 +675,7 @@ def calculate_exchange_rate_using_last_gle(company, account, party_type, party):
 			.run()[0][0]
 		)
 
-	return last_exchange_rate
+	return last_exchange_rate if last_exchange_rate else 0
 
 
 @frappe.whitelist()

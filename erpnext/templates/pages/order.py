@@ -38,7 +38,9 @@ def get_context(context):
 	context.available_loyalty_points = 0.0
 	if context.doc.get("customer"):
 		# check for the loyalty program of the customer
-		customer_loyalty_program = frappe.db.get_value("Customer", context.doc.customer, "loyalty_program")
+		customer_loyalty_program = frappe.db.get_value(
+		"Customer", context.doc.customer_name, "loyalty_program" ###Custom Update fix bug when visiting /Quotation/{quote-name}
+	)
 
 		if customer_loyalty_program:
 			from erpnext.accounts.doctype.loyalty_program.loyalty_program import (
