@@ -18,7 +18,7 @@ class ItemSupplier(Document):
 		parentfield: DF.Data
 		parenttype: DF.Data
 		supplier: DF.Link
-		supplier_part_no: DF.Data | None
+		supplier_part_no: DF.Data
 	# end: auto-generated types
 
 	pass

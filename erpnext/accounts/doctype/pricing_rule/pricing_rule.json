@@ -656,7 +656,7 @@
  "icon": "fa fa-gift",
  "idx": 1,
  "links": [],
- "modified": "2025-02-17 18:15:39.824639",
+ "modified": "2025-10-23 11:46:23.819805",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Pricing Rule",
@@ -713,6 +713,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",

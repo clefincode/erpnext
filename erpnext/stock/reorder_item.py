@@ -78,7 +78,7 @@ def _reorder_item():
 
 	for item_code, reorder_levels in items_to_consider.items():
 		for d in reorder_levels:
-			if d.has_variants:
+			if d.has_variants or d.material_request_type =='Purchase Instantly':
 				continue
 
 			add_to_material_request(

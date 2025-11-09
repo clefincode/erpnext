@@ -47,7 +47,7 @@ class Customer(TransactionBase):
 		companies: DF.Table[AllowedToTransactWith]
 		credit_limits: DF.Table[CustomerCreditLimit]
 		customer_details: DF.Text | None
-		customer_group: DF.Link | None
+		customer_group: DF.Link | None1
 		customer_name: DF.Data
 		customer_pos_id: DF.Data | None
 		customer_primary_address: DF.Link | None
@@ -609,6 +609,13 @@ def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=F
 		and company=%s {cond}""",
 		(customer, company),
 	)
+	print('==========')
+	print(f"""
+		select sum(debit) - sum(credit)
+		from `tabGL Entry` where party_type = 'Customer'
+		and is_cancelled = 0 and party = %s
+		and company=%s {cond}""",
+		(customer, company),)
 
 	outstanding_based_on_gle = flt(outstanding_based_on_gle[0][0]) if outstanding_based_on_gle else 0
 

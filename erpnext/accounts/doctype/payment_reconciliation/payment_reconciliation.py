@@ -552,7 +552,6 @@ class PaymentReconciliation(Document):
 
 		self.validate_allocation()
 		self.reconcile_allocations()
-		msgprint(_("Successfully Reconciled"))
 
 		self.get_unreconciled_entries()
 
