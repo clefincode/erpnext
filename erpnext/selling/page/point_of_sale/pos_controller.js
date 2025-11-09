@@ -195,8 +195,6 @@ erpnext.PointOfSale.Controller = class {
 			"Ctrl+O"
 		);
 
-		this.page.add_menu_item(__("Sync POS Invoices"), this.sync_pos_invoices_to_prodaction.bind(this), false, "Shift+Ctrl+S");
-
 		this.page.add_menu_item(__("Save as Draft"), this.save_draft_invoice.bind(this), false, "Ctrl+S");
 
 		this.page.add_menu_item(__("Close the POS"), this.close_pos.bind(this), false, "Shift+Ctrl+C");
@@ -241,273 +239,6 @@ erpnext.PointOfSale.Controller = class {
 			});
 	}
 
-	sync_pos_invoices_to_prodaction() {
-
-		const me = this;
-
-
-
-		frappe.call({
-			method: "sultan_1975.api.api.get_unsynced_pos_invoices",
-			callback: function (response) {
-				if (response.message && response.message.total_unsynced > 0) {
-					frappe.call({
-						method: "sultan_1975.api.api.check_if_sync_auth_exiest",
-						callback: function (auth) {
-
-							console.log(auth.message)
-
-							if(auth.message){
-								me.show_confirm_dialog(response.message.total_unsynced , auth.message.auth);
-
-							
-							} 
-							else {
-								me.showLoginPopup(response.message.total_unsynced);
-							}
-						}
-					});
-
-				} else {
-					// Show a message if no unsynced invoices are found
-					frappe.msgprint(__('No unsynced POS invoices found.'));
-				}
-			}
-		});
-	}
-
-
-
-	 showLoginPopup (total_unsynced) {
-		var me = this;
-		const loginDialog = new frappe.ui.Dialog({
-			title: 'Login to synchronization',
-			fields: [
-				{
-					fieldname: 'username',
-					label: 'Username',
-					fieldtype: 'Data',
-					reqd: 1
-				},
-				{
-					fieldname: 'password',
-					label: 'Password',
-					fieldtype: 'Password',
-					reqd: 1
-				}
-			],
-			primary_action_label: 'Submit',
-			primary_action: function(values) {
-				loginDialog.hide();
-				frappe.call({
-					method: 'sultan_1975.api.api.get_auth_for_sync',
-					args: {
-						username: values.username,
-						password: values.password
-					},
-					freeze:true,
-					freeze_message: 'Fetching session details, please wait...',
-					callback: async function(response)  {
-						console.log(response.message)
-						if (response.message) {
-							loginDialog.hide();
-							await new Promise((resolve) => setTimeout(resolve, 300));
-							if(response.message.status != 'success'){
-								frappe.msgprint({
-									title: 'Error Fetching session',
-									message: response.message.message,
-									indicator: 'red'
-								});
-							}
-
-							else
-							{
-								me.show_confirm_dialog(total_unsynced,response.message.auth);
-
-
-								
-							}
-
-						}
-					},
-					error: function(err) {
-						frappe.msgprint({
-							title: 'Error',
-							message: 'An error occurred. Please try again.',
-							indicator: 'red'
-						});
-						console.error(err);
-					}
-				});
-			}
-		});
-
-		loginDialog.show();
-	}
-
-	show_confirm_dialog (totalUnsynced, auth){
-		var me = this;
-		frappe.call({
-			method: "sultan_1975.api.api.get_unsynced_invoices",
-			callback: function (response) {
-				if (response.message) {
-					let unsyncedInvoices = response.message;
-				
-					// Generate the invoice list HTML
-					let invoiceListHTML = `
-						<div style="max-height: 25vh; overflow-y: auto">
-							<table class="table table-bordered">
-								<thead>
-									<tr>
-										<th>${__('Customer')}</th>
-										<th>${__('Grand Total')}</th>
-									</tr>
-								</thead>
-								<tbody>
-									${unsyncedInvoices.map(invoice => `
-										<tr>
-											<td>${invoice.customer}</td>
-											<td>${invoice.grand_total}</td>
-										</tr>
-									`).join('')}
-								</tbody>
-							</table>
-						</div>
-					`;
-				
-					// Create a confirmation dialog
-					let dialog = new frappe.ui.Dialog({
-						title: __('Confirm Sync'),
-						fields: [
-							{
-								fieldtype: 'HTML',
-								fieldname: 'message',
-								options: `<p>${__('Are you sure you want to sync the following invoices?')}</p>`
-							},
-							{
-								fieldtype: 'HTML',
-								fieldname: 'invoice_list',
-								options: invoiceListHTML // Inject the invoice list HTML
-							},
-							{
-								fieldtype: 'Small Text',
-								fieldname: 'description',
-								placeholder: __('Enter a description for the sync (optional)')
-							}
-						],
-						primary_action_label: __('Sync'),
-						primary_action: async function () {
-							let description = dialog.get_value('description');
-							
-							dialog.hide();
-							await new Promise((resolve) => setTimeout(resolve, 300));
-							
-							me.show_sync_progress_popup(totalUnsynced, auth , description);
-						},
-						secondary_action_label: __('Cancel'),
-						secondary_action: async function () {
-							dialog.hide();
-						}
-					});
-				
-					// Show the dialog
-					dialog.show();
-				}
-			}
-		});
-	}
-
-
-	 show_sync_progress_popup(totalUnsynced, auth , description) {
-        var me = this;
-
-		let dialog = new frappe.ui.Dialog({
-			title: __('Syncing POS Invoices'),
-			fields: [
-				{
-					fieldtype: 'HTML',
-					fieldname: 'progress',
-					options: '', // Leave empty for now; we'll inject later
-				},
-			]
-		});
-		
-		// Show the dialog
-		dialog.show();
-		
-		// Inject the progress bar HTML after the dialog is rendered
-		let progressHTML = `
-			<div name="sync-progress-bar" = id="sync-progress-bar">
-				<div class="progress" style="height: 20px;">
-					<div class="progress-bar progress-bar-striped progress-bar-animated"
-						role="progressbar"
-						style="width: 0%;"
-						aria-valuenow="0"
-						aria-valuemin="0"
-						aria-valuemax="100">
-						Sync Progress: 0 of ${totalUnsynced}
-					</div>
-				</div>
-			</div>
-		`;
-		$(dialog.body).find('div[data-fieldname="progress"]').html(progressHTML);
-		
-		// Access the progress bar
-		let progressBar = document.querySelector("#sync-progress-bar .progress-bar");
-		
-		// Listen for real-time updates
-		frappe.realtime.on("sync_progress", function (data) {
-			let percentage = (data.current / data.total) * 100;
-
-			// Update progress bar
-			progressBar.style.width = percentage + "%";
-			progressBar.setAttribute("aria-valuenow", percentage);
-			progressBar.innerHTML = `Sync Progress: ${data.current} of ${data.total}`;
-		
-			// Close the dialog when syncing is complete
-			if (data.current === data.total) {
-				dialog.hide();
-			}
-		});
-		// Trigger sync process
-		frappe.call({
-			method: "sultan_1975.api.api.sync_pos_invoices_to_prodaction",
-			args:{
-				auth:auth,
-				description:description
-			},
-			callback: async function (response) {
-				dialog.hide();
-				await new Promise((resolve) => setTimeout(resolve, 300));
-				if(!response.message)
-				{
-					frappe.msgprint(__(`${totalUnsynced} of ${totalUnsynced} POS invoices synced successfully!`));
-				}
-				else{
-					if(response.message.autrazation)
-					{
-						dialog.hide();
-						me.showLoginPopup(totalUnsynced);
-
-					}
-					else{
-						frappe.msgprint(__(`Failed to sync POS Invoices!`));
-					}
-					
-				} 
-			}
-		});
-	
-		// Listen for real-time progress updates
-		
-
-
-
-
-
-		
-
-	}
 
 	close_pos() {
 		if (!this.$components_wrapper.is(":visible")) return;
@@ -861,21 +592,26 @@ erpnext.PointOfSale.Controller = class {
 
 		console.log('ssssss1')
 
+		
+
 
 		doc.items.forEach(item => {
 
-			const parsedTaxRate = JSON.parse(item.item_tax_rate);
+			if(item.item_tax_rate && item.item_tax_rate !="{}")
+			{
+				const parsedTaxRate = JSON.parse(item.item_tax_rate);
 
 
-			const taxRateKey = Object.keys(parsedTaxRate)[0];
-
-
-			var taxEntry  = doc.taxes.find((i) => i.account_head == taxRateKey);
-
-
-			taxEntry.included_in_print_rate = parseInt(item.custom_is_this_tax_included_in_basic_rate); 
-
-			
+				const taxRateKey = Object.keys(parsedTaxRate)[0];
+	
+	
+				var taxEntry  = doc.taxes.find((i) => i.account_head == taxRateKey);
+	
+	
+				taxEntry.included_in_print_rate = parseInt(item.custom_is_this_tax_included_in_basic_rate); 
+	
+				
+			}
 		});
 
 		this.frm.doc.items.find((i) => i.name == name);

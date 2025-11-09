@@ -866,7 +866,7 @@ erpnext.PointOfSale.ItemCart = class {
 
 			this.$cart_container.find('.complete_order').css({
 				'background-color': 'var(--blue-500)',
-				'width':'50%'
+				'width':'100%'
 			});
 
 
