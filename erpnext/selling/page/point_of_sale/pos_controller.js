@@ -239,7 +239,6 @@ erpnext.PointOfSale.Controller = class {
 			});
 	}
 
-
 	close_pos() {
 		if (!this.$components_wrapper.is(":visible")) return;
 
@@ -494,10 +493,8 @@ erpnext.PointOfSale.Controller = class {
 				},
 
 				submit_invoice:  () => {
-					console.log('submit_invoice');
 					const active_coupon =this.frm.doc.active_coupon;
 					 this.check_if_tax_included_in_basic_rate(this.frm.doc)
-					 console.log('submit_invoice 2');
 					 this.frm.savesubmit().then((r) => {
 						this.toggle_components(false);
 						this.order_summary.toggle_component(true);
@@ -590,28 +587,19 @@ erpnext.PointOfSale.Controller = class {
 
 	check_if_tax_included_in_basic_rate(doc) {
 
-		console.log('ssssss1')
-
-		
-
-
 		doc.items.forEach(item => {
 
-			if(item.item_tax_rate && item.item_tax_rate !="{}")
-			{
-				const parsedTaxRate = JSON.parse(item.item_tax_rate);
+		const parsedTaxRate = JSON.parse(item.item_tax_rate || '{}');
 
+		if (parsedTaxRate && Object.keys(parsedTaxRate).length > 0) {
+		const taxRateKey = Object.keys(parsedTaxRate)[0];
 
-				const taxRateKey = Object.keys(parsedTaxRate)[0];
-	
-	
-				var taxEntry  = doc.taxes.find((i) => i.account_head == taxRateKey);
-	
-	
-				taxEntry.included_in_print_rate = parseInt(item.custom_is_this_tax_included_in_basic_rate); 
-	
-				
-			}
+		const taxEntry = doc.taxes.find(i => i.account_head === taxRateKey);
+
+		if (taxEntry) {
+			taxEntry.included_in_print_rate = parseInt(item.custom_is_this_tax_included_in_basic_rate) || 0;
+		}
+		}
 		});
 
 		this.frm.doc.items.find((i) => i.name == name);
@@ -878,7 +866,6 @@ erpnext.PointOfSale.Controller = class {
 		let item_row = undefined;
 		try {
 			let { field, value, item } = args;
-			console.log(args)
 			item_row = this.get_item_from_frm(item);
 			const item_row_exists = !$.isEmptyObject(item_row);
 
@@ -934,7 +921,6 @@ erpnext.PointOfSale.Controller = class {
 					this.edit_item_details_of(item_row);
 			}
 		} catch (error) {
-			console.log(error);
 		} finally {
 			frappe.dom.unfreeze();
 			return item_row; // eslint-disable-line no-unsafe-finally
