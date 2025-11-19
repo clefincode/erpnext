@@ -609,9 +609,8 @@ def get_rfq_response_days(scorecard):
 
 #============================ Start Custom For TASK-2025-00192 ===============================
 
-def avg_product_quality(scorecard, criteria_name='جودة المنتج'):
 
-
+def _calculate_avg_rating(scorecard, criteria_name):
     supplier = frappe.get_doc("Supplier", scorecard.supplier)
 
     params = {
@@ -624,7 +623,7 @@ def avg_product_quality(scorecard, criteria_name='جودة المنتج'):
         SELECT
             AVG(csr.supplier_rating)
         FROM
-            `tabCiC Supplier Rating` csr
+            `tabSupplier Rating` csr
         INNER JOIN
             `tabPurchase Order` po ON csr.parent = po.name
         WHERE
@@ -633,12 +632,11 @@ def avg_product_quality(scorecard, criteria_name='جودة المنتج'):
             AND po.docstatus = 1
     """
 
-
     if criteria_name:
         query += " AND csr.evaluation_item = %(criteria_name)s"
-        params["criteria_name"] = criteria_name  
+        params["criteria_name"] = criteria_name
 
-
+    # Debugging
     try:
         formatted_query = query % params
     except Exception as e:
@@ -650,204 +648,32 @@ def avg_product_quality(scorecard, criteria_name='جودة المنتج'):
     frappe.log_error("Raw SQL result", str(result))
 
     if not result:
-        return 5
+        return 0
 
     value = round(result * 5, 2)
     frappe.log_error("Final rating", f"{criteria_name or 'Overall'} = {value}")
+
     return value
+
+def avg_product_quality(scorecard, criteria_name='جودة المنتج'):
+    return _calculate_avg_rating(scorecard, criteria_name)
 
 
 def get_avg_price_and_competitiveness(scorecard, criteria_name='السعر والتنافسية'):
-
-
-    supplier = frappe.get_doc("Supplier", scorecard.supplier)
-
-    params = {
-        "supplier": supplier.name,
-        "start_date": scorecard.start_date,
-        "end_date": scorecard.end_date,
-    }
-
-    query = """
-        SELECT
-            AVG(csr.supplier_rating)
-        FROM
-            `tabCiC Supplier Rating` csr
-        INNER JOIN
-            `tabPurchase Order` po ON csr.parent = po.name
-        WHERE
-            po.supplier = %(supplier)s
-            AND po.transaction_date BETWEEN %(start_date)s AND %(end_date)s
-            AND po.docstatus = 1
-    """
-
-
-    if criteria_name:
-        query += " AND csr.evaluation_item = %(criteria_name)s"
-        params["criteria_name"] = criteria_name  
-
-
-    try:
-        formatted_query = query % params
-    except Exception as e:
-        formatted_query = f"Error formatting query: {e}"
-
-    frappe.log_error(f"Executing query:\n{formatted_query}", "Supplier Scorecard Debug")
-
-    result = frappe.db.sql(query, params)[0][0]
-    frappe.log_error("Raw SQL result", str(result))
-
-    if not result:
-        return 5
-
-    value = round(result * 5, 2)
-    frappe.log_error("Final rating", f"{criteria_name or 'Overall'} = {value}")
-    return value
-
-
+    return _calculate_avg_rating(scorecard, criteria_name)
 
 
 def get_avg_contractual_behavior(scorecard, criteria_name='السلوك التعاقدي'):
+    return _calculate_avg_rating(scorecard, criteria_name)
 
-
-    supplier = frappe.get_doc("Supplier", scorecard.supplier)
-
-    params = {
-        "supplier": supplier.name,
-        "start_date": scorecard.start_date,
-        "end_date": scorecard.end_date,
-    }
-
-    query = """
-        SELECT
-            AVG(csr.supplier_rating)
-        FROM
-            `tabCiC Supplier Rating` csr
-        INNER JOIN
-            `tabPurchase Order` po ON csr.parent = po.name
-        WHERE
-            po.supplier = %(supplier)s
-            AND po.transaction_date BETWEEN %(start_date)s AND %(end_date)s
-            AND po.docstatus = 1
-    """
-
-
-    if criteria_name:
-        query += " AND csr.evaluation_item = %(criteria_name)s"
-        params["criteria_name"] = criteria_name  
-
-
-    try:
-        formatted_query = query % params
-    except Exception as e:
-        formatted_query = f"Error formatting query: {e}"
-
-    frappe.log_error(f"Executing query:\n{formatted_query}", "Supplier Scorecard Debug")
-
-    result = frappe.db.sql(query, params)[0][0]
-    frappe.log_error("Raw SQL result", str(result))
-
-    if not result:
-        return 5
-
-    value = round(result * 5, 2)
-    frappe.log_error("Final rating", f"{criteria_name or 'Overall'} = {value}")
-    return value
 
 
 
 def get_avg_technical_service(scorecard, criteria_name='الخدمة التقنية وخدمة مابعد البيع'):
-
-
-    supplier = frappe.get_doc("Supplier", scorecard.supplier)
-
-    params = {
-        "supplier": supplier.name,
-        "start_date": scorecard.start_date,
-        "end_date": scorecard.end_date,
-    }
-
-    query = """
-        SELECT
-            AVG(csr.supplier_rating)
-        FROM
-            `tabCiC Supplier Rating` csr
-        INNER JOIN
-            `tabPurchase Order` po ON csr.parent = po.name
-        WHERE
-            po.supplier = %(supplier)s
-            AND po.transaction_date BETWEEN %(start_date)s AND %(end_date)s
-            AND po.docstatus = 1
-    """
-
-
-    if criteria_name:
-        query += " AND csr.evaluation_item = %(criteria_name)s"
-        params["criteria_name"] = criteria_name  
-
-
-    try:
-        formatted_query = query % params
-    except Exception as e:
-        formatted_query = f"Error formatting query: {e}"
-
-    frappe.log_error(f"Executing query:\n{formatted_query}", "Supplier Scorecard Debug")
-
-    result = frappe.db.sql(query, params)[0][0]
-    frappe.log_error("Raw SQL result", str(result))
-
-    if not result:
-        return 5
-
-    value = round(result * 5, 2)
-    frappe.log_error("Final rating", f"{criteria_name or 'Overall'} = {value}")
-    return value
+    return _calculate_avg_rating(scorecard, criteria_name)
 
 
 def get_avg_punctuality(scorecard, criteria_name='الالتزام بالمواعيد'):
+    return _calculate_avg_rating(scorecard, criteria_name)
 
-
-    supplier = frappe.get_doc("Supplier", scorecard.supplier)
-
-    params = {
-        "supplier": supplier.name,
-        "start_date": scorecard.start_date,
-        "end_date": scorecard.end_date,
-    }
-
-    query = """
-        SELECT
-            AVG(csr.supplier_rating)
-        FROM
-            `tabCiC Supplier Rating` csr
-        INNER JOIN
-            `tabPurchase Order` po ON csr.parent = po.name
-        WHERE
-            po.supplier = %(supplier)s
-            AND po.transaction_date BETWEEN %(start_date)s AND %(end_date)s
-            AND po.docstatus = 1
-    """
-
-
-    if criteria_name:
-        query += " AND csr.evaluation_item = %(criteria_name)s"
-        params["criteria_name"] = criteria_name  
-
-
-    try:
-        formatted_query = query % params
-    except Exception as e:
-        formatted_query = f"Error formatting query: {e}"
-
-    frappe.log_error(f"Executing query:\n{formatted_query}", "Supplier Scorecard Debug")
-
-    result = frappe.db.sql(query, params)[0][0]
-    frappe.log_error("Raw SQL result", str(result))
-
-    if not result:
-        return 5
-
-    value = round(result * 5, 2)
-    frappe.log_error("Final rating", f"{criteria_name or 'Overall'} = {value}")
-    return value
 #============================ End Custom For TASK-2025-00192 ===============================
