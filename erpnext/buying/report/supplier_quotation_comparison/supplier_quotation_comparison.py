@@ -117,8 +117,25 @@ def prepare_data(supplier_quotation_data, filters):
 			"lead_time_days": data.get("lead_time_days"),
 		}
 		row["price_per_unit"] = flt(row["price"]) / (flt(data.get("stock_qty")) or 1)
+#============================ Start Custom For TASK-2025-00256 ===============================
+		rfq = data.get("request_for_quotation")
+		if rfq:
+			deadline = frappe.db.get_value(
+				"Request for Quotation",
+				rfq,
+				"custom_submission_deadline"
+			)
 
-		# map for report view of form {'supplier1'/'item1':[{},{},...]}
+			if deadline:
+				today = frappe.utils.getdate(frappe.utils.nowdate())
+				deadline = frappe.utils.getdate(deadline)
+
+				if today < deadline:
+						row["price"] = None
+						row["base_amount"] = None
+						row["base_rate"] = None
+						row["price_per_unit"] = None
+#============================ End Custom For TASK-2025-00256 ===============================
 		group_wise_map[group].append(row)
 
 		# map for chart preparation of the form {'supplier1': {'qty': 'price'}}
