@@ -217,7 +217,7 @@ class PaymentEntry(AccountsController):
 		if self.payment_type == "Internal Transfer":
 			return
 
-		if self.party_type in ("Customer", "Supplier"):
+		if self.party_type in ("Customer", "Supplier", "Student"):
 			self.validate_allocated_amount_with_latest_data()
 		else:
 			fail_message = _("Row #{0}: Allocated Amount cannot be greater than outstanding amount.")
@@ -357,9 +357,14 @@ class PaymentEntry(AccountsController):
 			_party_name = "title" if self.party_type == "Shareholder" else self.party_type.lower() + "_name"
 
 			if frappe.db.has_column(self.party_type, _party_name):
-				self.party_name = frappe.db.get_value(self.party_type, self.party, _party_name)
+				print(self.party_type)
+				if (self.party_type=='Student'):
+					self.party_name = frappe.db.get_value(self.party_type, self.party, "title")
+				else :
+					self.party_name = frappe.db.get_value(self.party_type, self.party, _party_name)
+
 			else:
-				self.party_name = frappe.db.get_value(self.party_type, self.party, "name")
+				self.party_name = frappe.db.get_value(self.party_type, self.party, "title")
 
 		if self.party:
 			if not self.party_balance:
@@ -473,6 +478,7 @@ class PaymentEntry(AccountsController):
 			if not d.allocated_amount:
 				continue
 			if d.reference_doctype not in valid_reference_doctypes:
+				frappe.log_error(message=str(d.reference_doctype),title= "refernce doctype")
 				frappe.throw(
 					_("Reference Doctype must be one of {0}").format(
 						comma_or((_(d) for d in valid_reference_doctypes))
@@ -1001,9 +1007,9 @@ class PaymentEntry(AccountsController):
 		bank_account = self.paid_to if self.payment_type == "Receive" else self.paid_from
 		bank_account_type = frappe.get_cached_value("Account", bank_account, "account_type")
 
-		if bank_account_type == "Bank":
-			if not self.reference_no or not self.reference_date:
-				frappe.throw(_("Reference No and Reference Date is mandatory for Bank transaction"))
+		# if bank_account_type == "Bank":
+		# 	if not self.reference_no or not self.reference_date:
+		# 		frappe.throw(_("Reference No and Reference Date is mandatory for Bank transaction"))
 
 	def set_remarks(self):
 		if self.custom_remarks:
@@ -2155,12 +2161,15 @@ def get_payment_entry(
 		100.0 + over_billing_allowance
 	):
 		frappe.throw(_("Can only make payment against unbilled {0}").format(_(dt)))
-
-	if not party_type:
-		party_type = set_party_type(dt)
-
+	
+	if not doc.get('mode_of_payment'):
+		doc.update({'mode_of_payment' : frappe.db.get_value('User Mode of Payment' ,{'parent' : frappe.session.user , 'is_default' : 1 } ,['mode_of_payment'])})
+	
+	party_type = set_party_type(dt)
 	party_account = set_party_account(dt, dn, doc, party_type)
 	party_account_currency = set_party_account_currency(dt, party_account, doc)
+	payment_type = set_payment_type(dt, doc)
+	grand_total, outstanding_amount = set_grand_total_and_outstanding_amount(party_amount, dt, party_account_currency, doc)
 
 	if not payment_type:
 		payment_type = set_payment_type(dt, doc)
@@ -2181,7 +2190,7 @@ def get_payment_entry(
 
 	paid_amount, received_amount = set_paid_amount_and_received_amount(
 		dt, party_account_currency, bank, outstanding_amount, payment_type, bank_amount, doc
-	)
+	) if dt != "Service Invoice" else (doc.paid_amount , doc.paid_amount)
 
 	reference_date = getdate(reference_date)
 	paid_amount, received_amount, discount_amount, valid_discounts = apply_early_payment_discount(
@@ -2191,7 +2200,7 @@ def get_payment_entry(
 	pe = frappe.new_doc("Payment Entry")
 	pe.payment_type = payment_type
 	pe.company = doc.company
-	pe.cost_center = doc.get("cost_center")
+	pe.cost_center = doc.get("cost_center") if dt != "Service Invoice" else doc.services[0].cost_center###Note:This avoide differant cost center in different item
 	pe.posting_date = nowdate()
 	pe.reference_date = reference_date
 	pe.mode_of_payment = doc.get("mode_of_payment")
@@ -2277,7 +2286,7 @@ def get_payment_entry(
 						"due_date": doc.get("due_date"),
 						"total_amount": grand_total,
 						"outstanding_amount": outstanding_amount,
-						"allocated_amount": outstanding_amount,
+						"allocated_amount": paid_amount,  # Update by Neamah : replace outstanding_amount with paid_amount
 					},
 				)
 
@@ -2335,8 +2344,13 @@ def set_party_type(dt):
 		party_type = "Customer"
 	elif dt in ("Purchase Invoice", "Purchase Order"):
 		party_type = "Supplier"
+	elif dt in ("Expense Claim", "Employee Advance", "Gratuity", "Instructor Invoice"):
+		party_type = "Employee"
+	elif dt in ("Fees","Service Invoice"):
+		party_type = "Student"
+	elif dt == "Donation":
+		party_type = "Donor"
 	return party_type
-
 
 def set_party_account(dt, dn, doc, party_type):
 	if dt == "Sales Invoice":
@@ -2358,8 +2372,8 @@ def set_party_account_currency(dt, party_account, doc):
 
 def set_payment_type(dt, doc):
 	if (
-		(dt == "Sales Order" or (dt == "Sales Invoice" and doc.outstanding_amount > 0))
-		or (dt == "Purchase Invoice" and doc.outstanding_amount < 0)
+		(dt in ("Sales Order", "Donation") or (dt in ("Sales Invoice", "Fees", "Dunning" , "Service Invoice") and doc.outstanding_amount > 0)) \
+		or (dt=="Purchase Invoice" and doc.outstanding_amount < 0)
 		or dt == "Dunning"
 	):
 		payment_type = "Receive"
@@ -2378,9 +2392,31 @@ def set_grand_total_and_outstanding_amount(party_amount, dt, party_account_curre
 		else:
 			grand_total = doc.rounded_total or doc.grand_total
 		outstanding_amount = doc.outstanding_amount
+	elif dt in ("Expense Claim"):
+		grand_total = doc.total_sanctioned_amount + doc.total_taxes_and_charges
+		outstanding_amount = doc.grand_total \
+			- doc.total_amount_reimbursed
+	elif dt == "Employee Advance":
+		grand_total = flt(doc.advance_amount)
+		outstanding_amount = flt(doc.advance_amount) - flt(doc.paid_amount)
+		if party_account_currency != doc.currency:
+			grand_total = flt(doc.advance_amount) * flt(doc.exchange_rate)
+			outstanding_amount = (flt(doc.advance_amount) - flt(doc.paid_amount)) * flt(doc.exchange_rate)
+	elif dt == "Fees":
+		grand_total = doc.grand_total
+		outstanding_amount = doc.outstanding_amount
 	elif dt == "Dunning":
 		grand_total = doc.grand_total
 		outstanding_amount = doc.grand_total
+	elif dt == "Donation":
+		grand_total = doc.amount
+		outstanding_amount = doc.amount
+	elif dt == "Gratuity":
+		grand_total = doc.amount
+		outstanding_amount = flt(doc.amount) - flt(doc.paid_amount)
+	elif dt in ["Service Invoice","Instructor Invoice"]:
+		grand_total = doc.grand_total
+		outstanding_amount = doc.outstanding_amount
 	else:
 		if party_account_currency == doc.company_currency:
 			grand_total = flt(doc.get("base_rounded_total") or doc.get("base_grand_total"))

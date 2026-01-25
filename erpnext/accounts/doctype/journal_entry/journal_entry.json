@@ -22,6 +22,7 @@
   "company",
   "posting_date",
   "apply_tds",
+  "program_disenrollment",
   "2_add_edit_gl_entries",
   "accounts",
   "section_break99",
@@ -65,7 +66,8 @@
   "subscription_section",
   "auto_repeat",
   "amended_from",
-  "repost_required"
+  "repost_required",
+  "apl"
  ],
  "fields": [
   {
@@ -90,7 +92,7 @@
    "label": "Entry Type",
    "oldfieldname": "voucher_type",
    "oldfieldtype": "Select",
-   "options": "Journal Entry\nInter Company Journal Entry\nBank Entry\nCash Entry\nCredit Card Entry\nDebit Note\nCredit Note\nContra Entry\nExcise Entry\nWrite Off Entry\nOpening Entry\nDepreciation Entry\nExchange Rate Revaluation\nExchange Gain Or Loss\nDeferred Revenue\nDeferred Expense",
+   "options": "Journal Entry\nDisenrollment Entry\nInter Company Journal Entry\nBank Entry\nCash Entry\nCredit Card Entry\nDebit Note\nCredit Note\nContra Entry\nExcise Entry\nWrite Off Entry\nOpening Entry\nDepreciation Entry\nExchange Rate Revaluation\nExchange Gain Or Loss\nDeferred Revenue\nDeferred Expense",
    "reqd": 1,
    "search_index": 1
   },
@@ -553,6 +555,20 @@
    "label": "Repost Required",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "program_disenrollment",
+   "fieldtype": "Link",
+   "label": "Program Disenrollment",
+   "options": "Program Disenrollment"
+  },
+  {
+   "fieldname": "apl",
+   "fieldtype": "Link",
+   "label": "Accounting Permission Level",
+   "options": "Accounting Permission Level",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-file-text",
@@ -567,7 +583,7 @@
    "table_fieldname": "payment_entries"
   }
  ],
- "modified": "2023-11-23 12:11:04.128015",
+ "modified": "2024-07-18 11:06:43.209194",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Journal Entry",

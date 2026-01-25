@@ -36,7 +36,7 @@ class Company(NestedSet):
 		auto_exchange_rate_revaluation: DF.Check
 		book_advance_payments_in_separate_party_account: DF.Check
 		capital_work_in_progress_account: DF.Link | None
-		chart_of_accounts: DF.Literal
+		chart_of_accounts: DF.LiteralNone
 		company_description: DF.TextEditor | None
 		company_logo: DF.AttachImage | None
 		company_name: DF.Data
@@ -54,6 +54,7 @@ class Company(NestedSet):
 		default_cash_account: DF.Link | None
 		default_currency: DF.Link
 		default_deferred_expense_account: DF.Link | None
+		default_deferred_income_account_for_fee: DF.Link | None
 		default_deferred_revenue_account: DF.Link | None
 		default_discount_account: DF.Link | None
 		default_expense_account: DF.Link | None
@@ -75,12 +76,20 @@ class Company(NestedSet):
 		email: DF.Data | None
 		enable_perpetual_inventory: DF.Check
 		enable_provisional_accounting_for_non_stock_items: DF.Check
+		enable_repost_deferred_revenue: DF.Check
 		exception_budget_approver_role: DF.Link | None
 		exchange_gain_loss_account: DF.Link | None
 		existing_company: DF.Link | None
+		expense_course_account: DF.Link | None
+		expenses_included_in_asset_valuation: DF.Link | None
+		expenses_included_in_valuation: DF.Link | None
 		fax: DF.Data | None
+		freezed_student_account: DF.Link | None
+		instructor_account: DF.Link | None
+		instructor_salary_account: DF.Link | None
 		is_group: DF.Check
 		lft: DF.Int
+		mob: DF.Data | None
 		monthly_sales_target: DF.Currency
 		old_parent: DF.Data | None
 		parent_company: DF.Link | None
@@ -94,6 +103,8 @@ class Company(NestedSet):
 		series_for_depreciation_entry: DF.Data | None
 		stock_adjustment_account: DF.Link | None
 		stock_received_but_not_billed: DF.Link | None
+		student_account: DF.Link | None
+		student_discount_account: DF.Link | None
 		submit_err_jv: DF.Check
 		tax_id: DF.Data | None
 		total_monthly_sales: DF.Currency

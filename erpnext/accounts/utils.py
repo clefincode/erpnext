@@ -1716,9 +1716,10 @@ def update_voucher_outstanding(voucher_type, voucher_no, account, party_type, pa
 	ple_query = QueryPaymentLedger()
 
 	# on cancellation outstanding can be an empty list
+	# Update by Neamah: Add Service Invoice, "Instructor Invoice"
 	voucher_outstanding = ple_query.get_voucher_outstandings(vouchers, common_filter=common_filter)
 	if (
-		voucher_type in ["Sales Invoice", "Purchase Invoice", "Fees"]
+		voucher_type in ["Sales Invoice", "Purchase Invoice", "Fees", "Service Invoice", "Instructor Invoice"]
 		and party_type
 		and party
 		and voucher_outstanding

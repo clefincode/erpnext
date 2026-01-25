@@ -283,6 +283,7 @@ class Asset(AccountsController):
 			self.asset_category = frappe.get_cached_value("Item", self.item_code, "asset_category")
 
 		if self.item_code and not self.get("finance_books"):
+			frappe.log_error(message="missing",title="title")
 			finance_books = get_item_details(
 				self.item_code, self.asset_category, self.gross_purchase_amount
 			)

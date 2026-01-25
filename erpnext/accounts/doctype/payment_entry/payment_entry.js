@@ -124,6 +124,12 @@ frappe.ui.form.on("Payment Entry", {
 				doctypes = ["Sales Order", "Sales Invoice", "Journal Entry", "Dunning"];
 			} else if (frm.doc.party_type == "Supplier") {
 				doctypes = ["Purchase Order", "Purchase Invoice", "Journal Entry"];
+			} else if (frm.doc.party_type == "Employee") {
+				doctypes = ["Expense Claim", "Journal Entry", "Instructor Invoice"];
+			} else if (frm.doc.party_type == "Student") {
+				doctypes = ["Fees"];
+			} else if (frm.doc.party_type == "Donor") {
+				doctypes = ["Donation"];
 			}
 
 			return {
@@ -155,10 +161,19 @@ frappe.ui.form.on("Payment Entry", {
 				"Purchase Invoice",
 				"Purchase Order",
 				"Dunning",
+				"Expense Claim",
+				"Fees",
+				"Donation",
+				"Instructor Invoice",
 			];
 
 			if (in_list(party_type_doctypes, child.reference_doctype)) {
 				filters[doc.party_type.toLowerCase()] = doc.party;
+			}
+
+			if (child.reference_doctype == "Expense Claim") {
+				filters["docstatus"] = 1;
+				filters["is_paid"] = 0;
 			}
 
 			return {
@@ -736,6 +751,7 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	paid_amount: function (frm) {
+		console.log("Trigger Paid Amount");
 		frm.set_value("base_paid_amount", flt(frm.doc.paid_amount) * flt(frm.doc.source_exchange_rate));
 		frm.trigger("reset_received_amount");
 		frm.events.hide_unhide_fields(frm);
@@ -767,6 +783,7 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	reset_received_amount: function (frm) {
+		console.log("reset_received_amount");
 		if (
 			!frm.set_paid_amount_based_on_received_amount &&
 			frm.doc.paid_from_account_currency == frm.doc.paid_to_account_currency
@@ -1007,11 +1024,11 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	get_order_doctypes: function (frm) {
-		return ["Sales Order", "Purchase Order"];
+		return ["Sales Order", "Purchase Order", "Expense Claim", "Fees"];
 	},
 
 	get_invoice_doctypes: function (frm) {
-		return ["Sales Invoice", "Purchase Invoice"];
+		return ["Sales Invoice", "Purchase Invoice", "Expense Claim", "Fees"];
 	},
 
 	allocate_party_amount_against_ref_docs: function (frm, paid_amount, paid_amount_change) {
@@ -1033,6 +1050,7 @@ frappe.ui.form.on("Payment Entry", {
 
 		var allocated_negative_outstanding = 0;
 		if (
+			(frm.doc.payment_type == "Receive" && frm.doc.party_type == "Student") ||
 			(frm.doc.payment_type == "Receive" && frm.doc.party_type == "Customer") ||
 			(frm.doc.payment_type == "Pay" && frm.doc.party_type == "Supplier") ||
 			(frm.doc.payment_type == "Pay" && frm.doc.party_type == "Employee")

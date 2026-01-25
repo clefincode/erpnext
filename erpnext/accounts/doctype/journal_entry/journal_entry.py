@@ -45,14 +45,12 @@ class JournalEntry(AccountsController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
+		from erpnext.accounts.doctype.journal_entry_account.journal_entry_account import JournalEntryAccount
 		from frappe.types import DF
-
-		from erpnext.accounts.doctype.journal_entry_account.journal_entry_account import (
-			JournalEntryAccount,
-		)
 
 		accounts: DF.Table[JournalEntryAccount]
 		amended_from: DF.Link | None
+		apl: DF.Link | None
 		apply_tds: DF.Check
 		auto_repeat: DF.Link | None
 		bill_date: DF.Date | None
@@ -77,7 +75,9 @@ class JournalEntry(AccountsController):
 		payment_order: DF.Link | None
 		posting_date: DF.Date
 		process_deferred_accounting: DF.Link | None
+		program_disenrollment: DF.Link | None
 		remark: DF.SmallText | None
+		repost_required: DF.Check
 		reversal_of: DF.Link | None
 		select_print_heading: DF.Link | None
 		stock_entry: DF.Link | None
@@ -89,24 +89,7 @@ class JournalEntry(AccountsController):
 		total_credit: DF.Currency
 		total_debit: DF.Currency
 		user_remark: DF.SmallText | None
-		voucher_type: DF.Literal[
-			"Journal Entry",
-			"Inter Company Journal Entry",
-			"Bank Entry",
-			"Cash Entry",
-			"Credit Card Entry",
-			"Debit Note",
-			"Credit Note",
-			"Contra Entry",
-			"Excise Entry",
-			"Write Off Entry",
-			"Opening Entry",
-			"Depreciation Entry",
-			"Exchange Rate Revaluation",
-			"Exchange Gain Or Loss",
-			"Deferred Revenue",
-			"Deferred Expense",
-		]
+		voucher_type: DF.Literal["Journal Entry", "Disenrollment Entry", "Inter Company Journal Entry", "Bank Entry", "Cash Entry", "Credit Card Entry", "Debit Note", "Credit Note", "Contra Entry", "Excise Entry", "Write Off Entry", "Opening Entry", "Depreciation Entry", "Exchange Rate Revaluation", "Exchange Gain Or Loss", "Deferred Revenue", "Deferred Expense"]
 		write_off_amount: DF.Currency
 		write_off_based_on: DF.Literal["Accounts Receivable", "Accounts Payable"]
 	# end: auto-generated types
@@ -179,6 +162,10 @@ class JournalEntry(AccountsController):
 		self.update_asset_value()
 		self.update_inter_company_jv()
 		self.update_invoice_discounting()
+		# if self.voucher_type == "Disenrollment Entry":
+		# 	frappe.log_error(message="123",title="21")
+		# 	pde = frappe.get_doc("Program Disenrollment", 'EDU-DIE-2024-00095')
+		# 	pde.calc_unpaid_balance()
 
 	def on_update_after_submit(self):
 		if hasattr(self, "repost_required"):

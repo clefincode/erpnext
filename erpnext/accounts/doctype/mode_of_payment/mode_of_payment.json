@@ -11,7 +11,8 @@
   "mode_of_payment",
   "enabled",
   "type",
-  "accounts"
+  "accounts",
+  "is_sales"
  ],
  "fields": [
   {
@@ -42,16 +43,23 @@
    "fieldname": "enabled",
    "fieldtype": "Check",
    "label": "Enabled"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_sales",
+   "fieldtype": "Check",
+   "label": "Is Sales"
   }
  ],
  "icon": "fa fa-credit-card",
  "idx": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2020-09-18 17:57:23.835236",
+ "modified": "2024-07-15 10:26:25.275453",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Mode of Payment",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -73,5 +81,6 @@
  "quick_entry": 1,
  "show_name_in_global_search": 1,
  "sort_field": "modified",
- "sort_order": "ASC"
+ "sort_order": "ASC",
+ "states": []
 }
