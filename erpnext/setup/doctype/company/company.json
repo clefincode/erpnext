@@ -824,12 +824,6 @@
    "options": "Account"
   },
   {
-   "fieldname": "student_discount_account",
-   "fieldtype": "Link",
-   "label": "Student Discount Account",
-   "options": "Account"
-  },
-  {
    "fieldname": "instructor_salary_account",
    "fieldtype": "Link",
    "label": "Instructor Salary Account",
