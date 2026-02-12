@@ -91,7 +91,7 @@ class SerialBatchBundle:
 			)
 			self.sle.db_set({"serial_and_batch_bundle": new_bundle_id})
 
-	def make_serial_batch_no_bundle(self):
+	def make_serial_batch_no_bundle(self,ignore_permissions=False):
 		self.validate_item()
 		if self.sle.actual_qty > 0 and self.is_material_transfer():
 			self.make_serial_batch_no_bundle_for_material_transfer()
@@ -115,9 +115,11 @@ class SerialBatchBundle:
 				"make_bundle_from_sle": 1,
 				"sle": self.sle,
 			}
-		).make_serial_and_batch_bundle()
-
-		self.set_serial_and_batch_bundle(sn_doc)
+		)
+		if ignore_permissions:
+			sn_doc.make_serial_and_batch_bundle(ignore_permissions=True)
+		else:
+			sn_doc.make_serial_and_batch_bundle()
 
 	def validate_actual_qty(self, sn_doc):
 		link = get_link_to_form("Serial and Batch Bundle", sn_doc.name)
@@ -351,7 +353,19 @@ class SerialBatchBundle:
 			self.set_batch_no_in_serial_nos()
 
 		if self.sle.is_cancelled and self.sle.serial_and_batch_bundle:
-			self.cancel_serial_and_batch_bundle()
+			if self.sle.flags.ignore_permissions ==1 or self.sle.flags.ignore_permissions =='1':
+				self.cancel_serial_and_batch_bundle(ignore_permissions=True)
+			else :
+				self.cancel_serial_and_batch_bundle()
+
+	def cancel_serial_and_batch_bundle(self,ignore_permissions=False):
+
+		bundle_doc = frappe.get_cached_doc("Serial and Batch Bundle", self.sle.serial_and_batch_bundle)
+		if ignore_permissions :
+			bundle_doc.flags.ignore_permissions = ignore_permissions
+			bundle_doc.cancel()
+		else :
+			bundle_doc.cancel()
 
 	def cancel_serial_and_batch_bundle(self):
 		if self.is_pos_or_asset_repair_transaction():
@@ -382,6 +396,8 @@ class SerialBatchBundle:
 
 	def submit_serial_and_batch_bundle(self):
 		doc = frappe.get_doc("Serial and Batch Bundle", self.sle.serial_and_batch_bundle)
+		if self.sle.flags.ignore_permissions =='1'or self.sle.flags.ignore_permissions ==1:
+			doc.flags.ignore_permissions =True
 		self.validate_actual_qty(doc)
 
 		doc.flags.ignore_voucher_validation = True
@@ -1100,13 +1116,10 @@ class SerialBatchCreation:
 		for d in remove_list:
 			package.remove(d)
 
-	def make_serial_and_batch_bundle(
-		self, serial_nos=None, batch_nos=None
-	):  # passing None instead of [] due to ruff linter error B006
-		serial_nos = serial_nos or []
-		batch_nos = batch_nos or []
-
+	def make_serial_and_batch_bundle(self,ignore_permissions=False):
 		doc = frappe.new_doc("Serial and Batch Bundle")
+		if ignore_permissions :
+			doc.flags.ignore_permissions=True
 		valid_columns = doc.meta.get_valid_columns()
 		for key, value in self.__dict__.items():
 			if key in valid_columns:

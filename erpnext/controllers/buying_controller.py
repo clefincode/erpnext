@@ -952,8 +952,9 @@ class BuyingController(SubcontractingController):
 					asset.flags.ignore_mandatory = True
 					if asset.docstatus == 0:
 						asset.flags.ignore_validate = True
-
-					asset.save()
+						
+					if asset.docstatus != 2:###Issue: ISS-2024-00018
+						asset.save()
 
 	def delete_linked_asset(self):
 		if self.doctype == "Purchase Invoice" and not self.get("update_stock"):

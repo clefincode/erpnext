@@ -979,6 +979,10 @@ class JournalEntry(AccountsController):
 					party_account_currency = d.account_currency
 
 			elif frappe.get_cached_value("Account", d.account, "account_type") in ["Bank", "Cash"]:
+				if not d.debit_in_account_currency:
+					d.debit_in_account_currency = 0
+				if not d.credit_in_account_currency:
+					d.credit_in_account_currency = 0
 				bank_amount += flt(d.debit_in_account_currency) or flt(d.credit_in_account_currency)
 				bank_account_currency = d.account_currency
 

@@ -607,6 +607,10 @@ def get_result_as_list(data, filters):
 		d["account_currency"] = filters.account_currency
 
 		d["presentation_currency"] = filters.presentation_currency
+		##GitUpdate#NewLine#
+	if filters.get("show_items"):
+		data = get_items(data)
+	##EndGitUpdate#
 
 	return data
 
@@ -745,6 +749,38 @@ def get_columns(filters):
 			}
 		)
 
+		##GitUpdate#NewLine#
+	if filters.get("show_items"):
+		columns.extend([
+			{
+				"label": _("Item Code"),
+				"fieldname": "item_code",
+				"width": 100
+			},
+			{
+				"label": _("Item Name"),
+				"fieldname": "item_name",
+				"width": 100
+			},
+			{
+				"label": _("Qty"),
+				"fieldname": "qty",
+				"width": 100
+			}
+			,
+			{
+				"label": _("Rate (Party Currency)"),
+				"fieldname": "rate",
+				"width": 100
+			}
+			,
+			{
+				"label": _("Amount (Party Currency)"),
+				"fieldname": "amount",
+				"width": 100
+			}
+		])
+	##EndGitUpdate#NewLine#
 	if filters.get("include_dimensions"):
 		columns.append({"label": _("Project"), "options": "Project", "fieldname": "project", "width": 100})
 
@@ -774,3 +810,73 @@ def get_columns(filters):
 		columns.extend([{"label": _("Remarks"), "fieldname": "remarks", "width": 400}])
 
 	return columns
+
+	##GitUpdate#NewLine#
+def get_items(data):
+	itemsvoucher_dict = {}
+	for index, d in enumerate(data):
+		if d.get('voucher_type') == 'Purchase Invoice':
+			itemsvoucher_dict[index] = d.get('voucher_no')
+	strVouchernames = ""
+	for voucherkey,voucherkval  in itemsvoucher_dict.items():
+		if strVouchernames != "":
+			strVouchernames += ","
+		strVouchernames += "'" + voucherkval + "'"
+
+	if strVouchernames !="":
+		itemslist = frappe.db.sql("""
+			select Items.item_code, Items.item_name, Items.qty, Items.rate, Items.amount, Items.parent from `tabPurchase Invoice Item` as Items
+			where parent in (""" + strVouchernames + """)
+			order by parent ASC, Items.idx ASC
+			""", as_dict = 1)
+
+
+	addedrow = 1
+	for voucherkey,voucherkval  in itemsvoucher_dict.items():
+		for itemrow in itemslist:
+			if itemrow["parent"] == voucherkval:
+				data.insert(voucherkey + addedrow, get_items_dict(itemrow["item_code"],itemrow["item_name"],itemrow["qty"],itemrow["rate"], itemrow["amount"]))
+				addedrow += 1
+
+
+	itemsvoucher_dict = {}
+	for index, d in enumerate(data):
+		if d.get('voucher_type') == 'Sales Invoice':
+			itemsvoucher_dict[index] = d.get('voucher_no')
+	strVouchernames = ""
+	for voucherkey,voucherkval  in itemsvoucher_dict.items():
+		if strVouchernames != "":
+			strVouchernames += ","
+		strVouchernames += "'" + voucherkval + "'"
+
+	if strVouchernames !="":
+		itemslist = frappe.db.sql("""
+			select Items.item_code, Items.item_name, Items.qty, Items.rate, Items.amount, Items.parent from `tabSales Invoice Item` as Items
+			where parent in (""" + strVouchernames + """)
+			order by parent ASC, Items.idx ASC
+			""", as_dict = 1)
+
+
+	addedrow = 1
+	for voucherkey,voucherkval  in itemsvoucher_dict.items():
+		for itemrow in itemslist:
+			if itemrow["parent"] == voucherkval:
+				data.insert(voucherkey + addedrow, get_items_dict(itemrow["item_code"],itemrow["item_name"],itemrow["qty"],itemrow["rate"], itemrow["amount"]))
+				addedrow += 1
+
+
+
+
+	return data
+
+
+
+def get_items_dict(item_code, item_name, qty, rate, amount):
+	return _dict(
+		item_code=item_code,
+		item_name=item_name,
+		qty=qty,
+		rate=rate,
+		amount=amount
+	)
+##EndGitUpdate#
