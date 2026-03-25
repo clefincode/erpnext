@@ -2,7 +2,7 @@
  "actions": [],
  "allow_auto_repeat": 1,
  "allow_import": 1,
- "autoname": "prompt",
+ "autoname": "naming_series:",
  "creation": "2022-01-25 10:29:58.717206",
  "doctype": "DocType",
  "document_type": "Document",
@@ -558,11 +558,11 @@
    "table_fieldname": "payment_entries"
   }
  ],
- "modified": "2025-08-26 15:57:23.202469",
- "modified_by": "Administrator",
+ "modified": "2025-12-01 19:13:30.854417",
+ "modified_by": "ahmad@clefincode.com",
  "module": "Accounts",
  "name": "Journal Entry",
- "naming_rule": "Set by user",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
