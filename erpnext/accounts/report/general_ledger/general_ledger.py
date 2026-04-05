@@ -18,7 +18,7 @@ from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import (
 from erpnext.accounts.report.financial_statements import get_cost_centers_with_children
 from erpnext.accounts.report.utils import convert_to_presentation_currency, get_currency
 from erpnext.accounts.utils import get_account_currency
-
+from frappe.utils import flt
 
 def execute(filters=None):
 	if not filters:
@@ -594,25 +594,40 @@ def get_account_type_map(company):
 
 
 def get_result_as_list(data, filters):
-	balance = 0
+    balance = 0
 
-	for d in data:
-		if not d.get("posting_date"):
-			balance = 0
+    # NEW: running balance per (account, transaction_currency)
+    running_txn = {}
 
-		balance = get_balance(d, balance, "debit", "credit")
+    for d in data:
+        if not d.get("posting_date"):
+            balance = 0
+            running_txn.clear()  # reset transaction running balance too
 
-		d["balance"] = balance
+        balance = get_balance(d, balance, "debit", "credit")
+        d["balance"] = balance
 
-		d["account_currency"] = filters.account_currency
+        d["account_currency"] = filters.account_currency
+        d["presentation_currency"] = filters.presentation_currency
 
-		d["presentation_currency"] = filters.presentation_currency
-		##GitUpdate#NewLine#
-	if filters.get("show_items"):
-		data = get_items(data)
-	##EndGitUpdate#
+        # Calculate Balance (Transaction Currency)
+        d["balance_in_transaction_currency"] = None
 
-	return data
+        if filters.get("add_values_in_transaction_currency"):
+            account = d.get("account")
+            txn_currency = d.get("transaction_currency")
+
+            if account and txn_currency:
+                dr = flt(d.get("debit_in_transaction_currency"))
+                cr = flt(d.get("credit_in_transaction_currency"))
+
+                key = (account, txn_currency)
+                running_txn.setdefault(key, 0)
+                running_txn[key] += (dr - cr)
+
+                d["balance_in_transaction_currency"] = running_txn[key]
+
+    return data
 
 
 def get_supplier_invoice_details():
