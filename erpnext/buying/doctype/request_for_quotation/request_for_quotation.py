@@ -310,7 +310,7 @@ class RequestforQuotation(BuyingController):
 					self.doctype,
 					self.name,
 					doc=self,
-					print_format=self.meta.default_print_format or "Standard",
+					print_format="Supplier Quotation",
 					lang=supplier_language or system_language,
 					letterhead=self.letter_head,
 				)

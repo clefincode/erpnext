@@ -254,7 +254,6 @@ class StockEntry(StockController):
 		self.update_subcontracting_order_status()
 		self.update_pick_list_status()
 		self.make_gl_entries()
-
 		self.repost_future_sle_and_gle()
 		self.update_cost_in_project()
 		self.update_transferred_qty()
@@ -300,6 +299,69 @@ class StockEntry(StockController):
 
 	def on_update(self):
 		self.set_serial_and_batch_bundle()
+###################CUSTOM TASK TASK-2026-00144##############################################
+	
+	# @frappe.whitelist()
+	# def create_delayed_gl_entry(self):
+	# 	if self.docstatus != 1:
+	# 		frappe.throw(_("GL Entry can only be created for a submitted Stock Entry."))
+
+	# 	if not cint(self.custom_delay_accounting):
+	# 		frappe.throw(_("Delay Accounting is not enabled for this Stock Entry."))
+
+	# 	if self.purpose != "Material Issue":
+	# 		frappe.throw(_("This action is only allowed for Material Issue Stock Entries."))
+
+	# 	if not cint(erpnext.is_perpetual_inventory_enabled(self.company)):
+	# 		frappe.throw(_("Perpetual Inventory must be enabled for company {0}.").format(frappe.bold(self.company)))
+
+	# 	existing_gle = frappe.db.exists(
+	# 		"GL Entry",
+	# 		{
+	# 			"voucher_type": self.doctype,
+	# 			"voucher_no": self.name,
+	# 			"is_cancelled": 0,
+	# 		},
+	# 	)
+	# 	if existing_gle:
+	# 		frappe.throw(_("GL Entries already exist for this Stock Entry."))
+
+	# 	warehouse_account = self.get_warehouse_account_map()
+	# 	gl_entries = self.get_gl_entries(warehouse_account)
+
+	# 	if not gl_entries:
+	# 		frappe.throw(_("No GL Entries were generated for this Stock Entry."))
+
+	# 	from erpnext.accounts.general_ledger import make_gl_entries
+
+	# 	make_gl_entries(gl_entries, from_repost=False)
+
+	# 	frappe.msgprint(_("GL Entries created successfully for Stock Entry {0}.").format(frappe.bold(self.name)))
+		
+
+	# def get_warehouse_account_map(self):
+	# 	warehouse_account = {}
+
+	# 	for row in self.items:
+	# 		for wh in [row.s_warehouse, row.t_warehouse]:
+	# 			if wh and wh not in warehouse_account:
+
+	# 				account = frappe.db.get_value("Warehouse", wh, "account")
+	# 				if not account:
+	# 					frappe.throw(f"Warehouse {wh} has no account")
+
+	# 				account_currency = frappe.db.get_value(
+	# 					"Account", account, "account_currency"
+	# 				)
+
+	# 				warehouse_account[wh] = {
+	# 					"account": account,
+	# 					"account_currency": account_currency,
+	# 				}
+
+	# 	return warehouse_account
+###################END CUSTOM TASK TASK-2026-00144##############################################
+	
 
 	def set_job_card_data(self):
 		if self.job_card and not self.work_order:

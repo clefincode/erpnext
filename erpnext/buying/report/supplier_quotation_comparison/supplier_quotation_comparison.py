@@ -117,25 +117,26 @@ def prepare_data(supplier_quotation_data, filters):
 			"lead_time_days": data.get("lead_time_days"),
 		}
 		row["price_per_unit"] = flt(row["price"]) / (flt(data.get("stock_qty")) or 1)
-#============================ Start Custom For TASK-2025-00256 ===============================
+		#============================ Start Custom For TASK-2025-00256 ===============================
 		rfq = data.get("request_for_quotation")
 		if rfq:
-			deadline = frappe.db.get_value(
+			rfq_details = frappe.db.get_value(
 				"Request for Quotation",
 				rfq,
-				"custom_submission_deadline"
+				["custom_submission_deadline", "custom_is_rfq_completed"],
+				as_dict=True,
 			)
 
-			if deadline:
+			if rfq_details and cint(rfq_details.custom_is_rfq_completed) == 0 and rfq_details.custom_submission_deadline:
 				today = frappe.utils.getdate(frappe.utils.nowdate())
-				deadline = frappe.utils.getdate(deadline)
+				deadline = frappe.utils.getdate(rfq_details.custom_submission_deadline)
 
 				if today < deadline:
-						row["price"] = None
-						row["base_amount"] = None
-						row["base_rate"] = None
-						row["price_per_unit"] = None
-#============================ End Custom For TASK-2025-00256 ===============================
+					row["price"] = None
+					row["base_amount"] = None
+					row["base_rate"] = None
+					row["price_per_unit"] = None
+		#============================ End Custom For TASK-2025-00256 ===============================
 		group_wise_map[group].append(row)
 
 		# map for chart preparation of the form {'supplier1': {'qty': 'price'}}
@@ -161,11 +162,15 @@ def prepare_data(supplier_quotation_data, filters):
 		group_entries[0].update({group_by_field: group})  # Add item/supplier name in first group row
 
 		if highlight_min_price:
-			prices = [group_entry["price_per_unit"] for group_entry in group_entries]
-			min_price = min(prices)
+			prices = [
+				group_entry["price_per_unit"]
+				for group_entry in group_entries
+				if group_entry["price_per_unit"] is not None
+			]
+			min_price = min(prices) if prices else None
 
 		for entry in group_entries:
-			if highlight_min_price and entry["price_per_unit"] == min_price:
+			if highlight_min_price and min_price is not None and entry["price_per_unit"] == min_price:
 				entry["min"] = 1
 			out.append(entry)
 
