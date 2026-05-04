@@ -3163,15 +3163,6 @@ def get_uom_details(item_code, uom, qty):
 		}
 	return ret
 
-<<<<<<< HEAD
-=======
-###################CUSTOM TASK TASK-2026-00144##############################################
-
-@frappe.whitelist()
-def create_delayed_gl_entry(stock_entry_name):
-	pass
-###################END CUSTOM TASK TASK-2026-00144##############################################
->>>>>>> 84e4ed02f2 (Update And Fix)
 
 
 @frappe.whitelist()
