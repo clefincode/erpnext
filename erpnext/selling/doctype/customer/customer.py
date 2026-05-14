@@ -595,14 +595,43 @@ def get_nested_links(link_doctype, link_name, ignore_permissions=False):
 	return links
 
 
-def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, extra_amount=0):
-	credit_limit = get_credit_limit(customer, company)
-	if not credit_limit:
-		return
 
-	customer_outstanding = get_customer_outstanding(customer, company, ignore_outstanding_sales_order)
+#============================ Start Custom For Fix Issues ===============================
+def check_credit_limit(customer,company,ignore_outstanding_sales_order=False, extra_amount=0):
+	credit_limit = get_credit_limit(customer, company)
+
+	credit_limit_exists = frappe.db.exists(
+		"Customer Credit Limit",
+		{"parent": customer, "company": company}
+	)
+	
+	if credit_limit_exists and credit_limit == 0:
+		customer_outstanding = get_customer_outstanding(
+			customer, company, ignore_outstanding_sales_order
+		)
+		if extra_amount > 0:
+			customer_outstanding += flt(extra_amount)
+		
+		if flt(customer_outstanding) > 0:
+			frappe.throw(
+				_("Customer {0} has a Credit Limit of 0. No transactions are allowed.").format(
+					customer
+				),
+				frappe.ValidationError,
+			)
+		return
+	if not credit_limit_exists:
+		return
+	customer_outstanding = get_customer_outstanding(
+		customer, company, ignore_outstanding_sales_order
+	)
 	if extra_amount > 0:
 		customer_outstanding += flt(extra_amount)
+	
+	if credit_limit >= 0 and flt(customer_outstanding) > credit_limit:
+		message = _("Credit limit has been crossed for customer {0} ({1}/{2})").format(
+			customer, customer_outstanding, credit_limit
+		)
 
 	if credit_limit > 0 and flt(customer_outstanding) > credit_limit:
 		message = _("Credit limit has been crossed for customer {0} ({1}/{2})").format(
@@ -616,25 +645,34 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 		if not credit_controller_role or credit_controller_role not in frappe.get_roles():
 			# form a list of emails for the credit controller users
 			credit_controller_users = get_users_with_role(credit_controller_role or "Sales Master Manager")
+		message += "<br><br>"
 
+		# If not authorized person raise exception
+		credit_controller_role = frappe.db.get_single_value("Accounts Settings", "credit_controller")
+		if not credit_controller_role or credit_controller_role not in frappe.get_roles():
+			# form a list of emails for the credit controller users
+			credit_controller_users = get_users_with_role(credit_controller_role or "Sales Master Manager")
+			
 			# form a list of emails and names to show to the user
 			credit_controller_users_formatted = [
 				get_formatted_email(user).replace("<", "(").replace(">", ")")
 				for user in credit_controller_users
 			]
+			
 			if not credit_controller_users_formatted:
 				frappe.throw(
 					_("Please contact your administrator to extend the credit limits for {0}.").format(
 						customer
 					)
 				)
-
-			user_list = "<br><br><ul><li>{}</li></ul>".format("<li>".join(credit_controller_users_formatted))
-
+			
+			user_list = "<br><br><ul><li>{}</li></ul>".format(
+				"<li>".join(credit_controller_users_formatted)
+			)
+			
 			message += _(
 				"Please contact any of the following users to extend the credit limits for {0}: {1}"
 			).format(customer, user_list)
-
 			# if the current user does not have permissions to override credit limit,
 			# prompt them to send out an email to the controller users
 			frappe.msgprint(
@@ -653,6 +691,8 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 					},
 				},
 			)
+
+#============================ End Custom For Custom For Fix Issues ===============================
 
 
 @frappe.whitelist()
