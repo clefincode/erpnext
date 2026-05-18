@@ -162,8 +162,8 @@
    "type": "Link"
   }
  ],
- "modified": "2024-01-18 22:09:46.221549",
- "modified_by": "Administrator",
+ "modified": "2026-02-19 12:59:39.828441",
+ "modified_by": "o.kamadani@pro-wave.net",
  "module": "Accounts",
  "name": "Payables",
  "number_cards": [],
@@ -173,12 +173,13 @@
  "quick_lists": [],
  "restrict_to_domain": "",
  "roles": [],
- "sequence_id": 3.0,
+ "sequence_id": 4.0,
  "shortcuts": [
   {
    "doc_view": "",
    "label": "Accounts Payable",
    "link_to": "Accounts Payable",
+   "report_ref_doctype": "Purchase Invoice",
    "type": "Report"
   },
   {

@@ -24,24 +24,12 @@ class PricingRule(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
-
 		from erpnext.accounts.doctype.pricing_rule_brand.pricing_rule_brand import PricingRuleBrand
 		from erpnext.accounts.doctype.pricing_rule_item_code.pricing_rule_item_code import PricingRuleItemCode
-		from erpnext.accounts.doctype.pricing_rule_item_group.pricing_rule_item_group import (
-			PricingRuleItemGroup,
-		)
+		from erpnext.accounts.doctype.pricing_rule_item_group.pricing_rule_item_group import PricingRuleItemGroup
+		from frappe.types import DF
 
-		applicable_for: DF.Literal[
-			"",
-			"Customer",
-			"Customer Group",
-			"Territory",
-			"Sales Partner",
-			"Campaign",
-			"Supplier",
-			"Supplier Group",
-		]
+		applicable_for: DF.Literal["", "Customer", "Customer Group", "Territory", "Sales Partner", "Campaign", "Supplier", "Supplier Group"]
 		apply_discount_on: DF.Literal["Grand Total", "Net Total"]
 		apply_discount_on_rate: DF.Check
 		apply_multiple_pricing_rules: DF.Check
@@ -83,29 +71,7 @@ class PricingRule(Document):
 		other_item_code: DF.Link | None
 		other_item_group: DF.Link | None
 		price_or_product_discount: DF.Literal["Price", "Product"]
-		priority: DF.Literal[
-			"",
-			"1",
-			"2",
-			"3",
-			"4",
-			"5",
-			"6",
-			"7",
-			"8",
-			"9",
-			"10",
-			"11",
-			"12",
-			"13",
-			"14",
-			"15",
-			"16",
-			"17",
-			"18",
-			"19",
-			"20",
-		]
+		priority: DF.Literal["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"]
 		promotional_scheme: DF.Link | None
 		promotional_scheme_id: DF.Data | None
 		rate: DF.Currency

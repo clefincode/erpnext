@@ -13,7 +13,7 @@
  "for_user": "",
  "hide_custom": 0,
  "icon": "crm",
- "idx": 0,
+ "idx": 6,
  "is_hidden": 0,
  "label": "CRM",
  "links": [
@@ -419,8 +419,8 @@
    "type": "Link"
   }
  ],
- "modified": "2023-09-14 12:11:03.968048",
- "modified_by": "Administrator",
+ "modified": "2026-02-19 12:59:41.761145",
+ "modified_by": "o.kamadani@pro-wave.net",
  "module": "CRM",
  "name": "CRM",
  "number_cards": [],
@@ -430,7 +430,7 @@
  "quick_lists": [],
  "restrict_to_domain": "",
  "roles": [],
- "sequence_id": 17.0,
+ "sequence_id": 27.0,
  "shortcuts": [
   {
    "color": "Blue",
@@ -456,6 +456,7 @@
   {
    "label": "Sales Analytics",
    "link_to": "Sales Analytics",
+   "report_ref_doctype": "Sales Order",
    "type": "Report"
   },
   {

@@ -554,6 +554,7 @@
    "no_copy": 1
   }
  ],
+ "grid_page_length": 50,
  "icon": "fa fa-file-text",
  "idx": 176,
  "is_submittable": 1,
@@ -566,8 +567,8 @@
    "table_fieldname": "payment_entries"
   }
  ],
- "modified": "2025-09-29 13:05:46.982277",
- "modified_by": "Administrator",
+ "modified": "2025-12-01 19:13:30.854417",
+ "modified_by": "ahmad@clefincode.com",
  "module": "Accounts",
  "name": "Journal Entry",
  "naming_rule": "By \"Naming Series\" field",
@@ -611,6 +612,7 @@
    "role": "Auditor"
   }
  ],
+ "row_format": "Dynamic",
  "search_fields": "voucher_type,posting_date, due_date, cheque_no",
  "sort_field": "modified",
  "sort_order": "DESC",

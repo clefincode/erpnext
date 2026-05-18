@@ -7,10 +7,10 @@
  "docstatus": 0,
  "doctype": "Report",
  "filters": [],
- "idx": 3,
+ "idx": 28,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2025-11-05 15:47:59.597853",
+ "modified": "2026-01-17 12:36:14.570621",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "General Ledger",
@@ -28,6 +28,9 @@
   },
   {
    "role": "Auditor"
+  },
+  {
+   "role": "Accounts Officer"
   }
  ],
  "timeout": 0
