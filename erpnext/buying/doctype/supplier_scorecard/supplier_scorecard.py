@@ -197,6 +197,24 @@ def refresh_scorecards():
 			frappe.get_doc("Supplier Scorecard", sc.name).save()
 
 
+#============================ Start Custom For TASK-2025-00192 ===============================
+def has_purchase_order_in_period(supplier, start_date, end_date):
+    """Return True if at least 1 Purchase Order exists for this period."""
+    po_count = frappe.db.sql(
+        """
+        SELECT COUNT(name)
+        FROM `tabPurchase Order`
+        WHERE supplier = %(supplier)s
+          AND transaction_date BETWEEN %(start_date)s AND %(end_date)s
+          AND docstatus = 1
+        """,
+        {"supplier": supplier, "start_date": start_date, "end_date": end_date},
+    )[0][0]
+
+    return po_count and po_count > 0
+#============================ End Custom For TASK-2025-00192 ===============================
+
+
 @frappe.whitelist()
 def make_all_scorecards(docname):
 	sc = frappe.get_doc("Supplier Scorecard", docname)
@@ -212,6 +230,25 @@ def make_all_scorecards(docname):
 
 	while (start_date < todays) and (end_date <= todays):
 		# check to make sure there is no scorecard period already created
+		#============================ Start Custom For TASK-2025-00192 ===============================
+		custom_criteria = [
+        'جودة المنتج',
+        'السعر والتنافسية',
+        'السلوك التعاقدي',
+        'الخدمة التقنية وخدمة مابعد البيع',
+        'الالتزام بالمواعيد'
+		]
+
+		scorecard_criteria = [c.criteria_name for c in sc.criteria]
+		has_custom_criteria = any(c in custom_criteria for c in scorecard_criteria)
+
+		if has_custom_criteria:
+			if not has_purchase_order_in_period(supplier.name, start_date, end_date):
+				start_date = getdate(add_days(end_date, 1))
+				end_date = get_scorecard_date(sc.period, start_date)
+				continue
+
+#============================ End Custom For TASK-2025-00192 ===============================				
 		scorecards = frappe.db.sql(
 			"""
 			SELECT
