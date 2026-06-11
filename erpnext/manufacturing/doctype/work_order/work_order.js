@@ -982,6 +982,13 @@ erpnext.work_order = {
 	},
 
 	set_default_warehouse: function (frm) {
+//============================ Start Custom For Fix Issues ===============================
+
+		if (!frm.doc.company) {
+			return;
+		}
+//============================ End Custom For Fix Issues ===============================
+
 		if (!(frm.doc.wip_warehouse || frm.doc.fg_warehouse)) {
 			frappe.call({
 				method: "erpnext.manufacturing.doctype.work_order.work_order.get_default_warehouse",

@@ -1,0 +1,311 @@
+diff --git a/erpnext/buying/doctype/supplier_scorecard/supplier_scorecard.py b/erpnext/buying/doctype/supplier_scorecard/supplier_scorecard.py
+index b42a260d01..400c4fd596 100644
+--- a/erpnext/buying/doctype/supplier_scorecard/supplier_scorecard.py
++++ b/erpnext/buying/doctype/supplier_scorecard/supplier_scorecard.py
+@@ -197,6 +197,24 @@ def refresh_scorecards():
+ 			frappe.get_doc("Supplier Scorecard", sc.name).save()
+ 
+ 
++#============================ Start Custom For TASK-2025-00192 ===============================
++def has_purchase_order_in_period(supplier, start_date, end_date):
++    """Return True if at least 1 Purchase Order exists for this period."""
++    po_count = frappe.db.sql(
++        """
++        SELECT COUNT(name)
++        FROM `tabPurchase Order`
++        WHERE supplier = %(supplier)s
++          AND transaction_date BETWEEN %(start_date)s AND %(end_date)s
++          AND docstatus = 1
++        """,
++        {"supplier": supplier, "start_date": start_date, "end_date": end_date},
++    )[0][0]
++
++    return po_count and po_count > 0
++#============================ End Custom For TASK-2025-00192 ===============================
++
++
+ @frappe.whitelist()
+ def make_all_scorecards(docname):
+ 	sc = frappe.get_doc("Supplier Scorecard", docname)
+@@ -212,6 +230,25 @@ def make_all_scorecards(docname):
+ 
+ 	while (start_date < todays) and (end_date <= todays):
+ 		# check to make sure there is no scorecard period already created
++		#============================ Start Custom For TASK-2025-00192 ===============================
++		custom_criteria = [
++        'جودة المنتج',
++        'السعر والتنافسية',
++        'السلوك التعاقدي',
++        'الخدمة التقنية وخدمة مابعد البيع',
++        'الالتزام بالمواعيد'
++		]
++
++		scorecard_criteria = [c.criteria_name for c in sc.criteria]
++		has_custom_criteria = any(c in custom_criteria for c in scorecard_criteria)
++
++		if has_custom_criteria:
++			if not has_purchase_order_in_period(supplier.name, start_date, end_date):
++				start_date = getdate(add_days(end_date, 1))
++				end_date = get_scorecard_date(sc.period, start_date)
++				continue
++
++#============================ End Custom For TASK-2025-00192 ===============================				
+ 		scorecards = frappe.db.sql(
+ 			"""
+ 			SELECT
+diff --git a/erpnext/buying/doctype/supplier_scorecard_variable/supplier_scorecard_variable.py b/erpnext/buying/doctype/supplier_scorecard_variable/supplier_scorecard_variable.py
+index 19be89d547..68a1588694 100644
+--- a/erpnext/buying/doctype/supplier_scorecard_variable/supplier_scorecard_variable.py
++++ b/erpnext/buying/doctype/supplier_scorecard_variable/supplier_scorecard_variable.py
+@@ -623,3 +623,72 @@ def get_rfq_response_days(scorecard):
+ 		total_sq_days = 0
+ 
+ 	return total_sq_days
++
++
++#============================ Start Custom For TASK-2025-00192 ===============================
++
++
++def _calculate_avg_rating(scorecard, criteria_name):
++    supplier = frappe.get_doc("Supplier", scorecard.supplier)
++
++    params = {
++        "supplier": supplier.name,
++        "start_date": scorecard.start_date,
++        "end_date": scorecard.end_date,
++    }
++
++    query = """
++        SELECT
++            AVG(csr.supplier_rating)
++        FROM
++            `tabSupplier Rating` csr
++        INNER JOIN
++            `tabPurchase Order` po ON csr.parent = po.name
++        WHERE
++            po.supplier = %(supplier)s
++            AND po.transaction_date BETWEEN %(start_date)s AND %(end_date)s
++            AND po.docstatus = 1
++    """
++
++    if criteria_name:
++        query += " AND csr.evaluation_item = %(criteria_name)s"
++        params["criteria_name"] = criteria_name
++
++    # Debugging
++    try:
++        formatted_query = query % params
++    except Exception as e:
++        formatted_query = f"Error formatting query: {e}"
++
++
++    result = frappe.db.sql(query, params)[0][0]
++
++    if not result:
++        return 0
++
++    value = round(result * 5, 2)
++
++    return value
++
++def avg_product_quality(scorecard, criteria_name='جودة المنتج'):
++    return _calculate_avg_rating(scorecard, criteria_name)
++
++
++def get_avg_price_and_competitiveness(scorecard, criteria_name='السعر والتنافسية'):
++    return _calculate_avg_rating(scorecard, criteria_name)
++
++
++def get_avg_contractual_behavior(scorecard, criteria_name='السلوك التعاقدي'):
++    return _calculate_avg_rating(scorecard, criteria_name)
++
++
++
++
++def get_avg_technical_service(scorecard, criteria_name='الخدمة التقنية وخدمة مابعد البيع'):
++    return _calculate_avg_rating(scorecard, criteria_name)
++
++
++def get_avg_punctuality(scorecard, criteria_name='الالتزام بالمواعيد'):
++    return _calculate_avg_rating(scorecard, criteria_name)
++
++#============================ End Custom For TASK-2025-00192 ===============================
+\ No newline at end of file
+diff --git a/erpnext/buying/report/supplier_quotation_comparison/supplier_quotation_comparison.py b/erpnext/buying/report/supplier_quotation_comparison/supplier_quotation_comparison.py
+index db93a3d7e7..62e5ddfa38 100644
+--- a/erpnext/buying/report/supplier_quotation_comparison/supplier_quotation_comparison.py
++++ b/erpnext/buying/report/supplier_quotation_comparison/supplier_quotation_comparison.py
+@@ -117,6 +117,26 @@ def prepare_data(supplier_quotation_data, filters):
+ 			"lead_time_days": data.get("lead_time_days"),
+ 		}
+ 		row["price_per_unit"] = flt(row["price"]) / (flt(data.get("stock_qty")) or 1)
++		#============================ Start Custom For TASK-2025-00256 ===============================
++		rfq = data.get("request_for_quotation")
++		if rfq:
++			rfq_details = frappe.db.get_value(
++				"Request for Quotation",
++				rfq,
++				["custom_submission_deadline", "custom_is_rfq_completed"],
++				as_dict=True,
++			)
++
++			if rfq_details and cint(rfq_details.custom_is_rfq_completed) == 0 and rfq_details.custom_submission_deadline:
++				today = frappe.utils.getdate(frappe.utils.nowdate())
++				deadline = frappe.utils.getdate(rfq_details.custom_submission_deadline)
++
++				if today < deadline:
++					row["price"] = None
++					row["base_amount"] = None
++					row["base_rate"] = None
++					row["price_per_unit"] = None
++#============================ End Custom For TASK-2025-00256 ===============================
+ 
+ 		# map for report view of form {'supplier1'/'item1':[{},{},...]}
+ 		group_wise_map[group].append(row)
+diff --git a/erpnext/manufacturing/doctype/work_order/work_order.js b/erpnext/manufacturing/doctype/work_order/work_order.js
+index 5131b30c88..9cbc1dc4cd 100644
+--- a/erpnext/manufacturing/doctype/work_order/work_order.js
++++ b/erpnext/manufacturing/doctype/work_order/work_order.js
+@@ -970,6 +970,13 @@ erpnext.work_order = {
+ 	},
+ 
+ 	set_default_warehouse: function (frm) {
++//============================ Start Custom For Fix Issues ===============================
++
++		if (!frm.doc.company) {
++			return;
++		}
++//============================ End Custom For Fix Issues ===============================
++
+ 		if (!(frm.doc.wip_warehouse || frm.doc.fg_warehouse)) {
+ 			frappe.call({
+ 				method: "erpnext.manufacturing.doctype.work_order.work_order.get_default_warehouse",
+diff --git a/erpnext/selling/doctype/customer/customer.py b/erpnext/selling/doctype/customer/customer.py
+index 08bea658d9..bb439f156a 100644
+--- a/erpnext/selling/doctype/customer/customer.py
++++ b/erpnext/selling/doctype/customer/customer.py
+@@ -595,14 +595,43 @@ def get_nested_links(link_doctype, link_name, ignore_permissions=False):
+ 	return links
+ 
+ 
+-def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, extra_amount=0):
++
++#============================ Start Custom For Fix Issues ===============================
++def check_credit_limit(customer,company,ignore_outstanding_sales_order=False, extra_amount=0):
+ 	credit_limit = get_credit_limit(customer, company)
+-	if not credit_limit:
+-		return
+ 
+-	customer_outstanding = get_customer_outstanding(customer, company, ignore_outstanding_sales_order)
++	credit_limit_exists = frappe.db.exists(
++		"Customer Credit Limit",
++		{"parent": customer, "company": company}
++	)
++	
++	if credit_limit_exists and credit_limit == 0:
++		customer_outstanding = get_customer_outstanding(
++			customer, company, ignore_outstanding_sales_order
++		)
++		if extra_amount > 0:
++			customer_outstanding += flt(extra_amount)
++		
++		if flt(customer_outstanding) > 0:
++			frappe.throw(
++				_("Customer {0} has a Credit Limit of 0. No transactions are allowed.").format(
++					customer
++				),
++				frappe.ValidationError,
++			)
++		return
++	if not credit_limit_exists:
++		return
++	customer_outstanding = get_customer_outstanding(
++		customer, company, ignore_outstanding_sales_order
++	)
+ 	if extra_amount > 0:
+ 		customer_outstanding += flt(extra_amount)
++	
++	if credit_limit >= 0 and flt(customer_outstanding) > credit_limit:
++		message = _("Credit limit has been crossed for customer {0} ({1}/{2})").format(
++			customer, customer_outstanding, credit_limit
++		)
+ 
+ 	if credit_limit > 0 and flt(customer_outstanding) > credit_limit:
+ 		message = _("Credit limit has been crossed for customer {0} ({1}/{2})").format(
+@@ -616,25 +645,34 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False,
+ 		if not credit_controller_role or credit_controller_role not in frappe.get_roles():
+ 			# form a list of emails for the credit controller users
+ 			credit_controller_users = get_users_with_role(credit_controller_role or "Sales Master Manager")
++		message += "<br><br>"
+ 
++		# If not authorized person raise exception
++		credit_controller_role = frappe.db.get_single_value("Accounts Settings", "credit_controller")
++		if not credit_controller_role or credit_controller_role not in frappe.get_roles():
++			# form a list of emails for the credit controller users
++			credit_controller_users = get_users_with_role(credit_controller_role or "Sales Master Manager")
++			
+ 			# form a list of emails and names to show to the user
+ 			credit_controller_users_formatted = [
+ 				get_formatted_email(user).replace("<", "(").replace(">", ")")
+ 				for user in credit_controller_users
+ 			]
++			
+ 			if not credit_controller_users_formatted:
+ 				frappe.throw(
+ 					_("Please contact your administrator to extend the credit limits for {0}.").format(
+ 						customer
+ 					)
+ 				)
+-
+-			user_list = "<br><br><ul><li>{}</li></ul>".format("<li>".join(credit_controller_users_formatted))
+-
++			
++			user_list = "<br><br><ul><li>{}</li></ul>".format(
++				"<li>".join(credit_controller_users_formatted)
++			)
++			
+ 			message += _(
+ 				"Please contact any of the following users to extend the credit limits for {0}: {1}"
+ 			).format(customer, user_list)
+-
+ 			# if the current user does not have permissions to override credit limit,
+ 			# prompt them to send out an email to the controller users
+ 			frappe.msgprint(
+@@ -654,6 +692,8 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False,
+ 				},
+ 			)
+ 
++#============================ End Custom For Custom For Fix Issues ===============================
++
+ 
+ @frappe.whitelist()
+ def send_emails(customer, customer_outstanding, credit_limit, credit_controller_users_list):
+diff --git a/erpnext/selling/doctype/quotation/quotation.py b/erpnext/selling/doctype/quotation/quotation.py
+index fbaec574b7..8a2fcb8baa 100644
+--- a/erpnext/selling/doctype/quotation/quotation.py
++++ b/erpnext/selling/doctype/quotation/quotation.py
+@@ -246,8 +246,9 @@ class Quotation(SellingController):
+ 		for opportunity in set(d.prevdoc_docname for d in self.get("items")):
+ 			if opportunity:
+ 				self.update_opportunity_status(status, opportunity)
+-
+-		if self.opportunity:
++#============================ Start Custom For TASK-2025-00257 =============================
++		if getattr(self, "opportunity", None):
++#============================ End Custom For TASK-2025-00257 ===============================
+ 			self.update_opportunity_status(status)
+ 
+ 	def update_opportunity_status(self, status, opportunity=None):
+diff --git a/erpnext/templates/includes/rfq/rfq_items.html b/erpnext/templates/includes/rfq/rfq_items.html
+index 04cf922664..21e12e1e31 100644
+--- a/erpnext/templates/includes/rfq/rfq_items.html
++++ b/erpnext/templates/includes/rfq/rfq_items.html
+@@ -22,7 +22,7 @@
+ 				style="margin-top: 5px;display: inline-block" value="0.00"
+ 				data-idx="{{ d.idx }}">
+ 		</div>
+-        <div class="col-sm-3 col-4 text-right" style="padding-top: 9px;">
++        <div class="col-sm-3 col-4sad text-right" style="padding-top: 9px;">
+            {{doc.currency_symbol}} <span class="rfq-amount" data-idx="{{ d.idx }}">0.00</span>
+         </div>
+ 		</div>
