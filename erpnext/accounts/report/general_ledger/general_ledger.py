@@ -147,6 +147,8 @@ def get_result(filters, account_details):
 	data = get_data_with_opening_closing(filters, account_details, accounting_dimensions, gl_entries)
 
 	result = get_result_as_list(data, filters)
+	if filters.get("show_items"):
+		result = get_items(result)
 
 	return result
 
@@ -596,36 +598,39 @@ def get_account_type_map(company):
 def get_result_as_list(data, filters):
     balance = 0
 
-    # NEW: running balance per (account, transaction_currency)
+    # correct dict
     running_txn = {}
 
     for d in data:
+
         if not d.get("posting_date"):
             balance = 0
-            running_txn.clear()  # reset transaction running balance too
+            running_txn = {}
 
+        # normal balance
         balance = get_balance(d, balance, "debit", "credit")
         d["balance"] = balance
 
-        d["account_currency"] = filters.account_currency
-        d["presentation_currency"] = filters.presentation_currency
-
-        # Calculate Balance (Transaction Currency)
-        d["balance_in_transaction_currency"] = None
-
+        # transaction currency logic
         if filters.get("add_values_in_transaction_currency"):
+
             account = d.get("account")
-            txn_currency = d.get("transaction_currency")
+            tx_currency = d.get("transaction_currency")
 
-            if account and txn_currency:
-                dr = flt(d.get("debit_in_transaction_currency"))
-                cr = flt(d.get("credit_in_transaction_currency"))
+            debit_tx = d.get("debit_in_transaction_currency") or 0
+            credit_tx = d.get("credit_in_transaction_currency") or 0
 
-                key = (account, txn_currency)
-                running_txn.setdefault(key, 0)
-                running_txn[key] += (dr - cr)
+            if account and tx_currency:
+                key = (account, tx_currency)
 
-                d["balance_in_transaction_currency"] = running_txn[key]
+                if key not in running_txn:
+                    running_txn[key] = 0
+
+                running_txn[key] += (debit_tx - credit_tx)
+
+                d["balance_transaction_currency"] = running_txn[key]
+            else:
+                d["balance_transaction_currency"] = debit_tx - credit_tx
 
     return data
 
@@ -722,6 +727,13 @@ def get_columns(filters):
 				"width": 130,
 				"options": "transaction_currency",
 			},
+				{
+			"label": _("Balance (Transaction)"),
+			"fieldname": "balance_transaction_currency",
+			"fieldtype": "Currency",
+			"width": 130,
+			"options": "transaction_currency",
+		},
 			{
 				"label": "Transaction Currency",
 				"fieldname": "transaction_currency",
@@ -793,6 +805,21 @@ def get_columns(filters):
 				"label": _("Amount (Party Currency)"),
 				"fieldname": "amount",
 				"width": 100
+			},	
+			{
+				"label": _("Beneficiary Name"),
+				"fieldname": "custom_beneficiary_name",
+				"width": 100
+			},
+			{
+				"label": _("Beneficiary Passport No"),
+				"fieldname": "custom_beneficiary_passport_no",
+				"width": 100
+			},
+			{
+				"label": _("Ticket No"),
+				"fieldname": "custom_pnr_no",
+				"width": 100
 			}
 		])
 	##EndGitUpdate#NewLine#
@@ -828,70 +855,115 @@ def get_columns(filters):
 
 	##GitUpdate#NewLine#
 def get_items(data):
-	itemsvoucher_dict = {}
-	for index, d in enumerate(data):
-		if d.get('voucher_type') == 'Purchase Invoice':
-			itemsvoucher_dict[index] = d.get('voucher_no')
-	strVouchernames = ""
-	for voucherkey,voucherkval  in itemsvoucher_dict.items():
-		if strVouchernames != "":
-			strVouchernames += ","
-		strVouchernames += "'" + voucherkval + "'"
+    itemsvoucher_dict = {}
 
-	if strVouchernames !="":
-		itemslist = frappe.db.sql("""
-			select Items.item_code, Items.item_name, Items.qty, Items.rate, Items.amount, Items.parent from `tabPurchase Invoice Item` as Items
-			where parent in (""" + strVouchernames + """)
-			order by parent ASC, Items.idx ASC
-			""", as_dict = 1)
+    # Collect Purchase Invoice vouchers
+    for index, d in enumerate(data):
+        if d.get('voucher_type') == 'Purchase Invoice':
+            itemsvoucher_dict[index] = ('Purchase Invoice', d.get('voucher_no'))
 
+        if d.get('voucher_type') == 'Journal Entry' and d.get('against_voucher_type') == 'Purchase Invoice':
+            itemsvoucher_dict[index] = ('Purchase Invoice', d.get('against_voucher'))
 
-	addedrow = 1
-	for voucherkey,voucherkval  in itemsvoucher_dict.items():
-		for itemrow in itemslist:
-			if itemrow["parent"] == voucherkval:
-				data.insert(voucherkey + addedrow, get_items_dict(itemrow["item_code"],itemrow["item_name"],itemrow["qty"],itemrow["rate"], itemrow["amount"]))
-				addedrow += 1
+    # Collect Sales Invoice vouchers
+    for index, d in enumerate(data):
+        if d.get('voucher_type') == 'Sales Invoice':
+            itemsvoucher_dict[index] = ('Sales Invoice', d.get('voucher_no'))
 
+        if d.get('voucher_type') == 'Journal Entry' and d.get('against_voucher_type') == 'Sales Invoice':
+            itemsvoucher_dict[index] = ('Sales Invoice', d.get('against_voucher'))
 
-	itemsvoucher_dict = {}
-	for index, d in enumerate(data):
-		if d.get('voucher_type') == 'Sales Invoice':
-			itemsvoucher_dict[index] = d.get('voucher_no')
-	strVouchernames = ""
-	for voucherkey,voucherkval  in itemsvoucher_dict.items():
-		if strVouchernames != "":
-			strVouchernames += ","
-		strVouchernames += "'" + voucherkval + "'"
+    # Handle Journal Entry WITHOUT against_voucher_type
+    for index, d in enumerate(data):
+        if d.get("gl_entry") and not d.get('against_voucher_type') and d.get('party_type'):
 
-	if strVouchernames !="":
-		itemslist = frappe.db.sql("""
-			select Items.item_code, Items.item_name, Items.qty, Items.rate, Items.amount, Items.parent from `tabSales Invoice Item` as Items
-			where parent in (""" + strVouchernames + """)
-			order by parent ASC, Items.idx ASC
-			""", as_dict = 1)
+            jv_data = frappe.db.sql("""
+                SELECT reference_type AS against_voucher_type, reference_name AS against_voucher
+                FROM `tabJournal Entry Account`
+                WHERE parent = %s
+            """, (d.get('voucher_no')), as_dict=True)
 
+            if len(jv_data) == 2:
+                if (d['party_type'] == 'Supplier' and d.get('debit', 0) > 0) or \
+                   (d['party_type'] == 'Customer' and d.get('credit', 0) > 0):
 
-	addedrow = 1
-	for voucherkey,voucherkval  in itemsvoucher_dict.items():
-		for itemrow in itemslist:
-			if itemrow["parent"] == voucherkval:
-				data.insert(voucherkey + addedrow, get_items_dict(itemrow["item_code"],itemrow["item_name"],itemrow["qty"],itemrow["rate"], itemrow["amount"]))
-				addedrow += 1
+                    for row in jv_data:
+                        if row.get("against_voucher_type") in ['Sales Invoice', 'Purchase Invoice']:
+                            itemsvoucher_dict[index] = (
+                                row["against_voucher_type"],
+                                row["against_voucher"]
+                            )
+                            break
 
+    # ───── Fetch Purchase Invoice Items ─────
+    pi_vouchers = [v for t, v in itemsvoucher_dict.values() if t == 'Purchase Invoice']
+    pi_items_map = {}
 
+    if pi_vouchers:
+        itemslist = frappe.db.sql(f"""
+            select item_code, item_name, qty, rate, amount, parent,
+                custom_beneficiary_name, custom_beneficiary_passport_no, custom_pnr_no
+            from `tabPurchase Invoice Item`
+            where parent in ({", ".join(['%s']*len(pi_vouchers))})
+            order by parent ASC, idx ASC
+        """, tuple(pi_vouchers), as_dict=1)
 
+        for itemrow in itemslist:
+            pi_items_map.setdefault(itemrow["parent"], []).append(itemrow)
 
-	return data
+    # ───── Fetch Sales Invoice Items ─────
+    si_vouchers = [v for t, v in itemsvoucher_dict.values() if t == 'Sales Invoice']
+    si_items_map = {}
 
+    if si_vouchers:
+        itemslist = frappe.db.sql(f"""
+            select item_code, item_name, qty, rate, amount, parent,
+                custom_beneficiary_name, custom_beneficiary_passport_no, custom_pnr_no
+            from `tabSales Invoice Item`
+            where parent in ({", ".join(['%s']*len(si_vouchers))})
+            order by parent ASC, idx ASC
+        """, tuple(si_vouchers), as_dict=1)
 
+        for itemrow in itemslist:
+            si_items_map.setdefault(itemrow["parent"], []).append(itemrow)
 
-def get_items_dict(item_code, item_name, qty, rate, amount):
-	return _dict(
-		item_code=item_code,
-		item_name=item_name,
-		qty=qty,
-		rate=rate,
-		amount=amount
-	)
+    # ───── Insert rows into data (sorted to keep index offsets correct) ─────
+    addedrow = 0
+
+    for voucherkey, (doctype, voucherno) in sorted(itemsvoucher_dict.items()):
+        if doctype == 'Purchase Invoice':
+            items = pi_items_map.get(voucherno, [])
+        elif doctype == 'Sales Invoice':
+            items = si_items_map.get(voucherno, [])
+        else:
+            continue
+
+        for itemrow in items:
+            data.insert(voucherkey + addedrow + 1, get_items_dict(
+                itemrow["item_code"],
+                itemrow["item_name"],
+                itemrow["qty"],
+                itemrow["rate"],
+                itemrow["amount"],
+                itemrow["custom_beneficiary_name"],
+                itemrow["custom_beneficiary_passport_no"],
+                itemrow["custom_pnr_no"]
+            ))
+            addedrow += 1
+
+    return data
+
+def get_items_dict(item_code, item_name, qty, rate, amount,
+                   custom_beneficiary_name, custom_beneficiary_passport_no, custom_pnr_no):
+
+    return _dict(
+        item_code=item_code,
+        item_name=item_name,
+        qty=qty,
+        rate=rate,
+        amount=amount,
+        custom_beneficiary_name=custom_beneficiary_name,
+        custom_beneficiary_passport_no=custom_beneficiary_passport_no,
+        custom_pnr_no=custom_pnr_no
+    )
 ##EndGitUpdate#

@@ -1342,6 +1342,8 @@ class AccountsController(TransactionBase):
 			"Purchase Receipt",
 			"Purchase Invoice",
 			"Stock Entry",
+			"Loan Repayment",
+			"Loan Disbursement",
 		]:
 			self.validate_account_currency(gl_dict.account, account_currency)
 
@@ -1349,6 +1351,8 @@ class AccountsController(TransactionBase):
 			"Journal Entry",
 			"Period Closing Voucher",
 			"Payment Entry",
+			"Loan Repayment",
+			"Loan Disbursement",
 		]:
 			set_balance_in_account_currency(
 				gl_dict, account_currency, self.get("conversion_rate"), self.company_currency
