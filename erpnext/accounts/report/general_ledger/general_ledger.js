@@ -219,6 +219,14 @@ frappe.query_reports["General Ledger"] = {
 			label: __("Show Remarks"),
 			fieldtype: "Check",
 		},
+//============================ Start Custom For TASK-2026-00408 ===============================
+		{
+			fieldname: "show_items",
+			label: __("Show Items"),
+			fieldtype: "Check",
+		},
+//============================ End Custom For TASK-2026-00408 ===============================
+
 		{
 			fieldname: "ignore_err",
 			label: __("Ignore Exchange Rate Revaluation and Gain / Loss Journals"),
