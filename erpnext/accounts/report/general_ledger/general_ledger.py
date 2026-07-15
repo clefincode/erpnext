@@ -153,7 +153,11 @@ def get_result(filters, account_details):
 	data = get_data_with_opening_closing(filters, account_details, accounting_dimensions, gl_entries)
 
 	result = get_result_as_list(data, filters)
+#============================ Start Custom For TASK-2026-00408 ===============================
 
+	if filters.get("show_items"):
+		result = get_items(result)
+#============================ End Custom For TASK-2026-00408 ===============================
 	return result
 
 
@@ -646,8 +650,59 @@ def get_result_as_list(data, filters):
 		d["presentation_currency"] = filters.presentation_currency
 
 	return data
+#============================ Start Custom For TASK-2026-00408 ===============================
+def get_items(data):
+	for voucher_type, child_doctype in (
+		("Purchase Invoice", "Purchase Invoice Item"),
+		("Sales Invoice", "Sales Invoice Item"),
+	):
+		voucher_rows = {
+			index: row.get("voucher_no")
+			for index, row in enumerate(data)
+			if row.get("voucher_type") == voucher_type and row.get("voucher_no")
+		}
+
+		if not voucher_rows:
+			continue
+
+		items = frappe.db.get_all(
+			child_doctype,
+			fields=["item_code", "item_name", "qty", "rate", "amount", "parent", "idx"],
+			filters={"parent": ("in", list(voucher_rows.values()))},
+			order_by="parent asc, idx asc",
+		)
+
+		items_by_parent = {}
+		for item in items:
+			items_by_parent.setdefault(item.parent, []).append(item)
+
+		added_rows = 1
+		for row_index, voucher_no in voucher_rows.items():
+			for item in items_by_parent.get(voucher_no, []):
+				data.insert(
+					row_index + added_rows,
+					get_items_dict(
+						item.item_code,
+						item.item_name,
+						item.qty,
+						item.rate,
+						item.amount,
+					),
+				)
+				added_rows += 1
+
+	return data
 
 
+def get_items_dict(item_code, item_name, qty, rate, amount):
+	return _dict(
+		item_code=item_code,
+		item_name=item_name,
+		qty=qty,
+		rate=rate,
+		amount=amount,
+	)
+#============================ End Custom For TASK-2026-00408 ===============================
 def get_supplier_invoice_details():
 	inv_details = {}
 	for d in frappe.db.sql(
@@ -816,7 +871,18 @@ def get_columns(filters):
 
 	if filters.get("show_remarks"):
 		columns.extend([{"label": _("Remarks"), "fieldname": "remarks", "width": 400}])
-
+#============================ Start Custom For TASK-2026-00408 ===============================
+	if filters.get("show_items"):
+		columns.extend(
+			[
+				{"label": _("Item Code"), "fieldname": "item_code", "width": 100},
+				{"label": _("Item Name"), "fieldname": "item_name", "width": 100},
+				{"label": _("Qty"), "fieldname": "qty", "width": 100},
+				{"label": _("Rate (Party Currency)"), "fieldname": "rate", "width": 100},
+				{"label": _("Amount (Party Currency)"), "fieldname": "amount", "width": 100},
+			]
+		)
+#============================ End Custom For TASK-2026-00408 ===============================
 	return columns
 
 
