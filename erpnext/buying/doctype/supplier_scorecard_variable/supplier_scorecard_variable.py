@@ -623,3 +623,72 @@ def get_rfq_response_days(scorecard):
 		total_sq_days = 0
 
 	return total_sq_days
+
+
+#============================ Start Custom For TASK-2025-00192 ===============================
+
+
+def _calculate_avg_rating(scorecard, criteria_name):
+    supplier = frappe.get_doc("Supplier", scorecard.supplier)
+
+    params = {
+        "supplier": supplier.name,
+        "start_date": scorecard.start_date,
+        "end_date": scorecard.end_date,
+    }
+
+    query = """
+        SELECT
+            AVG(csr.supplier_rating)
+        FROM
+            `tabSupplier Rating` csr
+        INNER JOIN
+            `tabPurchase Order` po ON csr.parent = po.name
+        WHERE
+            po.supplier = %(supplier)s
+            AND po.transaction_date BETWEEN %(start_date)s AND %(end_date)s
+            AND po.docstatus = 1
+    """
+
+    if criteria_name:
+        query += " AND csr.evaluation_item = %(criteria_name)s"
+        params["criteria_name"] = criteria_name
+
+    # Debugging
+    try:
+        formatted_query = query % params
+    except Exception as e:
+        formatted_query = f"Error formatting query: {e}"
+
+
+    result = frappe.db.sql(query, params)[0][0]
+
+    if not result:
+        return 0
+
+    value = round(result * 5, 2)
+
+    return value
+
+def avg_product_quality(scorecard, criteria_name='جودة المنتج'):
+    return _calculate_avg_rating(scorecard, criteria_name)
+
+
+def get_avg_price_and_competitiveness(scorecard, criteria_name='السعر والتنافسية'):
+    return _calculate_avg_rating(scorecard, criteria_name)
+
+
+def get_avg_contractual_behavior(scorecard, criteria_name='السلوك التعاقدي'):
+    return _calculate_avg_rating(scorecard, criteria_name)
+
+
+
+
+def get_avg_technical_service(scorecard, criteria_name='الخدمة التقنية وخدمة مابعد البيع'):
+    return _calculate_avg_rating(scorecard, criteria_name)
+
+
+def get_avg_punctuality(scorecard, criteria_name='الالتزام بالمواعيد'):
+    return _calculate_avg_rating(scorecard, criteria_name)
+
+#============================ End Custom For TASK-2025-00192 ===============================

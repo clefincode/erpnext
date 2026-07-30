@@ -246,8 +246,9 @@ class Quotation(SellingController):
 		for opportunity in set(d.prevdoc_docname for d in self.get("items")):
 			if opportunity:
 				self.update_opportunity_status(status, opportunity)
-
-		if self.opportunity:
+#============================ Start Custom For TASK-2025-00257 =============================
+		if getattr(self, "opportunity", None):
+#============================ End Custom For TASK-2025-00257 ===============================
 			self.update_opportunity_status(status)
 
 	def update_opportunity_status(self, status, opportunity=None):
