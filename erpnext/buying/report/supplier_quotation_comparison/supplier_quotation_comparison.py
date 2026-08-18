@@ -163,14 +163,20 @@ def prepare_data(supplier_quotation_data, filters):
 		group_entries = group_wise_map[group]  # all entries pertaining to item/supplier
 		group_entries[0].update({group_by_field: group})  # Add item/supplier name in first group row
 
+		#============================ Start Custom For Supplier Quotation Min Price ============================
 		if highlight_min_price:
-			prices = [group_entry["price_per_unit"] for group_entry in group_entries]
-			min_price = min(prices)
+			prices = [
+				group_entry["price_per_unit"]
+				for group_entry in group_entries
+				if group_entry["price_per_unit"] is not None
+			]
+			min_price = min(prices) if prices else None
 
 		for entry in group_entries:
-			if highlight_min_price and entry["price_per_unit"] == min_price:
+			if highlight_min_price and min_price is not None and entry["price_per_unit"] == min_price:
 				entry["min"] = 1
 			out.append(entry)
+		#============================ End Custom For Supplier Quotation Min Price ============================
 
 	if filters.get("item_code"):
 		# render chart only for one item comparison
